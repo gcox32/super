@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand Colors */
+  --brand-primary: #3b82f6; /* Blue */
+  --brand-primary-dark: #2563eb;
+  --brand-primary-light: #60a5fa;
+  --brand-accent: #f59e0b; /* Amber/Orange */
+  --brand-accent-dark: #d97706;
+  --brand-accent-light: #fbbf24;
+  
+  /* Status Colors */
+  --success: #10b981; /* Green */
+  --success-dark: #059669;
+  --warning: #f59e0b; /* Amber */
+  --error: #ef4444; /* Red */
+  --info: #3b82f6; /* Blue */
+  
+  /* Neutral Colors */
+  --background: #0a0a0a; /* Dark background */
+  --foreground: #ffffff; /* White text */
+  --muted: #6b7280; /* Gray for secondary text */
+  --muted-foreground: #9ca3af;
+  
+  /* Surface Colors */
+  --card: #1a1a1a; /* Slightly lighter than background */
+  --card-foreground: #ffffff;
+  --border: #2a2a2a; /* Subtle borders */
+  --input: #2a2a2a;
+  --ring: var(--brand-primary); /* Focus ring */
+  
+  /* Interactive States */
+  --hover: #2a2a2a;
+  --active: #333333;
+}
+
+@theme inline {
+  /* Brand Colors */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-dark: var(--brand-primary-dark);
+  --color-brand-primary-light: var(--brand-primary-light);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-dark: var(--brand-accent-dark);
+  --color-brand-accent-light: var(--brand-accent-light);
+  
+  /* Status Colors */
+  --color-success: var(--success);
+  --color-success-dark: var(--success-dark);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  
+  /* Base Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  
+  /* Surface Colors */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  
+  /* Interactive States */
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
