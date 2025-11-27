@@ -31,7 +31,7 @@ export default function BottomNav() {
               }`}
             >
               <span className="text-2xl mb-1"><item.icon className="w-6 h-6" /></span>
-              <span className="text-xs font-medium">{item.name}</span>
+              <span className="text-xs font-medium hidden md:block">{item.name}</span>
             </Link>
           );
         })}

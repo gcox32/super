@@ -14,8 +14,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Super Soldier Regimen",
+  title: "Super Soldier Program",
   description: "Training and nutrition app for building the ultimate physique",
+  openGraph: {
+    title: "Super Soldier Program",
+    description: 'Super Soldier Program',
+    url: 'https://super-soldier-app.vercel.app',
+    siteName: 'Super Solider Program',
+    images: [{ url: 'https://super-soldier-app.vercel.app/opengraph-evans.png' }]
+  },
 };
 
 export default function RootLayout({
