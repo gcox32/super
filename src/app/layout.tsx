@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/globals.css";
 import ClientLayout from "@/app/client-layout";
@@ -13,9 +13,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#3b82f6',
+};
+
 export const metadata: Metadata = {
   title: "Super Soldier Program",
   description: "Training and nutrition app for building the ultimate physique",
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Super',
+  },
   openGraph: {
     title: "Super Soldier Program",
     description: 'Super Soldier Program',
@@ -24,9 +39,13 @@ export const metadata: Metadata = {
     images: [{ url: 'https://super-soldier-app.vercel.app/opengraph-evans.png' }]
   },
   icons: {
-    icon: '/apple-icon.png',
+    icon: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
     shortcut: '/apple-icon.png',
-    apple: '/apple-icon.png',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 };
 
