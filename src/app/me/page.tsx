@@ -11,7 +11,7 @@ export default function MePage() {
               <User className="w-8 h-8 text-brand-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Profile</h1>
+              <h1 className="text-2xl font-bold">Me</h1>
               <p className="text-sm text-muted-foreground">
                 Manage your account and settings
               </p>
