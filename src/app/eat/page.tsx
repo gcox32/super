@@ -1,4 +1,5 @@
 import { UtensilsCrossed, Target, Plus } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
 export default function EatPage() {
   return (
@@ -90,12 +91,12 @@ export default function EatPage() {
         <section className="px-4 md:px-6 py-6 border-t border-border">
           <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
           <div className="flex gap-2 md:max-w-2xl">
-            <button className="flex-1 py-3 bg-brand-primary text-white rounded-lg font-semibold hover:bg-brand-primary-dark transition-colors">
+            <Button variant="primary">
               Log Meal
-            </button>
-            <button className="flex-1 py-3 border border-border rounded-lg font-semibold hover:bg-hover transition-colors">
+            </Button>
+            <Button variant="outline">
               Plan Meals
-            </button>
+            </Button>
           </div>
         </section>
 

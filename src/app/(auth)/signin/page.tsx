@@ -3,11 +3,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Button from '@/components/ui/Button';
 
 export default function SignInPage() {
   const { isAuthenticated, login } = useAuth();
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -21,12 +22,11 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const success = await login(username, password);
-    console.log('success', success);
+    const success = await login(email, password);
     if (success) {
       router.push('/');
     } else {
-      setError('Invalid username or password');
+      setError('Invalid email or password');
     }
   };
 
@@ -36,14 +36,14 @@ export default function SignInPage() {
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">
-              Username
+            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+              Email
             </label>
             <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
@@ -64,12 +64,9 @@ export default function SignInPage() {
           {error && (
             <div className="text-red-600 text-sm">{error}</div>
           )}
-          <button
-            type="submit"
-            className="cursor-pointer w-full bg-brand-primary text-white py-2 px-4 rounded-md hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 transition-colors"
-          >
+          <Button type="submit" variant="primary" fullWidth>
             Login
-          </button>
+          </Button>
         </form>
       </div>
     </div>

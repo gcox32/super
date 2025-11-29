@@ -1,3 +1,4 @@
+import Button from '@/components/ui/Button';
 import { Play, Calendar, TrendingUp } from 'lucide-react';
 
 export default function TrainPage() {
@@ -33,10 +34,10 @@ export default function TrainPage() {
                     Scheduled
                   </span>
                 </div>
-                <button className="w-full py-3 bg-brand-primary text-white rounded-lg font-semibold hover:bg-brand-primary-dark transition-colors flex items-center justify-center gap-2">
+                <Button variant="primary" fullWidth>
                   <Play className="w-4 h-4" />
                   Start Session
-                </button>
+                </Button>
               </div>
             ))}
           </div>

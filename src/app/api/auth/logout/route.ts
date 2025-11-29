@@ -1,7 +1,24 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST() {
-  // Logout is primarily handled client-side via localStorage
-  // This endpoint exists for consistency and potential future server-side cleanup
-  return NextResponse.json({ success: true });
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Logout failed' },
+      { status: 500 }
+    );
+  }
 }

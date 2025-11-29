@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import Button from './Button';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -50,22 +51,18 @@ export default function ConfirmationModal({
         </div>
         <p className="text-muted-foreground mb-6">{message}</p>
         <div className="flex gap-3 justify-end">
-          <button
+          <Button
             onClick={onClose}
-            className="px-4 py-2 border border-border rounded-lg font-semibold hover:bg-hover transition-colors"
+            variant="outline"
           >
             {cancelText}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleConfirm}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              confirmVariant === 'danger'
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-brand-primary text-white hover:bg-brand-primary-dark'
-            }`}
+            variant={confirmVariant === 'danger' ? 'danger' : 'primary'}
           >
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

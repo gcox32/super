@@ -1,6 +1,5 @@
-'use client';
-
 import { Pencil, Ruler, Weight } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 export default function Today() {
   return (
@@ -41,9 +40,9 @@ export default function Today() {
                   Not started
                 </span>
               </div>
-              <button className="w-full py-3 bg-brand-primary text-white rounded-lg font-semibold hover:bg-brand-primary-dark transition-colors">
+              <Button variant="primary" fullWidth>
                 Start Session
-              </button>
+              </Button>
             </div>
 
             {/* PM Session Card */}
@@ -59,9 +58,9 @@ export default function Today() {
                   Not started
                 </span>
               </div>
-              <button className="w-full py-3 bg-brand-primary text-white rounded-lg font-semibold hover:bg-brand-primary-dark transition-colors">
+              <Button variant="primary" fullWidth>
                 Start Session
-              </button>
+              </Button>
             </div>
           </div>
         </section>
@@ -115,12 +114,12 @@ export default function Today() {
           </div>
 
           <div className="mt-4 flex gap-2 md:max-w-2xl">
-            <button className="flex-1 py-2.5 bg-brand-primary text-white rounded-lg font-semibold hover:bg-brand-primary-dark transition-colors">
+            <Button variant="primary">
               Plan Today's Meals
-            </button>
-            <button className="flex-1 py-2.5 border border-border rounded-lg font-semibold hover:bg-hover transition-colors">
+            </Button>
+            <Button variant="outline">
               Log Meal
-            </button>
+            </Button>
           </div>
         </section>
 
