@@ -10,7 +10,7 @@
 - [ ] Write CRUD functions to Create, Remove, Update, and Delete records from tables, making sure to `CASCADE` and aggregate where appropriate (e.g. deleting a record from `train.workout_instance` would delete the corresponding `train.workout_block_instance` records and their corresponding `train.workout_block_exercise_instance` records).
 - [ ] Write backend API routes to trigger these CRUD functions
 
-## Frontend 
+## Frontend UX and UI
 
 ### Train
 UI needed for creation, reading (getting or listing), updating, and deleting training related data
@@ -51,10 +51,39 @@ Supplements, Water Intake, and Sleep work a bit differently: the user is either 
 
 ### Log
 There are multiple types of Logs for a given User.
-#### 
 
+#### Stats Logs
+The primary "Stats Log" is made up of multiple logged user-specific stats, one of which is "tape measurements" which are themselves multiple stats
+- weight
+- body fat percentage
+- muscle mass (lean body mass)
+- tape measurements
+    - neck
+    - shoulders
+    - chest
+    - waist
+    - hips
+    - leftArm
+    - rightArm
+    - leftLeg
+    - rightLeg
+    - leftForearm
+    - rightForearm
+    - leftCalf
+    - rightCalf
+
+We also want to keep track of the "latest" of any one stat, to be able to easily surface it (with the record date) in a summary view.
+
+#### Performance Log
+The performance log is a running record of Workout-level and Exercise-Instance-level metrics such as "Average Power" across a workout or "Projected 1RM" for any particular exercise.
+
+#### Goals Log
+A running record of past, current, and stretch goals.
+
+#### Image Log
+A running record of images of the user for feedback and progress reassurance.
 
 ### Me
-
+The logs in combination with some of the "latest" stats will allow us to create a robust UX as well as provide comprehensive feedback. For example, with the layering of all of this data, a user can see what they were eating, how they were sleeping, if they'd had a "Personal Best" recently when reflecting on a great week of training. Or, conversely, they could see that their "Average Power" has been steadily declining, their tape measure measurements had plateaued, and their composite Macros had been way off when investigating performance dissatisfaction.
 
 
