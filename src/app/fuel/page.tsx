@@ -1,7 +1,7 @@
 import { UtensilsCrossed, Target, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
-export default function EatPage() {
+export default function FuelPage() {
   return (
     <div className="min-h-screen pb-20 bg-background">
       <div className="md:max-w-4xl md:mx-auto">

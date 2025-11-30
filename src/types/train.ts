@@ -1,8 +1,18 @@
 import { MuscleGroup } from "./anatomy";
 import { User } from "./user";
+import { 
+    DistanceMeasurement, TimeMeasurement, WeightMeasurement, CaloriesMeasurement, 
+    PaceMeasurement, LongTimeMeasurement, WorkMeasurement, PowerMeasurement 
+} from "./measures";
 
 // helpers
 type PlaneOfMotion = 'sagittal' | 'frontal' | 'transverse';
+
+type MovementPattern = 
+    'upper push' | 'upper pull' | 'squat'       | 
+    'hinge'      | 'lunge'      | 'hip thrust'  |
+    'isometric'  | 'locomotion' | 'hip flexion' |
+    'plyometric' | 'other';
 
 type Equipment = 'barbell' | 'dumbbell' | 'kettlebell' | 'machine' | 'bodyweight' | 'other';
 
@@ -14,18 +24,14 @@ type RestTimer = 0 | 15 | 30 | 45 | 60 | 90 | 120 | 180 | 240 | 300;
 
 type WorkoutType = 'strength' | 'hypertrophy' | 'endurance' | 'power' | 'skill' | 'other';
 
-type WorkoutBlockType = 'warm-up' | 'main' | 'accessory' | 'finisher' | 'other'; 
+type WorkoutBlockType = 'warm-up' | 'prep' | 'main' | 'accessory' | 'finisher' | 'cooldown' | 'other'; 
 
-type DistanceMeasurement = { value: number; unit: 'meters' | 'feet' | 'yards' | 'miles' };
-type TimeMeasurement     = { value: number; unit: 'seconds' | 'minutes' | 'hours' };
-type WeightMeasurement   = { value: number; unit: 'kg' | 'lbs' };
-type CaloriesMeasurement = { value: number; unit: 'calories' };
-type PaceMeasurement     = { value: number; unit: 'mph' | 'kph' | 'min/km' | 'min/mile' };
-type LongTimeMeasurement = { value: number; unit: 'days' | 'weeks' | 'months' | 'years' };
-
-interface MovementPattern {
-    name: string;
-    description: string;
+interface WorkPowerConstants {
+    useCalories: boolean;
+    defaultDistance: DistanceMeasurement;
+    armLengthFactor: number; // 0 - 1.0 default is 0
+    legLengthFactor: number; // 0 - 1.0 default is 0
+    bodyweightFactor: number; // 0 - 1.0 default is 1
 }
 
 interface ExerciseMeasures {
@@ -38,34 +44,35 @@ interface ExerciseMeasures {
     calories?:          CaloriesMeasurement;
 }
 
-
-// primary types
-interface Protocol {
+// `train` schema for supabase
+export interface Protocol {
     id: string;
     name: string;
+    objectives: string[];
     description?: string;
     workouts?: Workout[];
     duration: LongTimeMeasurement;
     daysPerWeek: number;
-    sessionsPerDay: number;
+    includes2ADays: boolean;
     notes?: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
-interface Workout {
+export interface Workout {
     id: string;
     userId: User['id'];
     workoutType: WorkoutType;
     name?: string;
-    blocks: WorkoutBlock[];
+    objectives: string[];
     description?: string;
+    blocks: WorkoutBlock[];
     estimatedDuration?: number; // in minutes
     createdAt: Date;
     updatedAt: Date;
 }
 
-interface WorkoutBlock {
+export interface WorkoutBlock {
     id: string;
     workoutId: Workout['id'];
     workoutBlockType: WorkoutBlockType;
@@ -79,7 +86,7 @@ interface WorkoutBlock {
     updatedAt: Date;
 }
 
-interface WorkoutBlockExercise {
+export interface WorkoutBlockExercise {
     id: string;
     exercise: Exercise;
     order: number;
@@ -96,7 +103,8 @@ interface WorkoutBlockExercise {
     notes?: string;
 }
 
-interface Exercise {
+export interface Exercise {
+    id: string;
     name: string;
     description: string;
     movementPattern: MovementPattern;
@@ -110,55 +118,95 @@ interface Exercise {
     equipment?: Equipment;
     imageUrl?: string;
     videoUrl?: string;
+    workPowerConstants: WorkPowerConstants;
+    createdAt: Date;
+    updatedAt: Date;
     difficulty?: Difficulty;
 }
 
-// instances
-interface ProtocolInstance {
+// specific instances
+export interface ProtocolInstance {
     id: string;
     userId: User['id'];
     protocolId: Protocol['id'];
+    active: boolean;
     startDate: Date;
     endDate?: Date | null;
     complete: boolean;
-    duration?: number; // in minutes
+    duration?: LongTimeMeasurement; // in minutes
     notes?: string;
 
 }
 
 export interface WorkoutInstance {
     id: string;
-    userId: User['id'];
-    workoutId: Workout['id'];
-    date: Date;
-    complete: boolean;
-    duration?: number; // in minutes
-    volume?: WeightMeasurement;
-    loadVolume?: WeightMeasurement;
-    notes?: string;
+    userId:        User['id'];
+    workoutId:     Workout['id'];
+    date:          Date;
+    complete:      boolean;
+    duration?:     TimeMeasurement;
+    volume?:       WeightMeasurement; // sets * reps * weight
+    work?:         WorkMeasurement; // weight * distance
+    averagePower?: PowerMeasurement; // work / time
+    notes?:        string;
 }
 
 export interface WorkoutBlockInstance {
-    id: string;
-    userId: User['id'];
+    id:                string;
+    userId:            User['id'];
     workoutInstanceId: WorkoutInstance['id'];
-    workoutBlockId: WorkoutBlock['id'];
-    date: Date;
-    complete: boolean;
-    duration?: number; // in minutes
-    volume?: WeightMeasurement;
-    loadVolume?: WeightMeasurement;
-    notes?: string;
+    workoutBlockId:    WorkoutBlock['id'];
+    date:              Date;
+    complete:          boolean;
+    duration?:         TimeMeasurement;
+    volume?:           WeightMeasurement; // sets * reps * weight
+    notes?:            string;
 }
 
 export interface WorkoutBlockExerciseInstance {
-    id: string;
-    userId: User['id'];
+    id:                     string;
+    userId:                 User['id'];
     workoutBlockInstanceId: WorkoutBlockInstance['id'];
     workoutBlockExerciseId: WorkoutBlockExercise['id'];
-    date: Date;
-    complete: boolean;
-    duration?: number; // in minutes
-    measures: ExerciseMeasures;
-    notes?: string;
+    date:                   Date;
+    complete:               boolean;
+    personalBest?:          boolean;
+    duration?:              TimeMeasurement;
+    measures:               ExerciseMeasures;
+    projected1RM?:          WeightMeasurement;
+    rpe?:                   RPE;
+    notes?:                 string;
 }
+
+// training logs
+export interface PerformanceLog {
+    id:           string;
+    userId:       User['id'];
+    performances: Performance[];
+}
+
+export interface Performance {
+    id:               string;
+    performanceLogId: PerformanceLog['id'];
+    date:             Date;
+    duration:         TimeMeasurement;
+    volume:           WeightMeasurement; // sets * reps * weight
+    work:             WorkMeasurement; // weight * distance
+    power:            PowerMeasurement; // work / time
+    notes?:           string;
+}
+
+export interface Projected1RMLog {
+    id:            string;
+    userId:        User['id'];
+    projected1RMs: Projected1RM[];
+}
+
+export interface Projected1RM {
+    id:                string;
+    projected1RMLogId: Projected1RMLog['id'];
+    date:              Date;
+    exerciseId:        Exercise['id'];
+    projected1RM:      WeightMeasurement;
+    notes?:            string;
+}   

@@ -7,7 +7,7 @@ import { Home, Dumbbell, ForkKnife, User, ListChecks } from 'lucide-react';
 const navItems = [
   { name: 'Today', href: '/', icon: Home, className: 'rounded-l-4xl' },
   { name: 'Train', href: '/train', icon: Dumbbell, className: '' },
-  { name: 'Eat', href: '/eat', icon: ForkKnife, className: '' },
+  { name: 'Fuel', href: '/fuel', icon: ForkKnife, className: '' },
   { name: 'Log', href: '/log', icon: ListChecks, className: '' },
   { name: 'Me', href: '/me', icon: User, className: 'rounded-r-4xl' },
 ];

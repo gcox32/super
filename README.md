@@ -155,11 +155,11 @@ The system keeps a detailed log of all completed workouts.
 
 ---
 
-# 6. Eat: Fueling for Hypertrophy
+# 6. Fuel: Fueling for Hypertrophy
 
 A simplified approach to meal planning that fits the 4,000–4,300 calorie target.
 
-## 6.1 Eat Home
+## 6.1 Fuel Home
 - Daily target summary:
   - Calories, macros
 - Meal plan list:
