@@ -26,6 +26,12 @@ type WorkoutType = 'strength' | 'hypertrophy' | 'endurance' | 'power' | 'skill' 
 
 type WorkoutBlockType = 'warm-up' | 'prep' | 'main' | 'accessory' | 'finisher' | 'cooldown' | 'other'; 
 
+interface EffectedMuscleGroups {
+    primary:    MuscleGroup['id'];
+    secondary?: MuscleGroup['id'];
+    tertiary?:  MuscleGroup['id'];
+}
+
 interface WorkPowerConstants {
     useCalories:      boolean;
     defaultDistance:  DistanceMeasurement;
@@ -108,11 +114,7 @@ export interface Exercise {
     name:               string;
     description?:       string;
     movementPattern?:   MovementPattern;
-    muscleGroups: {
-        primary:    MuscleGroup['id'];
-        secondary?: MuscleGroup['id'];
-        tertiary?:  MuscleGroup['id'];
-    };
+    muscleGroups:       EffectedMuscleGroups;
     planeOfMotion?:     PlaneOfMotion;
     bilateral?:         boolean;
     equipment?:         Equipment;

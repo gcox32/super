@@ -57,7 +57,7 @@ export interface Meal {
     mealPlanId:   MealPlan['id'];
     name:         string;
     description?: string;
-    foods?:       Food[]; // hydrated in UI
+    foods?:       PortionedFood[]; // hydrated in UI
     recipes?:     Recipe[]
     createdAt:    Date;
     updatedAt:    Date;
