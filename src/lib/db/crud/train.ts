@@ -678,19 +678,59 @@ export async function createWorkoutBlockInstance(
   } as WorkoutBlockInstance;
 }
 
+export async function getWorkoutBlockInstanceById(
+  instanceId: string,
+  userId: string
+): Promise<WorkoutBlockInstance | null> {
+  const [found] = await db
+    .select()
+    .from(workoutBlockInstance)
+    .where(and(eq(workoutBlockInstance.id, instanceId), eq(workoutBlockInstance.userId, userId)))
+    .limit(1);
+
+  if (!found) return null;
+
+  return {
+    ...nullToUndefined(found),
+    date: new Date(found.date),
+  } as WorkoutBlockInstance;
+}
+
 export async function getWorkoutBlockInstances(
-  workoutInstanceId: string
+  userId: string,
+  options?: { workoutInstanceId?: string; dateFrom?: Date; dateTo?: Date }
 ): Promise<WorkoutBlockInstance[]> {
+  let whereClause = eq(workoutBlockInstance.userId, userId);
+  
+  if (options?.workoutInstanceId) {
+    whereClause = and(
+      eq(workoutBlockInstance.userId, userId),
+      eq(workoutBlockInstance.workoutInstanceId, options.workoutInstanceId)
+    ) as any;
+  }
+
   const results = await db
     .select()
     .from(workoutBlockInstance)
-    .where(eq(workoutBlockInstance.workoutInstanceId, workoutInstanceId))
+    .where(whereClause)
     .orderBy(workoutBlockInstance.date);
   
-  return results.map((r) => ({
-    ...r,
+  const converted = results.map((r) => ({
+    ...nullToUndefined(r),
     date: new Date(r.date),
   })) as WorkoutBlockInstance[];
+
+  // Filter by date range if provided
+  if (options?.dateFrom || options?.dateTo) {
+    return converted.filter((instance) => {
+      const instanceDate = instance.date;
+      if (options.dateFrom && instanceDate < options.dateFrom) return false;
+      if (options.dateTo && instanceDate > options.dateTo) return false;
+      return true;
+    });
+  }
+
+  return converted;
 }
 
 export async function updateWorkoutBlockInstance(

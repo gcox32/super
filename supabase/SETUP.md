@@ -62,9 +62,9 @@ After running migrations, verify everything is set up correctly:
    ```
 
 3. **Test connection:**
-   Make sure your `DATABASE_URL` environment variable is set:
+   Make sure your `POSTGRES_URL` environment variable is set:
    ```bash
-   echo $DATABASE_URL
+   echo $POSTGRES_URL
    ```
 
 ## Environment Variables
@@ -72,7 +72,7 @@ After running migrations, verify everything is set up correctly:
 Make sure you have these set in your `.env.local`:
 
 ```env
-DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres
+POSTGRES_URL=postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres
 NEXT_PUBLIC_SUPABASE_URL=https://[YOUR-PROJECT-REF].supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
@@ -91,6 +91,6 @@ You can find these values in your Supabase project settings → API.
 - Verify RLS is enabled: `SELECT * FROM pg_tables WHERE rowsecurity = true;`
 
 ### Connection errors
-- Verify your `DATABASE_URL` is correct
+- Verify your `POSTGRES_URL` is correct
 - Check that your IP is allowed in Supabase dashboard (Settings → Database → Connection Pooling)
 

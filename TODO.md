@@ -7,8 +7,8 @@
 - [x] Write scripts to generate initial schemas and tables (e.g. `train.protocol`, `eat.food` etc.).
 
 ## Backend
-- [ ] Write CRUD functions to Create, Remove, Update, and Delete records from tables, making sure to `CASCADE` and aggregate where appropriate (e.g. deleting a record from `train.workout_instance` would delete the corresponding `train.workout_block_instance` records and their corresponding `train.workout_block_exercise_instance` records).
-- [ ] Write backend API routes to trigger these CRUD functions
+- [x] Write CRUD functions to Create, Remove, Update, and Delete records from tables, making sure to `CASCADE` and aggregate where appropriate (e.g. deleting a record from `train.workout_instance` would delete the corresponding `train.workout_block_instance` records and their corresponding `train.workout_block_exercise_instance` records).
+- [x] Write backend API routes to trigger these CRUD functions
 
 ## Frontend UX and UI
 

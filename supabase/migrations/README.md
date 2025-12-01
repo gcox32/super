@@ -74,7 +74,7 @@ This will generate migration files in the `drizzle` directory based on your sche
 
 Make sure you have the following environment variables set:
 
-- `DATABASE_URL` - Your Supabase PostgreSQL connection string
+- `POSTGRES_URL` - Your Supabase PostgreSQL connection string
 - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anon key
 

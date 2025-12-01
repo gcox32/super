@@ -197,6 +197,36 @@ export async function addPortionedFoodToMeal(
   }).returning();
 }
 
+export async function getMealPortions(mealId: string): Promise<Array<{ portionedFoodId: string; order: number; portionedFood: PortionedFood }>> {
+  const portions = await db
+    .select()
+    .from(mealPortion)
+    .where(eq(mealPortion.mealId, mealId))
+    .orderBy(mealPortion.order);
+
+  const portionedFoodIds = portions.map(p => p.portionedFoodId);
+  const portionedFoods = await db
+    .select()
+    .from(portionedFood)
+    .where(inArray(portionedFood.id, portionedFoodIds));
+
+  const portionedFoodMap = new Map(portionedFoods.map(pf => [pf.id, pf]));
+
+  return portions.map(p => {
+    const pf = portionedFoodMap.get(p.portionedFoodId);
+    if (!pf) throw new Error(`Portioned food ${p.portionedFoodId} not found`);
+    return {
+      portionedFoodId: p.portionedFoodId,
+      order: p.order,
+      portionedFood: {
+        ...(pf as any),
+        food: pf.foodId,
+        calories: pf.calories ? Number(pf.calories) : undefined,
+      } as PortionedFood,
+    };
+  });
+}
+
 export async function removePortionedFoodFromMeal(
   mealId: string,
   portionedFoodId: string
@@ -389,6 +419,36 @@ export async function updateRecipe(
   return (updated as Recipe) || null;
 }
 
+export async function getRecipeIngredients(recipeId: string): Promise<Array<{ portionedFoodId: string; order: number; portionedFood: PortionedFood }>> {
+  const ingredients = await db
+    .select()
+    .from(recipeIngredient)
+    .where(eq(recipeIngredient.recipeId, recipeId))
+    .orderBy(recipeIngredient.order);
+
+  const portionedFoodIds = ingredients.map(i => i.portionedFoodId);
+  const portionedFoods = await db
+    .select()
+    .from(portionedFood)
+    .where(inArray(portionedFood.id, portionedFoodIds));
+
+  const portionedFoodMap = new Map(portionedFoods.map(pf => [pf.id, pf]));
+
+  return ingredients.map(i => {
+    const pf = portionedFoodMap.get(i.portionedFoodId);
+    if (!pf) throw new Error(`Portioned food ${i.portionedFoodId} not found`);
+    return {
+      portionedFoodId: i.portionedFoodId,
+      order: i.order,
+      portionedFood: {
+        ...(pf as any),
+        food: pf.foodId,
+        calories: pf.calories ? Number(pf.calories) : undefined,
+      } as PortionedFood,
+    };
+  });
+}
+
 export async function addIngredientToRecipe(
   recipeId: string,
   portionedFoodId: string,
@@ -399,6 +459,20 @@ export async function addIngredientToRecipe(
     portionedFoodId,
     order,
   }).returning();
+}
+
+export async function removeIngredientFromRecipe(
+  recipeId: string,
+  portionedFoodId: string
+): Promise<void> {
+  await db
+    .delete(recipeIngredient)
+    .where(
+      and(
+        eq(recipeIngredient.recipeId, recipeId),
+        eq(recipeIngredient.portionedFoodId, portionedFoodId)
+      )
+    );
 }
 
 // ============================================================================
@@ -447,6 +521,36 @@ export async function getGroceryListById(
   return (found as GroceryList) || null;
 }
 
+export async function getGroceryListItems(listId: string): Promise<Array<{ portionedFoodId: string; order: number; portionedFood: PortionedFood }>> {
+  const items = await db
+    .select()
+    .from(groceryListItem)
+    .where(eq(groceryListItem.groceryListId, listId))
+    .orderBy(groceryListItem.order);
+
+  const portionedFoodIds = items.map(i => i.portionedFoodId);
+  const portionedFoods = await db
+    .select()
+    .from(portionedFood)
+    .where(inArray(portionedFood.id, portionedFoodIds));
+
+  const portionedFoodMap = new Map(portionedFoods.map(pf => [pf.id, pf]));
+
+  return items.map(i => {
+    const pf = portionedFoodMap.get(i.portionedFoodId);
+    if (!pf) throw new Error(`Portioned food ${i.portionedFoodId} not found`);
+    return {
+      portionedFoodId: i.portionedFoodId,
+      order: i.order,
+      portionedFood: {
+        ...(pf as any),
+        food: pf.foodId,
+        calories: pf.calories ? Number(pf.calories) : undefined,
+      } as PortionedFood,
+    };
+  });
+}
+
 export async function addPortionedFoodToGroceryList(
   listId: string,
   portionedFoodId: string,
@@ -457,6 +561,20 @@ export async function addPortionedFoodToGroceryList(
     portionedFoodId,
     order,
   }).returning();
+}
+
+export async function removePortionedFoodFromGroceryList(
+  listId: string,
+  portionedFoodId: string
+): Promise<void> {
+  await db
+    .delete(groceryListItem)
+    .where(
+      and(
+        eq(groceryListItem.groceryListId, listId),
+        eq(groceryListItem.portionedFoodId, portionedFoodId)
+      )
+    );
 }
 
 export async function deleteGroceryList(listId: string, userId: string): Promise<boolean> {
@@ -813,6 +931,48 @@ export async function getUserSupplementInstances(
   return converted;
 }
 
+export async function getSupplementInstanceById(
+  instanceId: string,
+  userId: string
+): Promise<SupplementInstance | null> {
+  const [found] = await db
+    .select()
+    .from(supplementInstance)
+    .where(and(eq(supplementInstance.id, instanceId), eq(supplementInstance.userId, userId)))
+    .limit(1);
+
+  if (!found) return null;
+
+  return { ...found, date: new Date(found.date) } as SupplementInstance;
+}
+
+export async function updateSupplementInstance(
+  instanceId: string,
+  userId: string,
+  updates: Partial<Omit<SupplementInstance, 'id' | 'userId' | 'supplementScheduleId' | 'supplementId' | 'date'>>
+): Promise<SupplementInstance | null> {
+  const [updated] = await db
+    .update(supplementInstance)
+    .set(updates)
+    .where(and(eq(supplementInstance.id, instanceId), eq(supplementInstance.userId, userId)))
+    .returning();
+
+  if (!updated) return null;
+
+  return { ...updated, date: new Date(updated.date) } as SupplementInstance;
+}
+
+export async function deleteSupplementInstance(
+  instanceId: string,
+  userId: string
+): Promise<boolean> {
+  const result = await db
+    .delete(supplementInstance)
+    .where(and(eq(supplementInstance.id, instanceId), eq(supplementInstance.userId, userId)));
+
+  return true;
+}
+
 // ============================================================================
 // WATER INTAKE CRUD
 // ============================================================================
@@ -883,6 +1043,56 @@ export async function getUserWaterIntakes(
   }
 
   return converted;
+}
+
+export async function getWaterIntakeById(
+  intakeId: string,
+  userId: string
+): Promise<WaterIntake | null> {
+  const [found] = await db
+    .select()
+    .from(waterIntake)
+    .where(and(eq(waterIntake.id, intakeId), eq(waterIntake.userId, userId)))
+    .limit(1);
+
+  if (!found) return null;
+
+  return {
+    ...found,
+    date: new Date(found.date),
+    timestamp: found.timestamp ? new Date(found.timestamp) : null,
+  } as WaterIntake;
+}
+
+export async function updateWaterIntake(
+  intakeId: string,
+  userId: string,
+  updates: Partial<Omit<WaterIntake, 'id' | 'userId' | 'date'>>
+): Promise<WaterIntake | null> {
+  const [updated] = await db
+    .update(waterIntake)
+    .set(updates)
+    .where(and(eq(waterIntake.id, intakeId), eq(waterIntake.userId, userId)))
+    .returning();
+
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    date: new Date(updated.date),
+    timestamp: updated.timestamp ? new Date(updated.timestamp) : null,
+  } as WaterIntake;
+}
+
+export async function deleteWaterIntake(
+  intakeId: string,
+  userId: string
+): Promise<boolean> {
+  const result = await db
+    .delete(waterIntake)
+    .where(and(eq(waterIntake.id, intakeId), eq(waterIntake.userId, userId)));
+
+  return true;
 }
 
 // ============================================================================
