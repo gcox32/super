@@ -3,10 +3,10 @@ import postgres from 'postgres';
 import * as schema from './schema';
 
 // Connection string from environment variables
-const connectionString = process.env.DATABASE_URL!;
+const connectionString = process.env.POSTGRES_URL!;
 
 if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set');
+  throw new Error('POSTGRES_URL environment variable is not set');
 }
 
 // Create postgres client

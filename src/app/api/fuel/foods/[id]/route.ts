@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, parseBody } from '@/lib/api/helpers';
 import { getFoodById, updateFood } from '@/lib/db/crud';
+import type { Food } from '@/types/fuel';
 
 // GET /api/fuel/foods/[id] - Get a specific food (public)
 export async function GET(
@@ -29,7 +30,7 @@ export async function PATCH(
 ) {
   return withAuth(async () => {
     const { id } = await params;
-    const updates = await parseBody(request);
+    const updates = await parseBody<Partial<Omit<Food, 'id' | 'createdAt' | 'updatedAt'>>>(request);
     const food = await updateFood(id, updates);
     if (!food) {
       return { error: 'Food not found' };

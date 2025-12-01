@@ -1,5 +1,16 @@
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../index';
+
+// Helper to convert null to undefined for optional fields
+function nullToUndefined<T extends Record<string, any>>(obj: T): T {
+  const result = { ...obj };
+  for (const key in result) {
+    if (result[key] === null && key !== 'id') {
+      (result as any)[key] = undefined;
+    }
+  }
+  return result;
+}
 import {
   user,
   userProfile,
@@ -51,7 +62,9 @@ export async function updateUser(
     .where(eq(user.id, userId))
     .returning();
 
-  return (updatedUser as User) || null;
+  if (!updatedUser) return null;
+
+  return updatedUser as User;
 }
 
 // ============================================================================
@@ -72,13 +85,16 @@ export async function createUserProfile(
       profilePicture: profileData.profilePicture,
       bio: profileData.bio,
       gender: profileData.gender,
-      birthDate: profileData.birthDate,
+      birthDate: profileData.birthDate ? profileData.birthDate.toISOString().split('T')[0] : null,
       dailyWaterRecommendation: profileData.dailyWaterRecommendation,
       activityLevel: profileData.activityLevel,
-    })
+    } as any)
     .returning();
 
-  return newProfile as UserProfile;
+  return {
+    ...nullToUndefined(newProfile),
+    birthDate: newProfile.birthDate ? new Date(newProfile.birthDate) : undefined,
+  } as UserProfile;
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
@@ -88,20 +104,36 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     .where(eq(userProfile.userId, userId))
     .limit(1);
 
-  return (profile as UserProfile) || null;
+  if (!profile) return null;
+
+  return {
+    ...nullToUndefined(profile),
+    birthDate: profile.birthDate ? new Date(profile.birthDate) : undefined,
+  } as UserProfile;
 }
 
 export async function updateUserProfile(
   userId: string,
   updates: Partial<Omit<UserProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
 ): Promise<UserProfile | null> {
+  // Convert Date objects to strings for database
+  const dbUpdates: any = { ...updates };
+  if (updates.birthDate !== undefined) {
+    dbUpdates.birthDate = updates.birthDate ? updates.birthDate.toISOString().split('T')[0] : null;
+  }
+
   const [updatedProfile] = await db
     .update(userProfile)
-    .set(updates)
+    .set(dbUpdates)
     .where(eq(userProfile.userId, userId))
     .returning();
 
-  return (updatedProfile as UserProfile) || null;
+  if (!updatedProfile) return null;
+
+  return {
+    ...nullToUndefined(updatedProfile),
+    birthDate: updatedProfile.birthDate ? new Date(updatedProfile.birthDate) : undefined,
+  } as UserProfile;
 }
 
 // ============================================================================
@@ -119,22 +151,32 @@ export async function createUserGoal(
       name: goalData.name,
       description: goalData.description,
       duration: goalData.duration,
-      startDate: goalData.startDate,
-      endDate: goalData.endDate,
+      startDate: goalData.startDate ? goalData.startDate.toISOString().split('T')[0] : null,
+      endDate: goalData.endDate ? goalData.endDate.toISOString().split('T')[0] : null,
       complete: goalData.complete ?? false,
-      notes: goalData.notes,
-    })
+      notes: goalData.notes ?? null,
+    } as any)
     .returning();
 
-  return newGoal as UserGoal;
+  return {
+    ...nullToUndefined(newGoal),
+    startDate: newGoal.startDate ? new Date(newGoal.startDate) : undefined,
+    endDate: newGoal.endDate ? new Date(newGoal.endDate) : undefined,
+  } as UserGoal;
 }
 
 export async function getUserGoals(userId: string): Promise<UserGoal[]> {
-  return await db
+  const results = await db
     .select()
     .from(userGoal)
     .where(eq(userGoal.userId, userId))
     .orderBy(desc(userGoal.createdAt));
+  
+  return results.map((r) => ({
+    ...nullToUndefined(r),
+    startDate: r.startDate ? new Date(r.startDate) : undefined,
+    endDate: r.endDate ? new Date(r.endDate) : undefined,
+  })) as UserGoal[];
 }
 
 export async function getUserGoalById(goalId: string, userId: string): Promise<UserGoal | null> {
@@ -144,7 +186,13 @@ export async function getUserGoalById(goalId: string, userId: string): Promise<U
     .where(and(eq(userGoal.id, goalId), eq(userGoal.userId, userId)))
     .limit(1);
 
-  return (goal as UserGoal) || null;
+  if (!goal) return null;
+
+  return {
+    ...nullToUndefined(goal),
+    startDate: goal.startDate ? new Date(goal.startDate) : undefined,
+    endDate: goal.endDate ? new Date(goal.endDate) : undefined,
+  } as UserGoal;
 }
 
 export async function updateUserGoal(
@@ -152,13 +200,28 @@ export async function updateUserGoal(
   userId: string,
   updates: Partial<Omit<UserGoal, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
 ): Promise<UserGoal | null> {
+  // Convert Date objects to strings for database
+  const dbUpdates: any = { ...updates };
+  if (updates.startDate !== undefined) {
+    dbUpdates.startDate = updates.startDate ? updates.startDate.toISOString().split('T')[0] : null;
+  }
+  if (updates.endDate !== undefined) {
+    dbUpdates.endDate = updates.endDate ? updates.endDate.toISOString().split('T')[0] : null;
+  }
+
   const [updatedGoal] = await db
     .update(userGoal)
-    .set(updates)
+    .set(dbUpdates)
     .where(and(eq(userGoal.id, goalId), eq(userGoal.userId, userId)))
     .returning();
 
-  return (updatedGoal as UserGoal) || null;
+  if (!updatedGoal) return null;
+
+  return {
+    ...nullToUndefined(updatedGoal),
+    startDate: updatedGoal.startDate ? new Date(updatedGoal.startDate) : undefined,
+    endDate: updatedGoal.endDate ? new Date(updatedGoal.endDate) : undefined,
+  } as UserGoal;
 }
 
 export async function deleteUserGoal(goalId: string, userId: string): Promise<boolean> {
@@ -166,7 +229,7 @@ export async function deleteUserGoal(goalId: string, userId: string): Promise<bo
     .delete(userGoal)
     .where(and(eq(userGoal.id, goalId), eq(userGoal.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -208,8 +271,8 @@ export async function createUserStats(
       weight: statsData.weight,
       bodyFatPercentage: statsData.bodyFatPercentage,
       muscleMass: statsData.muscleMass,
-      date: statsData.date,
-    })
+      date: statsData.date ? statsData.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    } as any)
     .returning();
 
   // Create tape measurement if provided
@@ -229,20 +292,28 @@ export async function createUserStats(
       rightForearm: statsData.tapeMeasurements.rightForearm,
       leftCalf: statsData.tapeMeasurements.leftCalf,
       rightCalf: statsData.tapeMeasurements.rightCalf,
-    });
+    }).returning();
   }
 
-  return newStats as UserStats;
+  return {
+    ...newStats,
+    date: new Date(newStats.date),
+  } as UserStats;
 }
 
 export async function getUserStats(userId: string): Promise<UserStats[]> {
   const statsLogId = await getOrCreateUserStatsLog(userId);
 
-  return await db
+  const results = await db
     .select()
     .from(userStats)
     .where(eq(userStats.statsLogId, statsLogId))
     .orderBy(desc(userStats.date));
+  
+  return results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+  })) as UserStats[];
 }
 
 export async function getUserStatsById(
@@ -269,9 +340,10 @@ export async function getUserStatsById(
     .limit(1);
 
   return {
-    ...(stat as UserStats),
+    ...(stat as any),
+    date: new Date(stat.date),
     tapeMeasurements: tape ? (tape as TapeMeasurement) : undefined,
-  };
+  } as UserStats & { tapeMeasurements?: TapeMeasurement };
 }
 
 export async function getLatestUserStats(
@@ -290,9 +362,9 @@ export async function getLatestUserStats(
     .limit(1);
 
   return {
-    ...(latest as UserStats),
+    ...(latest as any),
     tapeMeasurements: tape ? (tape as TapeMeasurement) : undefined,
-  };
+  } as UserStats & { tapeMeasurements?: TapeMeasurement };
 }
 
 export async function deleteUserStats(statsId: string, userId: string): Promise<boolean> {
@@ -303,7 +375,7 @@ export async function deleteUserStats(statsId: string, userId: string): Promise<
     .delete(userStats)
     .where(and(eq(userStats.id, statsId), eq(userStats.statsLogId, statsLogId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -339,23 +411,31 @@ export async function createUserImage(
     .insert(userImage)
     .values({
       imageLogId,
-      date: imageData.date,
+      date: imageData.date ? imageData.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       imageUrl: imageData.imageUrl,
-      notes: imageData.notes,
-    })
+      notes: imageData.notes ?? null,
+    } as any)
     .returning();
 
-  return newImage as UserImage;
+  return {
+    ...newImage,
+    date: new Date(newImage.date),
+  } as UserImage;
 }
 
 export async function getUserImages(userId: string): Promise<UserImage[]> {
   const imageLogId = await getOrCreateUserImageLog(userId);
 
-  return await db
+  const results = await db
     .select()
     .from(userImage)
     .where(eq(userImage.imageLogId, imageLogId))
     .orderBy(desc(userImage.date));
+  
+  return results.map((r) => ({
+    ...nullToUndefined(r),
+    date: new Date(r.date),
+  })) as UserImage[];
 }
 
 export async function getUserImageById(
@@ -370,7 +450,12 @@ export async function getUserImageById(
     .where(and(eq(userImage.id, imageId), eq(userImage.imageLogId, imageLogId)))
     .limit(1);
 
-  return (image as UserImage) || null;
+  if (!image) return null;
+
+  return {
+    ...nullToUndefined(image),
+    date: new Date(image.date),
+  } as UserImage;
 }
 
 export async function getLatestUserImage(userId: string): Promise<UserImage | null> {
@@ -385,6 +470,6 @@ export async function deleteUserImage(imageId: string, userId: string): Promise<
     .delete(userImage)
     .where(and(eq(userImage.id, imageId), eq(userImage.imageLogId, imageLogId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 

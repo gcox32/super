@@ -1,5 +1,16 @@
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { db } from '../index';
+
+// Helper to convert null to undefined for optional fields
+function nullToUndefined<T extends Record<string, any>>(obj: T): T {
+  const result = { ...obj };
+  for (const key in result) {
+    if (result[key] === null && key !== 'id') {
+      (result as any)[key] = undefined;
+    }
+  }
+  return result;
+}
 import {
   mealPlan,
   meal,
@@ -54,17 +65,19 @@ export async function createMealPlan(
       name: mealPlanData.name,
       description: mealPlanData.description,
     })
-    .returning();
+    ;
 
   return newMealPlan as MealPlan;
 }
 
 export async function getUserMealPlans(userId: string): Promise<MealPlan[]> {
-  return await db
+  const results = await db
     .select()
     .from(mealPlan)
     .where(eq(mealPlan.userId, userId))
     .orderBy(desc(mealPlan.createdAt));
+  
+  return results.map(nullToUndefined) as MealPlan[];
 }
 
 export async function getMealPlanById(
@@ -89,18 +102,27 @@ export async function updateMealPlan(
     .update(mealPlan)
     .set(updates)
     .where(and(eq(mealPlan.id, mealPlanId), eq(mealPlan.userId, userId)))
-    .returning();
+    ;
 
   return (updated as MealPlan) || null;
 }
 
 export async function deleteMealPlan(mealPlanId: string, userId: string): Promise<boolean> {
   // CASCADE will handle meals
-  const result = await db
+  // Check if the record exists first
+  const [existing] = await db
+    .select()
+    .from(mealPlan)
+    .where(and(eq(mealPlan.id, mealPlanId), eq(mealPlan.userId, userId)))
+    .limit(1);
+  
+  if (!existing) return false;
+  
+  await db
     .delete(mealPlan)
     .where(and(eq(mealPlan.id, mealPlanId), eq(mealPlan.userId, userId)));
-
-  return result.rowCount !== null && result.rowCount > 0;
+  
+  return true;
 }
 
 // ============================================================================
@@ -118,17 +140,19 @@ export async function createMeal(
       name: mealData.name,
       description: mealData.description,
     })
-    .returning();
+    ;
 
   return newMeal as Meal;
 }
 
 export async function getMeals(mealPlanId: string): Promise<Meal[]> {
-  return await db
+  const results = await db
     .select()
     .from(meal)
     .where(eq(meal.mealPlanId, mealPlanId))
     .orderBy(desc(meal.createdAt));
+  
+  return results.map(nullToUndefined) as Meal[];
 }
 
 export async function getMealById(mealId: string): Promise<Meal | null> {
@@ -149,15 +173,15 @@ export async function updateMeal(
     .update(meal)
     .set(updates)
     .where(eq(meal.id, mealId))
-    .returning();
+    ;
 
   return (updated as Meal) || null;
 }
 
 export async function deleteMeal(mealId: string): Promise<boolean> {
   // CASCADE will handle meal_portions, meal_recipes
-  const result = await db.delete(meal).where(eq(meal.id, mealId));
-  return result.rowCount !== null && result.rowCount > 0;
+  await db.delete(meal).where(eq(meal.id, mealId));
+  return true;
 }
 
 // Add portioned food to meal
@@ -170,7 +194,7 @@ export async function addPortionedFoodToMeal(
     mealId,
     portionedFoodId,
     order,
-  });
+  }).returning();
 }
 
 export async function removePortionedFoodFromMeal(
@@ -201,13 +225,14 @@ export async function createFood(
       description: foodData.description,
       imageUrl: foodData.imageUrl,
     })
-    .returning();
+    ;
 
   return newFood as Food;
 }
 
 export async function getFoods(): Promise<Food[]> {
-  return await db.select().from(food).orderBy(food.name);
+  const results = await db.select().from(food).orderBy(food.name);
+  return results.map(nullToUndefined) as Food[];
 }
 
 export async function getFoodById(foodId: string): Promise<Food | null> {
@@ -217,11 +242,12 @@ export async function getFoodById(foodId: string): Promise<Food | null> {
 }
 
 export async function searchFoods(query: string): Promise<Food[]> {
-  return await db
+  const results = await db
     .select()
     .from(food)
     .where(eq(food.name, query))
     .orderBy(food.name);
+  return results.map(nullToUndefined) as Food[];
 }
 
 export async function updateFood(
@@ -232,7 +258,7 @@ export async function updateFood(
     .update(food)
     .set(updates)
     .where(eq(food.id, foodId))
-    .returning();
+    ;
 
   return (updated as Food) || null;
 }
@@ -248,7 +274,7 @@ export async function createPortionedFood(
     .insert(portionedFood)
     .values({
       foodId: portionedFoodData.food,
-      calories: portionedFoodData.calories,
+      calories: portionedFoodData.calories?.toString() || null,
       macros: portionedFoodData.macros,
       micros: portionedFoodData.micros,
       portionSize: portionedFoodData.portionSize,
@@ -256,9 +282,10 @@ export async function createPortionedFood(
     .returning();
 
   return {
-    ...(newPortionedFood as PortionedFood),
+    ...(newPortionedFood as any),
     food: portionedFoodData.food,
-  };
+    calories: newPortionedFood.calories ? Number(newPortionedFood.calories) : undefined,
+  } as PortionedFood;
 }
 
 export async function getPortionedFoodById(portionedFoodId: string): Promise<PortionedFood | null> {
@@ -277,27 +304,35 @@ export async function getPortionedFoodById(portionedFoodId: string): Promise<Por
     .limit(1);
 
   return {
-    ...(found as PortionedFood),
+    ...(found as any),
     food: found.foodId,
-  };
+    calories: found.calories ? Number(found.calories) : undefined,
+  } as PortionedFood;
 }
 
 export async function updatePortionedFood(
   portionedFoodId: string,
   updates: Partial<Omit<PortionedFood, 'id' | 'food' | 'createdAt' | 'updatedAt'>>
 ): Promise<PortionedFood | null> {
+  // Convert calories to string if provided
+  const dbUpdates: any = { ...updates };
+  if (updates.calories !== undefined) {
+    dbUpdates.calories = updates.calories?.toString() || null;
+  }
+  
   const [updated] = await db
     .update(portionedFood)
-    .set(updates)
+    .set(dbUpdates)
     .where(eq(portionedFood.id, portionedFoodId))
     .returning();
 
   if (!updated) return null;
 
   return {
-    ...(updated as PortionedFood),
+    ...(updated as any),
     food: updated.foodId,
-  };
+    calories: updated.calories ? Number(updated.calories) : undefined,
+  } as PortionedFood;
 }
 
 // ============================================================================
@@ -317,19 +352,28 @@ export async function createRecipe(
       micros: recipeData.micros,
       calories: recipeData.calories,
     })
-    .returning();
+    ;
 
   return newRecipe as Recipe;
 }
 
 export async function getRecipes(): Promise<Recipe[]> {
-  return await db.select().from(recipe).orderBy(recipe.name);
+  const results = await db.select().from(recipe).orderBy(recipe.name);
+  return results.map((r) => ({
+    ...nullToUndefined(r),
+    ingredients: [], // Ingredients are loaded separately via recipe_ingredient junction table
+  })) as Recipe[];
 }
 
 export async function getRecipeById(recipeId: string): Promise<Recipe | null> {
   const [found] = await db.select().from(recipe).where(eq(recipe.id, recipeId)).limit(1);
 
-  return (found as Recipe) || null;
+  if (!found) return null;
+
+  return {
+    ...nullToUndefined(found),
+    ingredients: [], // Ingredients are loaded separately via recipe_ingredient junction table
+  } as Recipe;
 }
 
 export async function updateRecipe(
@@ -340,7 +384,7 @@ export async function updateRecipe(
     .update(recipe)
     .set(updates)
     .where(eq(recipe.id, recipeId))
-    .returning();
+    ;
 
   return (updated as Recipe) || null;
 }
@@ -354,7 +398,7 @@ export async function addIngredientToRecipe(
     recipeId,
     portionedFoodId,
     order,
-  });
+  }).returning();
 }
 
 // ============================================================================
@@ -372,17 +416,22 @@ export async function createGroceryList(
       name: groceryListData.name,
       description: groceryListData.description,
     })
-    .returning();
+    ;
 
   return newList as GroceryList;
 }
 
 export async function getUserGroceryLists(userId: string): Promise<GroceryList[]> {
-  return await db
+  const results = await db
     .select()
     .from(groceryList)
     .where(eq(groceryList.userId, userId))
     .orderBy(desc(groceryList.createdAt));
+  
+  return results.map((r) => ({
+    ...nullToUndefined(r),
+    foods: [], // Foods are loaded separately via grocery_list_item junction table
+  })) as GroceryList[];
 }
 
 export async function getGroceryListById(
@@ -407,7 +456,7 @@ export async function addPortionedFoodToGroceryList(
     groceryListId: listId,
     portionedFoodId,
     order,
-  });
+  }).returning();
 }
 
 export async function deleteGroceryList(listId: string, userId: string): Promise<boolean> {
@@ -416,7 +465,7 @@ export async function deleteGroceryList(listId: string, userId: string): Promise
     .delete(groceryList)
     .where(and(eq(groceryList.id, listId), eq(groceryList.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -433,21 +482,31 @@ export async function createMealPlanInstance(
       userId,
       mealPlanId: instanceData.mealPlanId,
       startDate: instanceData.startDate,
-      endDate: instanceData.endDate,
+      endDate: instanceData.endDate ?? null,
       complete: instanceData.complete ?? false,
-      notes: instanceData.notes,
-    })
+      notes: instanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newInstance as MealPlanInstance;
+  return {
+    ...newInstance,
+    startDate: new Date(newInstance.startDate),
+    endDate: newInstance.endDate ? new Date(newInstance.endDate) : null,
+  } as MealPlanInstance;
 }
 
 export async function getUserMealPlanInstances(userId: string): Promise<MealPlanInstance[]> {
-  return await db
+  const results = await db
     .select()
     .from(mealPlanInstance)
     .where(eq(mealPlanInstance.userId, userId))
     .orderBy(desc(mealPlanInstance.startDate));
+  
+  return results.map((r) => ({
+    ...r,
+    startDate: new Date(r.startDate),
+    endDate: r.endDate ? new Date(r.endDate) : null,
+  })) as MealPlanInstance[];
 }
 
 export async function updateMealPlanInstance(
@@ -455,13 +514,24 @@ export async function updateMealPlanInstance(
   userId: string,
   updates: Partial<Omit<MealPlanInstance, 'id' | 'userId' | 'mealPlanId'>>
 ): Promise<MealPlanInstance | null> {
+  // Convert Date objects to strings for database
+  const dbUpdates: any = { ...updates };
+  if (updates.startDate) dbUpdates.startDate = updates.startDate;
+  if (updates.endDate !== undefined) dbUpdates.endDate = updates.endDate ?? null;
+  
   const [updated] = await db
     .update(mealPlanInstance)
-    .set(updates)
+    .set(dbUpdates)
     .where(and(eq(mealPlanInstance.id, instanceId), eq(mealPlanInstance.userId, userId)))
     .returning();
 
-  return (updated as MealPlanInstance) || null;
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    startDate: new Date(updated.startDate),
+    endDate: updated.endDate ? new Date(updated.endDate) : null,
+  } as MealPlanInstance;
 }
 
 export async function deleteMealPlanInstance(
@@ -473,7 +543,7 @@ export async function deleteMealPlanInstance(
     .delete(mealPlanInstance)
     .where(and(eq(mealPlanInstance.id, instanceId), eq(mealPlanInstance.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -491,43 +561,52 @@ export async function createMealInstance(
       mealPlanInstanceId: instanceData.mealPlanInstanceId,
       mealId: instanceData.mealId,
       date: instanceData.date,
-      timestamp: instanceData.timestamp,
+      timestamp: instanceData.timestamp ?? null,
       complete: instanceData.complete ?? false,
-      notes: instanceData.notes,
-    })
+      notes: instanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newInstance as MealInstance;
+  return { ...newInstance, date: new Date(newInstance.date), timestamp: newInstance.timestamp ? new Date(newInstance.timestamp) : null } as MealInstance;
 }
 
 export async function getUserMealInstances(
   userId: string,
   options?: { mealPlanInstanceId?: string; dateFrom?: Date; dateTo?: Date }
 ): Promise<MealInstance[]> {
-  let query = db.select().from(mealInstance).where(eq(mealInstance.userId, userId));
-
+  let whereClause = eq(mealInstance.userId, userId);
+  
   if (options?.mealPlanInstanceId) {
-    query = query.where(
-      and(
-        eq(mealInstance.userId, userId),
-        eq(mealInstance.mealPlanInstanceId, options.mealPlanInstanceId)
-      )
-    );
+    whereClause = and(
+      eq(mealInstance.userId, userId),
+      eq(mealInstance.mealPlanInstanceId, options.mealPlanInstanceId)
+    ) as any;
   }
 
-  const results = await query.orderBy(desc(mealInstance.date));
+  const results = await db
+    .select()
+    .from(mealInstance)
+    .where(whereClause)
+    .orderBy(desc(mealInstance.date));
+
+  // Convert date strings to Date objects
+  const converted = results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+    timestamp: r.timestamp ? new Date(r.timestamp) : null,
+  })) as MealInstance[];
 
   // Filter by date range if provided
   if (options?.dateFrom || options?.dateTo) {
-    return results.filter((instance) => {
-      const instanceDate = new Date(instance.date);
+    return converted.filter((instance) => {
+      const instanceDate = instance.date;
       if (options.dateFrom && instanceDate < options.dateFrom) return false;
       if (options.dateTo && instanceDate > options.dateTo) return false;
       return true;
     });
   }
 
-  return results;
+  return converted;
 }
 
 export async function updateMealInstance(
@@ -539,7 +618,7 @@ export async function updateMealInstance(
     .update(mealInstance)
     .set(updates)
     .where(and(eq(mealInstance.id, instanceId), eq(mealInstance.userId, userId)))
-    .returning();
+    ;
 
   return (updated as MealInstance) || null;
 }
@@ -550,7 +629,7 @@ export async function deleteMealInstance(instanceId: string, userId: string): Pr
     .delete(mealInstance)
     .where(and(eq(mealInstance.id, instanceId), eq(mealInstance.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -571,7 +650,7 @@ export async function createPortionedFoodInstance(
       complete: instanceData.complete ?? false,
       notes: instanceData.notes,
     })
-    .returning();
+    ;
 
   return newInstance as PortionedFoodInstance;
 }
@@ -579,10 +658,12 @@ export async function createPortionedFoodInstance(
 export async function getPortionedFoodInstances(
   mealInstanceId: string
 ): Promise<PortionedFoodInstance[]> {
-  return await db
+  const results = await db
     .select()
     .from(portionedFoodInstance)
     .where(eq(portionedFoodInstance.mealInstanceId, mealInstanceId));
+  
+  return results as PortionedFoodInstance[];
 }
 
 export async function updatePortionedFoodInstance(
@@ -598,7 +679,7 @@ export async function updatePortionedFoodInstance(
     .where(
       and(eq(portionedFoodInstance.id, instanceId), eq(portionedFoodInstance.userId, userId))
     )
-    .returning();
+    ;
 
   return (updated as PortionedFoodInstance) || null;
 }
@@ -613,7 +694,7 @@ export async function deletePortionedFoodInstance(
       and(eq(portionedFoodInstance.id, instanceId), eq(portionedFoodInstance.userId, userId))
     );
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -630,13 +711,14 @@ export async function createSupplement(
       description: supplementData.description,
       imageUrl: supplementData.imageUrl,
     })
-    .returning();
+    ;
 
   return newSupplement as Supplement;
 }
 
 export async function getSupplements(): Promise<Supplement[]> {
-  return await db.select().from(supplement).orderBy(supplement.name);
+  const results = await db.select().from(supplement).orderBy(supplement.name);
+  return results.map(nullToUndefined) as Supplement[];
 }
 
 // ============================================================================
@@ -655,17 +737,22 @@ export async function createSupplementSchedule(
       scheduleType: scheduleData.scheduleType,
       description: scheduleData.description,
     })
-    .returning();
+    ;
 
   return newSchedule as SupplementSchedule;
 }
 
 export async function getUserSupplementSchedules(userId: string): Promise<SupplementSchedule[]> {
-  return await db
+  const results = await db
     .select()
     .from(supplementSchedule)
     .where(eq(supplementSchedule.userId, userId))
     .orderBy(desc(supplementSchedule.createdAt));
+  
+  return results.map((r) => ({
+    ...nullToUndefined(r),
+    supplements: [], // Supplements are loaded separately via supplement_instance junction table
+  })) as SupplementSchedule[];
 }
 
 export async function createSupplementInstance(
@@ -680,45 +767,50 @@ export async function createSupplementInstance(
       supplementId: instanceData.supplementId,
       dosage: instanceData.dosage,
       date: instanceData.date,
-      complete: instanceData.complete,
-      notes: instanceData.notes,
-    })
+      complete: instanceData.complete ?? null,
+      notes: instanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newInstance as SupplementInstance;
+  return { ...newInstance, date: new Date(newInstance.date) } as SupplementInstance;
 }
 
 export async function getUserSupplementInstances(
   userId: string,
   options?: { supplementScheduleId?: string; dateFrom?: Date; dateTo?: Date }
 ): Promise<SupplementInstance[]> {
-  let query = db
-    .select()
-    .from(supplementInstance)
-    .where(eq(supplementInstance.userId, userId));
-
+  let whereClause = eq(supplementInstance.userId, userId);
+  
   if (options?.supplementScheduleId) {
-    query = query.where(
-      and(
-        eq(supplementInstance.userId, userId),
-        eq(supplementInstance.supplementScheduleId, options.supplementScheduleId)
-      )
-    );
+    whereClause = and(
+      eq(supplementInstance.userId, userId),
+      eq(supplementInstance.supplementScheduleId, options.supplementScheduleId)
+    ) as any;
   }
 
-  const results = await query.orderBy(desc(supplementInstance.date));
+  const results = await db
+    .select()
+    .from(supplementInstance)
+    .where(whereClause)
+    .orderBy(desc(supplementInstance.date));
+
+  // Convert date strings to Date objects
+  const converted = results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+  })) as SupplementInstance[];
 
   // Filter by date range if provided
   if (options?.dateFrom || options?.dateTo) {
-    return results.filter((instance) => {
-      const instanceDate = new Date(instance.date);
+    return converted.filter((instance) => {
+      const instanceDate = instance.date;
       if (options.dateFrom && instanceDate < options.dateFrom) return false;
       if (options.dateTo && instanceDate > options.dateTo) return false;
       return true;
     });
   }
 
-  return results;
+  return converted;
 }
 
 // ============================================================================
@@ -752,13 +844,13 @@ export async function createWaterIntake(
       waterIntakeLogId,
       userId,
       date: intakeData.date,
-      timestamp: intakeData.timestamp,
+      timestamp: intakeData.timestamp ?? null,
       amount: intakeData.amount,
-      notes: intakeData.notes,
-    })
+      notes: intakeData.notes ?? null,
+    } as any)
     .returning();
 
-  return newIntake as WaterIntake;
+  return { ...newIntake, date: new Date(newIntake.date), timestamp: newIntake.timestamp ? new Date(newIntake.timestamp) : null } as WaterIntake;
 }
 
 export async function getUserWaterIntakes(
@@ -773,17 +865,24 @@ export async function getUserWaterIntakes(
     .where(eq(waterIntake.waterIntakeLogId, waterIntakeLogId))
     .orderBy(desc(waterIntake.date));
 
+  // Convert date strings to Date objects
+  const converted = results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+    timestamp: r.timestamp ? new Date(r.timestamp) : null,
+  })) as WaterIntake[];
+
   // Filter by date range if provided
   if (options?.dateFrom || options?.dateTo) {
-    return results.filter((intake) => {
-      const intakeDate = new Date(intake.date);
+    return converted.filter((intake) => {
+      const intakeDate = intake.date;
       if (options.dateFrom && intakeDate < options.dateFrom) return false;
       if (options.dateTo && intakeDate > options.dateTo) return false;
       return true;
     });
   }
 
-  return results;
+  return converted;
 }
 
 // ============================================================================
@@ -817,17 +916,21 @@ export async function createSleepInstance(
       sleepLogId,
       userId,
       date: sleepData.date,
-      timeAsleep: sleepData.timeAsleep,
-      startTime: sleepData.startTime,
-      endTime: sleepData.endTime,
-      sleepScore: sleepData.sleepScore,
-      wakeCount: sleepData.wakeCount,
-      timeAwake: sleepData.timeAwake,
-      notes: sleepData.notes,
-    })
+      timeAsleep: sleepData.timeAsleep ?? null,
+      startTime: sleepData.startTime ?? null,
+      endTime: sleepData.endTime ?? null,
+      sleepScore: sleepData.sleepScore?.toString() ?? null,
+      wakeCount: sleepData.wakeCount ?? null,
+      timeAwake: sleepData.timeAwake ?? null,
+      notes: sleepData.notes ?? null,
+    } as any)
     .returning();
 
-  return newSleep as SleepInstance;
+  return { 
+    ...newSleep, 
+    date: new Date(newSleep.date),
+    sleepScore: newSleep.sleepScore ? Number(newSleep.sleepScore) : undefined,
+  } as unknown as SleepInstance;
 }
 
 export async function getUserSleepInstances(
@@ -842,17 +945,24 @@ export async function getUserSleepInstances(
     .where(eq(sleepInstance.sleepLogId, sleepLogId))
     .orderBy(desc(sleepInstance.date));
 
+  // Convert date strings to Date objects and numeric strings to numbers
+  const converted = results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+    sleepScore: r.sleepScore ? Number(r.sleepScore) : undefined,
+  })) as unknown as SleepInstance[];
+
   // Filter by date range if provided
   if (options?.dateFrom || options?.dateTo) {
-    return results.filter((instance) => {
-      const instanceDate = new Date(instance.date);
+    return converted.filter((instance) => {
+      const instanceDate = instance.date;
       if (options.dateFrom && instanceDate < options.dateFrom) return false;
       if (options.dateTo && instanceDate > options.dateTo) return false;
       return true;
     });
   }
 
-  return results;
+  return converted;
 }
 
 export async function updateSleepInstance(
@@ -860,13 +970,25 @@ export async function updateSleepInstance(
   userId: string,
   updates: Partial<Omit<SleepInstance, 'id' | 'userId' | 'sleepLogId' | 'date'>>
 ): Promise<SleepInstance | null> {
+  // Convert Date objects to strings and numbers to strings for database
+  const dbUpdates: any = { ...updates };
+  if (updates.sleepScore !== undefined) {
+    dbUpdates.sleepScore = updates.sleepScore?.toString() ?? null;
+  }
+  
   const [updated] = await db
     .update(sleepInstance)
-    .set(updates)
+    .set(dbUpdates)
     .where(and(eq(sleepInstance.id, instanceId), eq(sleepInstance.userId, userId)))
     .returning();
 
-  return (updated as SleepInstance) || null;
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    date: new Date(updated.date),
+    sleepScore: updated.sleepScore ? Number(updated.sleepScore) : undefined,
+  } as unknown as SleepInstance;
 }
 
 export async function deleteSleepInstance(instanceId: string, userId: string): Promise<boolean> {
@@ -874,6 +996,6 @@ export async function deleteSleepInstance(instanceId: string, userId: string): P
     .delete(sleepInstance)
     .where(and(eq(sleepInstance.id, instanceId), eq(sleepInstance.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 

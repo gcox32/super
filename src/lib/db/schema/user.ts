@@ -1,20 +1,17 @@
-import { pgTable, uuid, text, boolean, date, jsonb, timestamp, pgSchema, unique } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, date, jsonb, timestamp, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { exercise } from './train';
-import { muscleGroup } from './anatomy';
-
-export const publicSchema = pgSchema('public');
 
 // Note: user.id references auth.users.id from Supabase auth
 // This is handled via foreign key constraint in SQL migrations
-export const user = publicSchema.table('user', {
+export const user = pgTable('user', {
   id: uuid('id').primaryKey(),
   email: text('email').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const userProfile = publicSchema.table('user_profile', {
+export const userProfile = pgTable('user_profile', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().unique().references(() => user.id),
   email: text('email').notNull(),
@@ -32,7 +29,7 @@ export const userProfile = publicSchema.table('user_profile', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const userGoal = publicSchema.table('user_goal', {
+export const userGoal = pgTable('user_goal', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => user.id),
   name: text('name'),
@@ -46,12 +43,12 @@ export const userGoal = publicSchema.table('user_goal', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const userStatsLog = publicSchema.table('user_stats_log', {
+export const userStatsLog = pgTable('user_stats_log', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().unique().references(() => user.id),
 });
 
-export const userStats = publicSchema.table('user_stats', {
+export const userStats = pgTable('user_stats', {
   id: uuid('id').defaultRandom().primaryKey(),
   statsLogId: uuid('stats_log_id').notNull().references(() => userStatsLog.id),
   height: jsonb('height'),
@@ -61,7 +58,7 @@ export const userStats = publicSchema.table('user_stats', {
   date: date('date').notNull(),
 });
 
-export const tapeMeasurement = publicSchema.table('tape_measurement', {
+export const tapeMeasurement = pgTable('tape_measurement', {
   id: uuid('id').defaultRandom().primaryKey(),
   userStatsId: uuid('user_stats_id').notNull().unique().references(() => userStats.id),
   neck: jsonb('neck'),
@@ -79,12 +76,12 @@ export const tapeMeasurement = publicSchema.table('tape_measurement', {
   rightCalf: jsonb('right_calf'),
 });
 
-export const userImageLog = publicSchema.table('user_image_log', {
+export const userImageLog = pgTable('user_image_log', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().unique().references(() => user.id),
 });
 
-export const userImage = publicSchema.table('user_image', {
+export const userImage = pgTable('user_image', {
   id: uuid('id').defaultRandom().primaryKey(),
   imageLogId: uuid('image_log_id').notNull().references(() => userImageLog.id),
   date: date('date').notNull(),
@@ -92,7 +89,7 @@ export const userImage = publicSchema.table('user_image', {
   notes: text('notes'),
 });
 
-export const userProfileKeyExercise = publicSchema.table('user_profile_key_exercise', {
+export const userProfileKeyExercise = pgTable('user_profile_key_exercise', {
   userProfileId: uuid('user_profile_id').notNull().references(() => userProfile.id),
   exerciseId: uuid('exercise_id').notNull().references(() => exercise.id),
 }, (table) => ({

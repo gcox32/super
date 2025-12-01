@@ -26,9 +26,9 @@ export async function withAuth<T>(
 /**
  * Parse JSON body from request
  */
-export async function parseBody<T>(request: Request): Promise<T> {
+export async function parseBody<T = any>(request: Request): Promise<T> {
   try {
-    return await request.json();
+    return await request.json() as T;
   } catch (error) {
     throw new Error('Invalid JSON body');
   }

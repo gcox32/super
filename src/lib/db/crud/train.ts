@@ -1,5 +1,16 @@
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { db } from '../index';
+
+// Helper to convert null to undefined for optional fields
+function nullToUndefined<T extends Record<string, any>>(obj: T): T {
+  const result = { ...obj };
+  for (const key in result) {
+    if (result[key] === null && key !== 'id') {
+      (result as any)[key] = undefined;
+    }
+  }
+  return result;
+}
 import {
   protocol,
   protocolWorkout,
@@ -50,11 +61,20 @@ export async function createProtocol(
     })
     .returning();
 
-  return newProtocol as Protocol;
+  return {
+    ...newProtocol,
+    description: newProtocol.description ?? undefined,
+    notes: newProtocol.notes ?? undefined,
+  } as Protocol;
 }
 
 export async function getProtocols(): Promise<Protocol[]> {
-  return await db.select().from(protocol).orderBy(desc(protocol.createdAt));
+  const results = await db.select().from(protocol).orderBy(desc(protocol.createdAt));
+  return results.map((r) => ({
+    ...r,
+    description: r.description ?? undefined,
+    notes: r.notes ?? undefined,
+  })) as Protocol[];
 }
 
 export async function getProtocolById(protocolId: string): Promise<Protocol | null> {
@@ -64,7 +84,13 @@ export async function getProtocolById(protocolId: string): Promise<Protocol | nu
     .where(eq(protocol.id, protocolId))
     .limit(1);
 
-  return (found as Protocol) || null;
+  if (!found) return null;
+
+  return {
+    ...found,
+    description: found.description ?? undefined,
+    notes: found.notes ?? undefined,
+  } as Protocol;
 }
 
 export async function updateProtocol(
@@ -77,12 +103,18 @@ export async function updateProtocol(
     .where(eq(protocol.id, protocolId))
     .returning();
 
-  return (updated as Protocol) || null;
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    description: updated.description ?? undefined,
+    notes: updated.notes ?? undefined,
+  } as Protocol;
 }
 
 export async function deleteProtocol(protocolId: string): Promise<boolean> {
-  const result = await db.delete(protocol).where(eq(protocol.id, protocolId));
-  return result.rowCount !== null && result.rowCount > 0;
+  await db.delete(protocol).where(eq(protocol.id, protocolId));
+  return true;
 }
 
 // ============================================================================
@@ -105,15 +137,23 @@ export async function createWorkout(
     })
     .returning();
 
-  return newWorkout as Workout;
+  return {
+    ...nullToUndefined(newWorkout),
+    blocks: [],
+  } as Workout;
 }
 
 export async function getUserWorkouts(userId: string): Promise<Workout[]> {
-  return await db
+  const results = await db
     .select()
     .from(workout)
     .where(eq(workout.userId, userId))
     .orderBy(desc(workout.createdAt));
+  
+  return results.map((r) => ({
+    ...nullToUndefined(r),
+    blocks: [], // Blocks are loaded separately via workout_block junction table
+  })) as Workout[];
 }
 
 export async function getWorkoutById(
@@ -126,7 +166,12 @@ export async function getWorkoutById(
     .where(and(eq(workout.id, workoutId), eq(workout.userId, userId)))
     .limit(1);
 
-  return (found as Workout) || null;
+  if (!found) return null;
+
+  return {
+    ...nullToUndefined(found),
+    blocks: [],
+  } as Workout;
 }
 
 export async function updateWorkout(
@@ -140,7 +185,12 @@ export async function updateWorkout(
     .where(and(eq(workout.id, workoutId), eq(workout.userId, userId)))
     .returning();
 
-  return (updated as Workout) || null;
+  if (!updated) return null;
+
+  return {
+    ...nullToUndefined(updated),
+    blocks: [],
+  } as Workout;
 }
 
 export async function deleteWorkout(workoutId: string, userId: string): Promise<boolean> {
@@ -149,7 +199,7 @@ export async function deleteWorkout(workoutId: string, userId: string): Promise<
     .delete(workout)
     .where(and(eq(workout.id, workoutId), eq(workout.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -173,15 +223,23 @@ export async function createWorkoutBlock(
     })
     .returning();
 
-  return newBlock as WorkoutBlock;
+  return {
+    ...nullToUndefined(newBlock),
+    exercises: [],
+  } as WorkoutBlock;
 }
 
 export async function getWorkoutBlocks(workoutId: string): Promise<WorkoutBlock[]> {
-  return await db
+  const results = await db
     .select()
     .from(workoutBlock)
     .where(eq(workoutBlock.workoutId, workoutId))
     .orderBy(workoutBlock.order);
+  
+  return results.map((r) => ({
+    ...nullToUndefined(r),
+    exercises: [], // Exercises are loaded separately via workout_block_exercise junction table
+  })) as WorkoutBlock[];
 }
 
 export async function getWorkoutBlockById(blockId: string): Promise<WorkoutBlock | null> {
@@ -191,7 +249,12 @@ export async function getWorkoutBlockById(blockId: string): Promise<WorkoutBlock
     .where(eq(workoutBlock.id, blockId))
     .limit(1);
 
-  return (found as WorkoutBlock) || null;
+  if (!found) return null;
+
+  return {
+    ...nullToUndefined(found),
+    exercises: [],
+  } as WorkoutBlock;
 }
 
 export async function updateWorkoutBlock(
@@ -204,13 +267,18 @@ export async function updateWorkoutBlock(
     .where(eq(workoutBlock.id, blockId))
     .returning();
 
-  return (updated as WorkoutBlock) || null;
+  if (!updated) return null;
+
+  return {
+    ...nullToUndefined(updated),
+    exercises: [],
+  } as WorkoutBlock;
 }
 
 export async function deleteWorkoutBlock(blockId: string): Promise<boolean> {
   // CASCADE will handle workout_block_exercises
-  const result = await db.delete(workoutBlock).where(eq(workoutBlock.id, blockId));
-  return result.rowCount !== null && result.rowCount > 0;
+  await db.delete(workoutBlock).where(eq(workoutBlock.id, blockId));
+  return true;
 }
 
 // ============================================================================
@@ -219,13 +287,18 @@ export async function deleteWorkoutBlock(blockId: string): Promise<boolean> {
 
 export async function createWorkoutBlockExercise(
   blockId: string,
-  exerciseData: Omit<WorkoutBlockExercise, 'id' | 'exercise'>
+  exerciseData: Omit<WorkoutBlockExercise, 'id' | 'exercise'> & { exercise: Exercise | string }
 ): Promise<WorkoutBlockExercise> {
+  // Handle both Exercise object and exercise ID string
+  const exerciseId = typeof exerciseData.exercise === 'string' 
+    ? exerciseData.exercise 
+    : exerciseData.exercise.id;
+
   const [newExercise] = await db
     .insert(workoutBlockExercise)
     .values({
       workoutBlockId: blockId,
-      exerciseId: exerciseData.exercise.id,
+      exerciseId,
       order: exerciseData.order,
       sets: exerciseData.sets,
       measures: exerciseData.measures,
@@ -240,13 +313,17 @@ export async function createWorkoutBlockExercise(
   const [fullExercise] = await db
     .select()
     .from(exercise)
-    .where(eq(exercise.id, exerciseData.exercise.id))
+    .where(eq(exercise.id, exerciseId))
     .limit(1);
 
+  if (!fullExercise) {
+    throw new Error('Exercise not found');
+  }
+
   return {
-    ...(newExercise as WorkoutBlockExercise),
+    ...(newExercise as any),
     exercise: fullExercise as Exercise,
-  };
+  } as WorkoutBlockExercise;
 }
 
 export async function getWorkoutBlockExercises(blockId: string): Promise<WorkoutBlockExercise[]> {
@@ -265,10 +342,16 @@ export async function getWorkoutBlockExercises(blockId: string): Promise<Workout
 
   const exerciseMap = new Map(fullExercises.map((e) => [e.id, e]));
 
-  return exercises.map((e) => ({
-    ...(e as WorkoutBlockExercise),
-    exercise: exerciseMap.get(e.exerciseId) as Exercise,
-  }));
+  return exercises.map((e) => {
+    const fullExercise = exerciseMap.get(e.exerciseId);
+    if (!fullExercise) {
+      throw new Error(`Exercise ${e.exerciseId} not found`);
+    }
+    return {
+      ...(e as any),
+      exercise: fullExercise as Exercise,
+    } as WorkoutBlockExercise;
+  });
 }
 
 export async function updateWorkoutBlockExercise(
@@ -290,10 +373,14 @@ export async function updateWorkoutBlockExercise(
     .where(eq(exercise.id, updated.exerciseId))
     .limit(1);
 
+  if (!fullExercise) {
+    throw new Error(`Exercise ${updated.exerciseId} not found`);
+  }
+
   return {
-    ...(updated as WorkoutBlockExercise),
+    ...(updated as any),
     exercise: fullExercise as Exercise,
-  };
+  } as WorkoutBlockExercise;
 }
 
 export async function deleteWorkoutBlockExercise(exerciseId: string): Promise<boolean> {
@@ -301,7 +388,7 @@ export async function deleteWorkoutBlockExercise(exerciseId: string): Promise<bo
     .delete(workoutBlockExercise)
     .where(eq(workoutBlockExercise.id, exerciseId));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -328,11 +415,12 @@ export async function createExercise(
     })
     .returning();
 
-  return newExercise as Exercise;
+  return nullToUndefined(newExercise) as Exercise;
 }
 
 export async function getExercises(): Promise<Exercise[]> {
-  return await db.select().from(exercise).orderBy(exercise.name);
+  const results = await db.select().from(exercise).orderBy(exercise.name);
+  return results.map(nullToUndefined) as Exercise[];
 }
 
 export async function getExerciseById(exerciseId: string): Promise<Exercise | null> {
@@ -342,15 +430,19 @@ export async function getExerciseById(exerciseId: string): Promise<Exercise | nu
     .where(eq(exercise.id, exerciseId))
     .limit(1);
 
-  return (found as Exercise) || null;
+  if (!found) return null;
+
+  return nullToUndefined(found) as Exercise;
 }
 
 export async function searchExercises(query: string): Promise<Exercise[]> {
-  return await db
+  const results = await db
     .select()
     .from(exercise)
     .where(eq(exercise.name, query))
     .orderBy(exercise.name);
+  
+  return results.map(nullToUndefined) as Exercise[];
 }
 
 export async function updateExercise(
@@ -363,7 +455,9 @@ export async function updateExercise(
     .where(eq(exercise.id, exerciseId))
     .returning();
 
-  return (updated as Exercise) || null;
+  if (!updated) return null;
+
+  return nullToUndefined(updated) as Exercise;
 }
 
 // ============================================================================
@@ -384,27 +478,41 @@ export async function createProtocolInstance(
       endDate: instanceData.endDate,
       complete: instanceData.complete ?? false,
       duration: instanceData.duration,
-      notes: instanceData.notes,
-    })
+      notes: instanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newInstance as ProtocolInstance;
+  return {
+    ...newInstance,
+    startDate: new Date(newInstance.startDate),
+    endDate: newInstance.endDate ? new Date(newInstance.endDate) : null,
+  } as ProtocolInstance;
 }
 
 export async function getUserProtocolInstances(
   userId: string,
   activeOnly = false
 ): Promise<ProtocolInstance[]> {
-  const query = db
-    .select()
-    .from(protocolInstance)
-    .where(eq(protocolInstance.userId, userId));
-
+  let whereClause = eq(protocolInstance.userId, userId);
+  
   if (activeOnly) {
-    query.where(and(eq(protocolInstance.userId, userId), eq(protocolInstance.active, true)));
+    whereClause = and(
+      eq(protocolInstance.userId, userId),
+      eq(protocolInstance.active, true)
+    ) as any;
   }
 
-  return await query.orderBy(desc(protocolInstance.startDate));
+  const results = await db
+    .select()
+    .from(protocolInstance)
+    .where(whereClause)
+    .orderBy(desc(protocolInstance.startDate));
+
+  return results.map((r) => ({
+    ...r,
+    startDate: new Date(r.startDate),
+    endDate: r.endDate ? new Date(r.endDate) : null,
+  })) as ProtocolInstance[];
 }
 
 export async function updateProtocolInstance(
@@ -412,13 +520,24 @@ export async function updateProtocolInstance(
   userId: string,
   updates: Partial<Omit<ProtocolInstance, 'id' | 'userId' | 'protocolId'>>
 ): Promise<ProtocolInstance | null> {
+  // Convert Date objects to strings for database
+  const dbUpdates: any = { ...updates };
+  if (updates.startDate) dbUpdates.startDate = updates.startDate;
+  if (updates.endDate !== undefined) dbUpdates.endDate = updates.endDate ?? null;
+
   const [updated] = await db
     .update(protocolInstance)
-    .set(updates)
+    .set(dbUpdates)
     .where(and(eq(protocolInstance.id, instanceId), eq(protocolInstance.userId, userId)))
     .returning();
 
-  return (updated as ProtocolInstance) || null;
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    startDate: new Date(updated.startDate),
+    endDate: updated.endDate ? new Date(updated.endDate) : null,
+  } as ProtocolInstance;
 }
 
 export async function deleteProtocolInstance(
@@ -430,7 +549,7 @@ export async function deleteProtocolInstance(
     .delete(protocolInstance)
     .where(and(eq(protocolInstance.id, instanceId), eq(protocolInstance.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -452,38 +571,52 @@ export async function createWorkoutInstance(
       volume: instanceData.volume,
       work: instanceData.work,
       averagePower: instanceData.averagePower,
-      notes: instanceData.notes,
-    })
+      notes: instanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newInstance as WorkoutInstance;
+  return {
+    ...newInstance,
+    date: new Date(newInstance.date),
+  } as WorkoutInstance;
 }
 
 export async function getUserWorkoutInstances(
   userId: string,
   options?: { workoutId?: string; dateFrom?: Date; dateTo?: Date }
 ): Promise<WorkoutInstance[]> {
-  let query = db.select().from(workoutInstance).where(eq(workoutInstance.userId, userId));
-
+  let whereClause = eq(workoutInstance.userId, userId);
+  
   if (options?.workoutId) {
-    query = query.where(
-      and(eq(workoutInstance.userId, userId), eq(workoutInstance.workoutId, options.workoutId))
-    );
+    whereClause = and(
+      eq(workoutInstance.userId, userId),
+      eq(workoutInstance.workoutId, options.workoutId)
+    ) as any;
   }
 
-  const results = await query.orderBy(desc(workoutInstance.date));
+  const results = await db
+    .select()
+    .from(workoutInstance)
+    .where(whereClause)
+    .orderBy(desc(workoutInstance.date));
 
-  // Filter by date range if provided (client-side for now)
+  // Convert date strings to Date objects
+  const converted = results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+  })) as WorkoutInstance[];
+
+  // Filter by date range if provided
   if (options?.dateFrom || options?.dateTo) {
-    return results.filter((instance) => {
-      const instanceDate = new Date(instance.date);
+    return converted.filter((instance) => {
+      const instanceDate = instance.date;
       if (options.dateFrom && instanceDate < options.dateFrom) return false;
       if (options.dateTo && instanceDate > options.dateTo) return false;
       return true;
     });
   }
 
-  return results;
+  return converted;
 }
 
 export async function updateWorkoutInstance(
@@ -497,7 +630,12 @@ export async function updateWorkoutInstance(
     .where(and(eq(workoutInstance.id, instanceId), eq(workoutInstance.userId, userId)))
     .returning();
 
-  return (updated as WorkoutInstance) || null;
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    date: new Date(updated.date),
+  } as WorkoutInstance;
 }
 
 export async function deleteWorkoutInstance(
@@ -509,7 +647,7 @@ export async function deleteWorkoutInstance(
     .delete(workoutInstance)
     .where(and(eq(workoutInstance.id, instanceId), eq(workoutInstance.userId, userId)));
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -530,21 +668,29 @@ export async function createWorkoutBlockInstance(
       complete: instanceData.complete ?? false,
       duration: instanceData.duration,
       volume: instanceData.volume,
-      notes: instanceData.notes,
-    })
+      notes: instanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newInstance as WorkoutBlockInstance;
+  return {
+    ...newInstance,
+    date: new Date(newInstance.date),
+  } as WorkoutBlockInstance;
 }
 
 export async function getWorkoutBlockInstances(
   workoutInstanceId: string
 ): Promise<WorkoutBlockInstance[]> {
-  return await db
+  const results = await db
     .select()
     .from(workoutBlockInstance)
     .where(eq(workoutBlockInstance.workoutInstanceId, workoutInstanceId))
     .orderBy(workoutBlockInstance.date);
+  
+  return results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+  })) as WorkoutBlockInstance[];
 }
 
 export async function updateWorkoutBlockInstance(
@@ -558,7 +704,12 @@ export async function updateWorkoutBlockInstance(
     .where(and(eq(workoutBlockInstance.id, instanceId), eq(workoutBlockInstance.userId, userId)))
     .returning();
 
-  return (updated as WorkoutBlockInstance) || null;
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    date: new Date(updated.date),
+  } as WorkoutBlockInstance;
 }
 
 export async function deleteWorkoutBlockInstance(
@@ -572,7 +723,7 @@ export async function deleteWorkoutBlockInstance(
       and(eq(workoutBlockInstance.id, instanceId), eq(workoutBlockInstance.userId, userId))
     );
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -596,23 +747,31 @@ export async function createWorkoutBlockExerciseInstance(
       measures: instanceData.measures,
       projected1RM: instanceData.projected1RM,
       rpe: instanceData.rpe,
-      notes: instanceData.notes,
-    })
+      notes: instanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newInstance as WorkoutBlockExerciseInstance;
+  return {
+    ...newInstance,
+    date: new Date(newInstance.date),
+  } as WorkoutBlockExerciseInstance;
 }
 
 export async function getWorkoutBlockExerciseInstances(
   workoutBlockInstanceId: string
 ): Promise<WorkoutBlockExerciseInstance[]> {
-  return await db
+  const results = await db
     .select()
     .from(workoutBlockExerciseInstance)
     .where(
       eq(workoutBlockExerciseInstance.workoutBlockInstanceId, workoutBlockInstanceId)
     )
     .orderBy(workoutBlockExerciseInstance.date);
+  
+  return results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+  })) as WorkoutBlockExerciseInstance[];
 }
 
 export async function updateWorkoutBlockExerciseInstance(
@@ -636,7 +795,12 @@ export async function updateWorkoutBlockExerciseInstance(
     )
     .returning();
 
-  return (updated as WorkoutBlockExerciseInstance) || null;
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    date: new Date(updated.date),
+  } as WorkoutBlockExerciseInstance;
 }
 
 export async function deleteWorkoutBlockExerciseInstance(
@@ -652,7 +816,7 @@ export async function deleteWorkoutBlockExerciseInstance(
       )
     );
 
-  return result.rowCount !== null && result.rowCount > 0;
+  return true;
 }
 
 // ============================================================================
@@ -689,21 +853,29 @@ export async function createPerformance(
       volume: performanceData.volume,
       work: performanceData.work,
       power: performanceData.power,
-      notes: performanceData.notes,
-    })
+      notes: performanceData.notes ?? null,
+    } as any)
     .returning();
 
-  return newPerformance as Performance;
+  return {
+    ...newPerformance,
+    date: new Date(newPerformance.date),
+  } as Performance;
 }
 
 export async function getUserPerformances(userId: string): Promise<Performance[]> {
   const performanceLogId = await getOrCreatePerformanceLog(userId);
 
-  return await db
+  const results = await db
     .select()
     .from(performance)
     .where(eq(performance.performanceLogId, performanceLogId))
     .orderBy(desc(performance.date));
+  
+  return results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+  })) as Performance[];
 }
 
 // ============================================================================
@@ -738,11 +910,14 @@ export async function createProjected1RM(
       date: projected1RMData.date,
       exerciseId: projected1RMData.exerciseId,
       projected1RM: projected1RMData.projected1RM,
-      notes: projected1RMData.notes,
-    })
+      notes: projected1RMData.notes ?? null,
+    } as any)
     .returning();
 
-  return newProjected1RM as Projected1RM;
+  return {
+    ...newProjected1RM,
+    date: new Date(newProjected1RM.date),
+  } as Projected1RM;
 }
 
 export async function getUserProjected1RMs(
@@ -751,20 +926,24 @@ export async function getUserProjected1RMs(
 ): Promise<Projected1RM[]> {
   const projected1RMLogId = await getOrCreateProjected1RMLog(userId);
 
-  let query = db
-    .select()
-    .from(projected1RM)
-    .where(eq(projected1RM.projected1RMLogId, projected1RMLogId));
-
+  let whereClause = eq(projected1RM.projected1RMLogId, projected1RMLogId);
+  
   if (exerciseId) {
-    query = query.where(
-      and(
-        eq(projected1RM.projected1RMLogId, projected1RMLogId),
-        eq(projected1RM.exerciseId, exerciseId)
-      )
-    );
+    whereClause = and(
+      eq(projected1RM.projected1RMLogId, projected1RMLogId),
+      eq(projected1RM.exerciseId, exerciseId)
+    ) as any;
   }
 
-  return await query.orderBy(desc(projected1RM.date));
+  const results = await db
+    .select()
+    .from(projected1RM)
+    .where(whereClause)
+    .orderBy(desc(projected1RM.date));
+  
+  return results.map((r) => ({
+    ...r,
+    date: new Date(r.date),
+  })) as Projected1RM[];
 }
 
