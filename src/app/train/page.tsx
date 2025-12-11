@@ -1,10 +1,10 @@
- 'use client';
+'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
-import { Play, Calendar, TrendingUp, Loader2, Trash } from 'lucide-react';
+import { Play, Calendar, Loader2, Trash, Eye } from 'lucide-react';
 import type {
   ProtocolInstance,
   Workout,
@@ -155,13 +155,13 @@ export default function TrainPage() {
           }),
         }
       );
-      
+
       // Verify we got a valid workout instance ID
       if (!res.workoutInstance?.id) {
         console.error('Invalid response from API:', res);
         throw new Error('Failed to create workout instance - no ID returned');
       }
-      
+
       // Navigate to the session page
       router.push(`/train/session/${res.workoutInstance.id}`);
     } catch (err: any) {
@@ -290,24 +290,35 @@ export default function TrainPage() {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleStartWorkout(workout.id)}
-                    disabled={startingWorkoutId === workout.id}
-                  >
-                    {startingWorkoutId === workout.id ? (
-                      <>
-                        <Loader2 className="mr-1 w-4 h-4 animate-spin" />
-                        Starting...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="mr-1 w-4 h-4" />
-                        Start Workout
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex justify-evenly gap-2">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={() => router.push(`/train/workout/${workout.id}`)}
+                      className="w-full"
+                    >
+                      <Eye className="mr-1 w-4 h-4" />
+                      View
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={() => handleStartWorkout(workout.id)}
+                      disabled={startingWorkoutId === workout.id}
+                      className="w-full"
+                    >
+                      {startingWorkoutId === workout.id ? (
+                        <>
+                          <Loader2 className="mr-1 w-4 h-4 animate-spin" />
+                        </>
+                      ) : (
+                        <>
+                          <Play className="mr-1 w-4 h-4" />
+                          Start 
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -346,24 +357,23 @@ export default function TrainPage() {
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 text-[11px] rounded ${
-                          instance.complete
+                        className={`px-2 py-1 text-[11px] rounded ${instance.complete
                             ? 'bg-emerald-500/15 text-emerald-500'
                             : 'bg-warning/20 text-warning'
-                        }`}
+                          }`}
                       >
                         {instance.complete ? 'Completed' : 'In progress'}
                       </span>
                     </div>
                     <div className="flex gap-2">
-                    <Link href={`/train/session/${instance.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Play className="mr-1 w-4 h-4" />
-                        Resume
-                      </Button>
-                    </Link>
-                    <Button variant="danger" size="sm" onClick={() => handleDeleteWorkoutInstance(instance.id)}>
-                      <Trash className="w-4 h-4" />
+                      <Link href={`/train/session/${instance.id}`}>
+                        <Button variant="outline" size="sm">
+                          <Play className="mr-1 w-4 h-4" />
+                          Resume
+                        </Button>
+                      </Link>
+                      <Button variant="danger" size="sm" onClick={() => handleDeleteWorkoutInstance(instance.id)}>
+                        <Trash className="w-4 h-4" />
                         Delete
                       </Button>
                     </div>

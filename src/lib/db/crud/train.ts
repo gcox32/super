@@ -205,6 +205,43 @@ export async function getWorkoutById(
   } as Workout;
 }
 
+export async function getWorkoutWithExercises(
+  workoutId: string,
+  userId: string
+): Promise<Workout | null> {
+  const result = await db.query.workout.findFirst({
+    where: (w, { eq, and }) => and(eq(w.id, workoutId), eq(w.userId, userId)),
+    with: {
+      blocks: {
+        orderBy: (b, { asc }) => [asc(b.order)],
+        with: {
+          exercises: {
+            orderBy: (e, { asc }) => [asc(e.order)],
+            with: {
+              exercise: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!result) return null;
+
+  // Transform result to ensure nulls are undefined where appropriate
+  // and structure matches Workout interface
+  return {
+    ...nullToUndefined(result),
+    blocks: result.blocks.map((b) => ({
+      ...nullToUndefined(b),
+      exercises: b.exercises.map((e) => ({
+        ...nullToUndefined(e),
+        exercise: nullToUndefined(e.exercise),
+      })),
+    })),
+  } as Workout;
+}
+
 export async function updateWorkout(
   workoutId: string,
   userId: string,
