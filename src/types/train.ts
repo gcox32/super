@@ -211,4 +211,13 @@ export interface Projected1RM {
     exerciseId:        Exercise['id'];
     projected1RM:      WeightMeasurement;
     notes?:            string;
-}   
+}
+
+// Session execution
+export interface SessionStep {
+    uniqueId: string;
+    block: WorkoutBlock;
+    exercise: WorkoutBlockExercise;
+    setIndex: number; // 0-based
+    totalSets: number;
+}

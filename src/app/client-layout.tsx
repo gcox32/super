@@ -16,6 +16,9 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
     const publicRoutes = ['/signin', '/terms-of-service', '/privacy-policy'];
     const isPublicRoute = publicRoutes.includes(pathname);
 
+    // Routes where navigation should be hidden (SPA mode)
+    const isSessionView = pathname.startsWith('/train/session/');
+
     useEffect(() => {
         if (!isLoading && !isAuthenticated && !isPublicRoute) {
             router.push('/signin');
@@ -42,9 +45,9 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
 
     return (
         <>
-            <FloatingMenu />
+            {!isSessionView && <FloatingMenu />}
             {children}
-            <BottomNav />
+            {!isSessionView && <BottomNav />}
         </>
     );
 }

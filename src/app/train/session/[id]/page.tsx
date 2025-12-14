@@ -1,17 +1,29 @@
 'use client';
 
-import { useEffect, useMemo, useState, use } from 'react';
+import { useEffect, useState, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { Play, Pause, Square, ChevronLeft } from 'lucide-react';
+
 import type {
   WorkoutInstance,
   WorkoutBlockInstance,
   WorkoutBlock,
   WorkoutBlockExercise,
   WorkoutBlockExerciseInstance,
+  SessionStep,
 } from '@/types/train';
-import type { TimeMeasurement, WeightMeasurement } from '@/types/measures';
+import type { TimeMeasurement } from '@/types/measures';
+
+import { SessionHeader } from '@/components/train/session/SessionHeader';
+import { SessionProgressBar } from '@/components/train/session/SessionProgressBar';
+import { SessionExerciseDisplay } from '@/components/train/session/SessionExerciseDisplay';
+import { SessionInputControls } from '@/components/train/session/SessionInputControls';
+import { SessionFooter } from '@/components/train/session/SessionFooter';
+import { SessionMenu } from '@/components/train/session/SessionMenu';
+
+// --- Types ---
+// (SessionStep is now in src/types/train.ts)
 
 type WorkoutInstanceResponse = { workoutInstance: WorkoutInstance };
 type BlockInstancesResponse = { instances: WorkoutBlockInstance[] };
@@ -20,6 +32,8 @@ type BlockExercisesResponse = { exercises: WorkoutBlockExercise[] };
 type BlockExerciseInstancesResponse = {
   instances: WorkoutBlockExerciseInstance[];
 };
+
+// --- Helpers ---
 
 function timeToSeconds(duration?: TimeMeasurement | null): number {
   if (!duration) return 0;
@@ -34,14 +48,7 @@ function formatClock(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
   const mins = Math.floor(s / 60);
   const secs = s % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs
-    .toString()
-    .padStart(2, '0')}`;
-}
-
-function percentage(done: number, total: number) {
-  if (!total || total <= 0) return 0;
-  return Math.min(100, Math.round((done / total) * 100));
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -55,6 +62,8 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+// --- Main Page ---
+
 export default function ActiveSessionPage({
   params,
 }: {
@@ -62,53 +71,47 @@ export default function ActiveSessionPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  
+  // Data State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [workoutInstance, setWorkoutInstance] =
-    useState<WorkoutInstance | null>(null);
-  const [blockInstances, setBlockInstances] = useState<WorkoutBlockInstance[]>(
-    []
-  );
+  const [workoutInstance, setWorkoutInstance] = useState<WorkoutInstance | null>(null);
   const [blocks, setBlocks] = useState<WorkoutBlock[]>([]);
-  const [blockExercises, setBlockExercises] = useState<
-    Record<string, WorkoutBlockExercise[]>
-  >({});
-  const [exerciseInstances, setExerciseInstances] = useState<
-    Record<string, WorkoutBlockExerciseInstance[]>
-  >({});
+  // We keep these for lookup, though flattened steps are main driver
+  const [blockExercises, setBlockExercises] = useState<Record<string, WorkoutBlockExercise[]>>({});
+  const [exerciseInstances, setExerciseInstances] = useState<Record<string, WorkoutBlockExerciseInstance[]>>({});
 
-  const [isRunning, setIsRunning] = useState(false);
+  // Execution State
+  const [steps, setSteps] = useState<SessionStep[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [restSeconds, setRestSeconds] = useState(0);
-  const [isCompleting, setIsCompleting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Input State for Current Step
+  const [reps, setReps] = useState<string>('');
+  const [weight, setWeight] = useState<string>('');
+  const [inputDirty, setInputDirty] = useState(false);
 
-  // Simple timer loops
-  useEffect(() => {
-    if (!isRunning) return;
-    const id = setInterval(() => {
-      setElapsedSeconds((s) => s + 1);
-      setRestSeconds((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [isRunning]);
+  // Swipe State
+  const touchStartY = useRef<number | null>(null);
 
-  // Initial data load
+  // Derived
+  const currentStep = steps[currentStepIndex];
+  const nextStep = steps[currentStepIndex + 1];
+
+  // Load Data
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      setLoading(true);
-      setError(null);
       try {
-        // 1) Load workout instance core data
-        const wi = await fetchJson<WorkoutInstanceResponse>(
-          `/api/train/workout-instances/${id}`
-        );
-
+        setLoading(true);
+        // 1. Get Instance
+        const wi = await fetchJson<WorkoutInstanceResponse>(`/api/train/workout-instances/${id}`);
         if (cancelled) return;
         setWorkoutInstance(wi.workoutInstance);
-
-        // 2) Load all block instances tied to this workout instance
+        
+        // 2. Get Blocks & Block Instances
         const [biRes, blocksRes] = await Promise.all([
           fetchJson<BlockInstancesResponse>(
             `/api/train/workout-block-instances?workoutInstanceId=${id}`
@@ -119,210 +122,144 @@ export default function ActiveSessionPage({
               )
             : Promise.resolve({ blocks: [] }),
         ]);
-
+        
         if (cancelled) return;
-        setBlockInstances(biRes.instances || []);
         setBlocks(blocksRes.blocks || []);
-
-        // 3) For each block, load its planned exercises
-        const exercisesByBlockId: Record<string, WorkoutBlockExercise[]> = {};
-        const instancesByBlockId: Record<
-          string,
-          WorkoutBlockExerciseInstance[]
-        > = {};
-
+        
+        // 3. Get Exercises & Existing Logs
+        const exercisesMap: Record<string, WorkoutBlockExercise[]> = {};
+        const instancesMap: Record<string, WorkoutBlockExerciseInstance[]> = {};
+        
         for (const block of blocksRes.blocks || []) {
           const exRes = await fetchJson<BlockExercisesResponse>(
             `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks/${block.id}/exercises`
           );
-          exercisesByBlockId[block.id] = exRes.exercises || [];
-
-          // Also load any existing performance instances for this block
-          const blockInstance = biRes.instances.find(
-            (bi) => bi.workoutBlockId === block.id
-          );
+          exercisesMap[block.id] = exRes.exercises || [];
+          
+          const blockInstance = biRes.instances.find(bi => bi.workoutBlockId === block.id);
           if (blockInstance) {
-            const instRes =
-              await fetchJson<BlockExerciseInstancesResponse>(
-                `/api/train/workout-block-exercise-instances?workoutBlockInstanceId=${blockInstance.id}`
-              );
-            instancesByBlockId[block.id] = instRes.instances || [];
+            const instRes = await fetchJson<BlockExerciseInstancesResponse>(
+              `/api/train/workout-block-exercise-instances?workoutBlockInstanceId=${blockInstance.id}`
+            );
+            instancesMap[block.id] = instRes.instances || [];
           } else {
-            instancesByBlockId[block.id] = [];
+            instancesMap[block.id] = [];
           }
         }
-
+        
         if (cancelled) return;
-        setBlockExercises(exercisesByBlockId);
-        setExerciseInstances(instancesByBlockId);
-      } catch (err: any) {
-        console.error(err);
-        if (!cancelled) {
-          setError(
-            err?.message || 'Unable to load this session. Please try again.'
+        setBlockExercises(exercisesMap);
+        setExerciseInstances(instancesMap);
+        
+        // 4. Build Steps (Flattened Workout)
+        const builtSteps: SessionStep[] = [];
+        (blocksRes.blocks || []).forEach(block => {
+          const exercises = exercisesMap[block.id] || [];
+          exercises.forEach(ex => {
+            const setCheck = ex.sets || 1;
+            for (let i = 0; i < setCheck; i++) {
+              builtSteps.push({
+                uniqueId: `${block.id}-${ex.id}-${i}`,
+                block,
+                exercise: ex,
+                setIndex: i,
+                totalSets: setCheck,
+              });
+            }
+          });
+        });
+        setSteps(builtSteps);
+
+        // 5. Determine Current Step (Resume)
+        let firstIncomplete = 0;
+        for (let i = 0; i < builtSteps.length; i++) {
+          const s = builtSteps[i];
+          const blockInsts = instancesMap[s.block.id] || [];
+          const match = blockInsts.find(inst => 
+            inst.workoutBlockExerciseId === s.exercise.id && 
+            inst.notes?.startsWith(`set:${s.setIndex}:`)
           );
+          if (!match || !match.complete) {
+            firstIncomplete = i;
+            break;
+          }
         }
+        setCurrentStepIndex(firstIncomplete);
+        
+      } catch (err: any) {
+        if (!cancelled) setError(err.message);
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
-
     load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [id]);
 
-  const totalPlannedExercises = useMemo(() => {
-    return blocks.reduce((sum, block) => {
-      return sum + (blockExercises[block.id]?.length || 0);
-    }, 0);
-  }, [blocks, blockExercises]);
+  // Timer
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setElapsedSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
 
-  // For now, completion is just how many block instances are complete
-  const completedBlocks = useMemo(
-    () => blockInstances.filter((b) => b.complete).length,
-    [blockInstances]
-  );
-
-  const sessionName =
-    (workoutInstance as any)?.workoutName || 'Workout Session';
-
-  const estimatedDurationSeconds = useMemo(() => {
-    if (!blocks.length) return 0;
-    return blocks.reduce((sum, block) => {
-      const dur = block.estimatedDuration as TimeMeasurement | undefined;
-      return sum + timeToSeconds(dur);
-    }, 0);
-  }, [blocks]);
-
-  const totalVolume = useMemo(() => {
-    // very simple: sum weight * reps across all logged instances
-    let total = 0;
-    Object.values(exerciseInstances).forEach((instances) => {
-      instances.forEach((inst) => {
-        const reps = inst.measures.reps ?? 0;
-        const load = inst.measures.externalLoad?.value ?? 0;
-        total += reps * load;
-      });
-    });
-    return total;
-  }, [exerciseInstances]);
-
-  async function handleCompleteWorkout() {
-    if (!workoutInstance || isCompleting) return;
-    setIsCompleting(true);
-    try {
-      const durationMinutes = Math.max(
-        1,
-        Math.round(elapsedSeconds / 60 || 0.1)
-      );
-
-      // 1) Mark workout instance complete with duration
-      const updated = await fetchJson<{ workoutInstance: WorkoutInstance }>(
-        `/api/train/workout-instances/${workoutInstance.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            complete: true,
-            duration: { value: durationMinutes, unit: 'min' } as TimeMeasurement,
-          }),
-        }
-      );
-      setWorkoutInstance(updated.workoutInstance);
-
-      // 2) Write a simple performance entry
-      const workValue = totalVolume; // temporary: treat volume as work
-      const performanceDuration: TimeMeasurement = {
-        value: durationMinutes,
-        unit: 'min',
-      };
-
-      const performancePayload = {
-        date: new Date().toISOString(),
-        duration: performanceDuration,
-        volume: { value: totalVolume, unit: 'kg' } as WeightMeasurement,
-        work: { value: workValue, unit: 'kg' } as any,
-        power: {
-          value:
-            durationMinutes > 0 ? Math.round(workValue / (durationMinutes * 60)) : 0,
-          unit: 'W',
-        } as any,
-        notes: `Auto-logged from workout ${workoutInstance.id}`,
-      };
-
-      await fetchJson(`/api/train/performance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(performancePayload),
-      });
-    } catch (e) {
-      console.error('Failed to complete workout', e);
-    } finally {
-      setIsCompleting(false);
-    }
-  }
-
-  async function upsertExerciseInstance(
-    block: WorkoutBlock,
-    planned: WorkoutBlockExercise,
-    setIndex: number,
-    updates: {
-      reps?: number;
-      weight?: WeightMeasurement | null;
-      rpe?: number | null;
-      notes?: string;
-    }
-  ) {
-    const blockInstance = blockInstances.find(
-      (bi) => bi.workoutBlockId === block.id
+  // Sync Input with Current Step's Data (if exists)
+  useEffect(() => {
+    if (!currentStep) return;
+    
+    // Reset inputs
+    setReps(currentStep.exercise.measures.reps?.toString() || '');
+    setWeight(currentStep.exercise.measures.externalLoad?.value?.toString() || '');
+    
+    // Check for existing instance data to override
+    const blockInsts = exerciseInstances[currentStep.block.id] || [];
+    const match = blockInsts.find(inst => 
+      inst.workoutBlockExerciseId === currentStep.exercise.id && 
+      inst.notes?.startsWith(`set:${currentStep.setIndex}:`)
     );
-    if (!blockInstance) return;
+    
+    if (match) {
+      if (match.measures.reps) setReps(match.measures.reps.toString());
+      if (match.measures.externalLoad?.value) setWeight(match.measures.externalLoad.value.toString());
+    }
+    
+    setInputDirty(false);
+  }, [currentStepIndex, exerciseInstances, currentStep]);
 
-    const existingForBlock = exerciseInstances[block.id] || [];
-    const target =
-      existingForBlock.find(
-        (inst) =>
-          inst.workoutBlockExerciseId === planned.id &&
-          // crude encoding: use notes prefix to distinguish sets
-          inst.notes?.startsWith(`set:${setIndex}:`)
-      ) || null;
+  // Actions
+  async function saveCurrentStep() {
+    if (!currentStep || !workoutInstance) return;
 
-    const baseMeasures = planned.measures || {};
-
-    const payloadMeasures: typeof baseMeasures = {
-      ...baseMeasures,
-      reps:
-        updates.reps !== undefined
-          ? updates.reps
-          : target?.measures.reps ?? baseMeasures.reps,
-      externalLoad:
-        updates.weight !== undefined
-          ? updates.weight || undefined
-          : target?.measures.externalLoad ?? baseMeasures.externalLoad,
-    };
+    const blockInstanceId = await ensureBlockInstance(currentStep.block.id);
+    if (!blockInstanceId) return;
 
     const payload = {
+      workoutBlockInstanceId: blockInstanceId,
+      workoutBlockExerciseId: currentStep.exercise.id,
+      date: new Date().toISOString(),
       complete: true,
-      measures: payloadMeasures,
-      rpe:
-        updates.rpe !== undefined
-          ? (updates.rpe as any)
-          : target?.rpe ?? null,
-      notes:
-        updates.notes !== undefined
-          ? updates.notes
-          : target?.notes ?? `set:${setIndex}:`,
+      measures: {
+        ...currentStep.exercise.measures,
+        reps: reps ? Number(reps) : undefined,
+        externalLoad: weight ? { value: Number(weight), unit: 'kg' } : undefined, // Assuming kg default
+      },
+      notes: `set:${currentStep.setIndex}:`,
     };
+
+    // Check if update or create
+    const blockInsts = exerciseInstances[currentStep.block.id] || [];
+    const existing = blockInsts.find(inst => 
+      inst.workoutBlockExerciseId === currentStep.exercise.id && 
+      inst.notes?.startsWith(`set:${currentStep.setIndex}:`)
+    );
 
     try {
       let saved: WorkoutBlockExerciseInstance;
-      if (target) {
+      if (existing) {
         const res = await fetchJson<{ instance: WorkoutBlockExerciseInstance }>(
-          `/api/train/workout-block-exercise-instances/${target.id}`,
+          `/api/train/workout-block-exercise-instances/${existing.id}`,
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -336,379 +273,203 @@ export default function ActiveSessionPage({
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              workoutBlockInstanceId: blockInstance.id,
-              workoutBlockExerciseId: planned.id,
-              date: new Date().toISOString(),
-              complete: true,
-              personalBest: false,
-              duration: null,
-              measures: payloadMeasures,
-              projected1RM: null,
-              rpe: payload.rpe,
-              notes: payload.notes,
-            }),
+            body: JSON.stringify(payload),
           }
         );
         saved = res.instance;
       }
 
-      setExerciseInstances((current) => {
-        const list = current[block.id] || [];
-        const idx = list.findIndex((i) => i.id === saved.id);
-        const next =
-          idx === -1
-            ? [...list, saved]
-            : [...list.slice(0, idx), saved, ...list.slice(idx + 1)];
-        return {
-          ...current,
-          [block.id]: next,
-        };
+      // Update local state
+      setExerciseInstances(prev => {
+        const list = prev[currentStep.block.id] || [];
+        const idx = list.findIndex(i => i.id === saved.id);
+        const nextList = idx === -1 ? [...list, saved] : list.map((item, i) => i === idx ? saved : item);
+        return { ...prev, [currentStep.block.id]: nextList };
       });
+      
     } catch (e) {
-      console.error('Failed to save exercise instance', e);
+      console.error('Failed to save set', e);
     }
   }
 
+  async function ensureBlockInstance(blockId: string): Promise<string | null> {
+    try {
+      const res = await fetchJson<BlockInstancesResponse>(
+        `/api/train/workout-block-instances?workoutInstanceId=${id}`
+      );
+      const existing = res.instances.find(bi => bi.workoutBlockId === blockId);
+      if (existing) return existing.id;
+
+      // Create
+      const createRes = await fetchJson<{ instance: WorkoutBlockInstance }>(
+        '/api/train/workout-block-instances',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workoutInstanceId: id,
+            workoutBlockId: blockId,
+            date: new Date().toISOString(),
+          })
+        }
+      );
+      return createRes.instance.id;
+    } catch (e) {
+      console.error('Failed to ensure block instance', e);
+      return null;
+    }
+  }
+
+  const handleNext = async () => {
+    await saveCurrentStep();
+    if (currentStepIndex < steps.length - 1) {
+      setCurrentStepIndex(i => i + 1);
+    } else {
+      // Finish Workout
+      await finishWorkout();
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(i => i - 1);
+    }
+  };
+
+  // Swipe Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffY = touchStartY.current - touchEndY;
+    
+    // Threshold for swipe (e.g., 50px)
+    if (Math.abs(diffY) > 50) {
+      if (diffY > 0) {
+        // Swipe Up -> Next
+        handleNext();
+      } else {
+        // Swipe Down -> Previous
+        handlePrevious();
+      }
+    }
+    
+    touchStartY.current = null;
+  };
+
+  const finishWorkout = async () => {
+    if (!workoutInstance) return;
+    try {
+       await fetchJson(
+        `/api/train/workout-instances/${workoutInstance.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            complete: true,
+            duration: { value: Math.ceil(elapsedSeconds / 60), unit: 'min' },
+          }),
+        }
+      );
+      router.push('/train');
+    } catch (e) {
+      console.error('Failed to finish', e);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="bg-background pb-20 min-h-screen">
-        <div className="md:mx-auto px-4 md:px-6 pt-6 md:max-w-3xl">
-          <p className="text-muted-foreground text-sm">Loading session...</p>
-        </div>
+      <div className="h-screen w-full bg-black text-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
       </div>
     );
   }
 
-  if (error || !workoutInstance) {
-    console.error('Error loading workout instance', error);
+  if (error || !currentStep) {
     return (
-      <div className="bg-background pb-20 min-h-screen">
-        <div className="space-y-4 md:mx-auto px-4 md:px-6 pt-6 md:max-w-3xl">
-          <button
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs"
-            onClick={() => router.back()}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Train
-          </button>
-          <div className="bg-card p-4 border border-border rounded-lg">
-            <p className="text-destructive text-sm">
-              {error ?? 'Session not found.'}
-            </p>
-          </div>
-        </div>
+      <div className="h-screen w-full bg-black text-white p-6 flex flex-col items-center justify-center gap-4">
+        <p className="text-red-500">{error || "Workout completed or invalid."}</p>
+        <Button onClick={() => router.push('/train')}>Back to Train</Button>
       </div>
     );
   }
-
-  const progressPercent = percentage(completedBlocks, blocks.length || 1);
 
   return (
-    <div className="bg-background pb-20 min-h-screen">
-      <div className="md:mx-auto md:max-w-3xl">
-        {/* Header */}
-        <section className="px-4 md:px-6 pt-6 pb-4 border-border border-b">
-          <button
-            className="inline-flex items-center gap-1 mb-2 text-muted-foreground hover:text-foreground text-xs"
-            onClick={() => router.back()}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Train
-          </button>
-          <h1 className="mb-1 font-semibold text-xl">{sessionName}</h1>
-          <p className="text-muted-foreground text-xs">
-            Active session •{' '}
-            {new Date(workoutInstance.date).toLocaleDateString(undefined, {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })}
-          </p>
-        </section>
-
-        {/* Timers + Progress */}
-        <section className="bg-card/40 px-4 md:px-6 py-4 border-border border-b">
-          <div className="flex justify-between items-center gap-3 mb-4">
-            <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
-                Workout Timer
-              </p>
-              <p className="font-mono font-semibold text-3xl">
-                {formatClock(elapsedSeconds)}
-              </p>
-              {estimatedDurationSeconds > 0 && (
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Est. {formatClock(estimatedDurationSeconds)}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant={isRunning ? 'outline' : 'primary'}
-                onClick={() => setIsRunning((v) => !v)}
-              >
-                {isRunning ? (
-                  <>
-                    <Pause className="mr-1 w-4 h-4" />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play className="mr-1 w-4 h-4" />
-                    Start
-                  </>
-                )}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setIsRunning(false);
-                  setElapsedSeconds(0);
-                }}
-              >
-                <Square className="mr-1 w-4 h-4" />
-                Reset
-              </Button>
-              <Button
-                size="sm"
-                variant={workoutInstance.complete ? 'outline' : 'primary'}
-                disabled={isCompleting || workoutInstance.complete}
-                onClick={handleCompleteWorkout}
-              >
-                {workoutInstance.complete ? 'Completed' : 'Complete workout'}
-              </Button>
-            </div>
+    <div 
+      className="relative h-screen w-full bg-black text-white overflow-hidden flex flex-col font-sans"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      
+      {/* Background Video/Image */}
+      <div className="absolute inset-0 z-0 opacity-40">
+        {currentStep.exercise.exercise.videoUrl ? (
+          <video 
+            src={currentStep.exercise.exercise.videoUrl} 
+            className="w-full h-full object-cover"
+            autoPlay 
+            loop 
+            muted 
+            playsInline
+          />
+        ) : (
+          <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+            {/* Fallback pattern or image */}
+            <div className="bg-linear-to-br from-zinc-800 to-black w-full h-full" />
           </div>
-
-          <div className="mb-4">
-            <div className="flex justify-between mb-1 text-[11px] text-muted-foreground">
-              <span>
-                Progress • {completedBlocks}/{blocks.length || 0} blocks
-              </span>
-              <span>{progressPercent}%</span>
-            </div>
-            <div className="bg-input rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-brand-primary rounded-full h-2 transition-all"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
-                Rest Timer
-              </p>
-              <p className="font-mono font-semibold text-lg">
-                {formatClock(restSeconds)}
-              </p>
-            </div>
-            <div className="flex gap-1">
-              {[30, 60, 90].map((sec) => (
-                <Button
-                  key={sec}
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setRestSeconds(sec)}
-                >
-                  {sec}s
-                </Button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Blocks + Exercises */}
-        <section className="space-y-4 px-4 md:px-6 py-6">
-          {blocks.map((block) => {
-            const exercises = blockExercises[block.id] || [];
-            const instancesForBlock = exerciseInstances[block.id] || [];
-            const instanceForBlock = blockInstances.find(
-              (bi) => bi.workoutBlockId === block.id
-            );
-            const isComplete = instanceForBlock?.complete;
-
-            return (
-              <div
-                key={block.id}
-                className="bg-card p-4 border border-border rounded-lg"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
-                      {block.workoutBlockType}
-                    </p>
-                    <h2 className="font-semibold text-sm">
-                      {block.name || 'Block'}
-                    </h2>
-                    {block.description && (
-                      <p className="mt-1 text-muted-foreground text-xs">
-                        {block.description}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={`px-2 py-1 text-[11px] rounded ${
-                      isComplete
-                        ? 'bg-emerald-500/15 text-emerald-500'
-                        : 'bg-warning/20 text-warning'
-                    }`}
-                  >
-                    {isComplete ? 'Done' : 'In progress'}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {exercises.map((ex, index) => {
-                    const sets = ex.sets || 1;
-                    const setIndices = Array.from({ length: sets }, (_, i) => i);
-
-                    const instancesForExercise = instancesForBlock.filter(
-                      (inst) => inst.workoutBlockExerciseId === ex.id
-                    );
-
-                    return (
-                      <div
-                        key={ex.id}
-                        className="bg-background px-3 py-2 border border-border/60 rounded-md"
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <div>
-                            <p className="font-medium text-sm">
-                              {ex.exercise.name}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              {sets} sets
-                              {ex.measures.reps
-                                ? ` • ${ex.measures.reps} reps`
-                                : ''}
-                              {ex.measures.externalLoad
-                                ? ` • ${ex.measures.externalLoad.value}${ex.measures.externalLoad.unit}`
-                                : ''}
-                            </p>
-                          </div>
-                          <span className="text-[11px] text-muted-foreground">
-                            #{index + 1}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1">
-                          {setIndices.map((setIdx) => {
-                            const existing = instancesForExercise.find((inst) =>
-                              inst.notes?.startsWith(`set:${setIdx}:`)
-                            );
-                            const reps = existing?.measures.reps ?? '';
-                            const weight = existing?.measures.externalLoad
-                              ?.value ?? '';
-                            const rpe = existing?.rpe ?? '';
-
-                            return (
-                              <div
-                                key={`${ex.id}-set-${setIdx}`}
-                                className="flex items-center gap-2 text-xs"
-                              >
-                                <span className="w-8 text-[11px] text-muted-foreground">
-                                  Set {setIdx + 1}
-                                </span>
-                                <input
-                                  type="number"
-                                  inputMode="numeric"
-                                  className="bg-background px-1 border border-border rounded w-16 h-7 text-xs"
-                                  placeholder="reps"
-                                  defaultValue={reps}
-                                  onBlur={(e) =>
-                                    upsertExerciseInstance(
-                                      block,
-                                      ex,
-                                      setIdx,
-                                      {
-                                        reps:
-                                          e.target.value === ''
-                                            ? undefined
-                                            : Number(e.target.value),
-                                      }
-                                    )
-                                  }
-                                />
-                                <input
-                                  type="number"
-                                  inputMode="numeric"
-                                  className="bg-background px-1 border border-border rounded w-16 h-7 text-xs"
-                                  placeholder={
-                                    ex.measures.externalLoad?.unit || 'kg'
-                                  }
-                                  defaultValue={weight}
-                                  onBlur={(e) =>
-                                    upsertExerciseInstance(
-                                      block,
-                                      ex,
-                                      setIdx,
-                                      {
-                                        weight:
-                                          e.target.value === ''
-                                            ? null
-                                            : {
-                                                value: Number(e.target.value),
-                                                unit:
-                                                  ex.measures.externalLoad
-                                                    ?.unit || 'kg',
-                                              },
-                                      }
-                                    )
-                                  }
-                                />
-                                <input
-                                  type="number"
-                                  inputMode="numeric"
-                                  className="bg-background px-1 border border-border rounded w-12 h-7 text-xs"
-                                  placeholder="RPE"
-                                  defaultValue={rpe}
-                                  onBlur={(e) =>
-                                    upsertExerciseInstance(
-                                      block,
-                                      ex,
-                                      setIdx,
-                                      {
-                                        rpe:
-                                          e.target.value === ''
-                                            ? null
-                                            : Number(e.target.value),
-                                      }
-                                    )
-                                  }
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {exercises.length === 0 && (
-                    <p className="text-muted-foreground text-xs">
-                      No exercises configured for this block yet.
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {blocks.length === 0 && (
-            <p className="text-muted-foreground text-xs">
-              This workout doesn&apos;t have any blocks configured yet. Build
-              out the structure in the program editor to see it here during
-              sessions.
-            </p>
-          )}
-        </section>
+        )}
+        <div className="absolute inset-0 bg-linear-to-b from-black/80 via-transparent to-black/90" />
       </div>
+
+      {/* Main Content Layer */}
+      <div className="relative z-10 flex flex-col h-full px-5 py-4 safe-area-inset-top">
+        
+        <SessionHeader 
+          elapsedSeconds={elapsedSeconds}
+          isPaused={isPaused}
+          onPauseToggle={() => setIsPaused(!isPaused)}
+          formatClock={formatClock}
+        />
+
+        <SessionProgressBar 
+          blocks={blocks} 
+          steps={steps}
+          currentStepIndex={currentStepIndex}
+          currentBlockId={currentStep.block.id}
+        />
+
+        <SessionExerciseDisplay 
+          step={currentStep}
+          onMenuOpen={() => setIsMenuOpen(true)}
+        />
+
+        {/* Spacer to push content down */}
+        <div className="flex-1" />
+
+        <SessionInputControls 
+          step={currentStep}
+          reps={reps}
+          onRepsChange={(val) => { setReps(val); setInputDirty(true); }}
+          weight={weight}
+          onWeightChange={(val) => { setWeight(val); setInputDirty(true); }}
+        />
+
+        <SessionFooter 
+          nextStepName={nextStep ? nextStep.exercise.exercise.name : null}
+          onNext={handleNext}
+        />
+
+      </div>
+
+      <SessionMenu 
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onSkip={handleNext}
+      />
     </div>
   );
 }
-
-
