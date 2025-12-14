@@ -116,14 +116,14 @@ export default function ProtocolList() {
 
                 {protocol.objectives && protocol.objectives.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-auto">
-                    {protocol.objectives.slice(0, 3).map((obj, i) => (
-                      <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                    {protocol.objectives.slice(0, 2).map((obj, i) => (
+                      <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
                         <Target className="h-3 w-3 mr-1" />
                         {obj}
                       </span>
                     ))}
                     {protocol.objectives.length > 3 && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
                         +{protocol.objectives.length - 3}
                       </span>
                     )}
