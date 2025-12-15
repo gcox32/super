@@ -14,7 +14,7 @@ type MovementPattern =
     'isometric'  | 'locomotion' | 'hip flexion' |
     'plyometric' | 'other';
 
-type Equipment = 'barbell' | 'dumbbell' | 'kettlebell' | 'machine' | 'bodyweight' | 'other';
+type Equipment = 'barbell' | 'dumbbell' | 'kettlebell' | 'machine' | 'bodyweight' | 'variable' | 'other';
 
 type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 
@@ -35,8 +35,8 @@ interface EffectedMuscleGroups {
 export interface WorkPowerConstants {
     useCalories:      boolean;
     defaultDistance:  DistanceMeasurement;
-    armLengthFactor:  number; // 0 - 1.0 default is 0
-    legLengthFactor:  number; // 0 - 1.0 default is 0
+    armLengthFactor:  number; // -1.0 - 1.0 default is 0
+    legLengthFactor:  number; // -1.0 - 1.0 default is 0
     bodyweightFactor: number; // 0 - 1.0 default is 1
 }
 

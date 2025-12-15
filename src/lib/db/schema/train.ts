@@ -92,7 +92,7 @@ export const exercise = trainSchema.table('exercise', {
   }),
   bilateral: boolean('bilateral'),
   equipment: text('equipment', {
-    enum: ['barbell', 'dumbbell', 'kettlebell', 'machine', 'bodyweight', 'other'],
+    enum: ['barbell', 'dumbbell', 'kettlebell', 'machine', 'bodyweight', 'variable', 'other'],
   }),
   imageUrl: text('image_url'),
   videoUrl: text('video_url'),

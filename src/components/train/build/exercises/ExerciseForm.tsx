@@ -33,7 +33,7 @@ const MOVEMENT_PATTERNS = [
 const PLANES_OF_MOTION = ['sagittal', 'frontal', 'transverse'] as const;
 
 const EQUIPMENT_TYPES = [
-  'barbell', 'dumbbell', 'kettlebell', 'machine', 'bodyweight', 'other'
+  'barbell', 'dumbbell', 'kettlebell', 'machine', 'bodyweight', 'variable', 'other'
 ] as const;
 
 const DIFFICULTY_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
@@ -94,6 +94,33 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const handleParentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const parentId = e.target.value;
+    const parentExercise = exercises.find(ex => ex.id === parentId);
+
+    setFormData(prev => {
+      const updates: Partial<ExerciseFormData> = {
+        parentExerciseId: parentId || undefined
+      };
+
+      if (parentExercise) {
+        updates.muscleGroups = { ...parentExercise.muscleGroups };
+        updates.workPowerConstants = {
+          ...parentExercise.workPowerConstants,
+          defaultDistance: { ...parentExercise.workPowerConstants.defaultDistance }
+        };
+        if (parentExercise.movementPattern) {
+          updates.movementPattern = parentExercise.movementPattern;
+        }
+      }
+
+      return {
+        ...prev,
+        ...updates
+      };
+    });
   };
 
   const handleMuscleGroupChange = (level: 'primary' | 'secondary' | 'tertiary', value: string) => {
@@ -182,7 +209,7 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
               <FormSelect
                 name="parentExerciseId"
                 value={formData.parentExerciseId || ''}
-                onChange={handleChange}
+                onChange={handleParentChange}
               >
                 <option value="">None</option>
                 {exercises.map(ex => (
@@ -358,11 +385,11 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
                   />
                </FormGroup>
                <FormGroup>
-                  <FormLabel className="text-xs">Arm Length (0-1)</FormLabel>
+                  <FormLabel className="text-xs">Arm Length (-1 to 1)</FormLabel>
                   <FormInput
                     type="number"
                     step="0.1"
-                    min="0"
+                    min="-1"
                     max="1"
                     value={formData.workPowerConstants.armLengthFactor}
                     onChange={(e) => {
@@ -373,11 +400,11 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
                   />
                </FormGroup>
                <FormGroup>
-                  <FormLabel className="text-xs">Leg Length (0-1)</FormLabel>
+                  <FormLabel className="text-xs">Leg Length (-1 to 1)</FormLabel>
                   <FormInput
                     type="number"
                     step="0.1"
-                    min="0"
+                    min="-1"
                     max="1"
                     value={formData.workPowerConstants.legLengthFactor}
                     onChange={(e) => {
@@ -394,7 +421,7 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
             <Button type="button" variant="ghost" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="w-[188px]!">
               {loading ? 'Saving...' : isEditing ? 'Update Exercise' : 'Create Exercise'}
             </Button>
           </FormActions>

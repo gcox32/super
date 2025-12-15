@@ -118,7 +118,7 @@ export function FormError({ className, children, ...props }: React.HTMLAttribute
 
 export function FormActions({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("flex justify-center gap-3 pt-4", className)} {...props}>
+    <div className={cn("flex justify-center gap-4 pt-4", className)} {...props}>
       {children}
     </div>
   );

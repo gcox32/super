@@ -112,9 +112,9 @@ export default function ExerciseList() {
             ) : (
               exercises.map((exercise) => (
                 <li key={exercise.id}>
-                  <Link href={`/train/build/exercises/${exercise.id}/edit`} className="block hover:bg-gray-50">
+                  <Link href={`/train/build/exercises/${exercise.id}/edit`} className="block hover:bg-gray-700">
                     <div className="px-4 py-4 sm:px-6 flex justify-between items-center">
-                      <div className="truncate text-sm font-medium text-brand-primary">
+                      <div className="truncate text-sm font-medium" style={{ color: 'color-mix(in srgb, var(--color-brand-primary) 70%, white)' }}>
                         {exercise.name}
                       </div>
 
