@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { user } from './user';
+import { MOVEMENT_PATTERNS, PLANES_OF_MOTION, EQUIPMENT_TYPES, DIFFICULTY_LEVELS } from '@/components/train/build/exercises/options';
 
 export const trainSchema = pgSchema('train');
 
@@ -72,33 +73,19 @@ export const exercise = trainSchema.table('exercise', {
   name: text('name').notNull(),
   description: text('description'),
   movementPattern: text('movement_pattern', {
-    enum: [
-      'upper push',
-      'upper pull',
-      'squat',
-      'hinge',
-      'lunge',
-      'hip thrust',
-      'isometric',
-      'locomotion',
-      'hip flexion',
-      'plyometric',
-      'other',
-    ],
+    enum: MOVEMENT_PATTERNS,
   }),
   muscleGroups: jsonb('muscle_groups').notNull(),
   planeOfMotion: text('plane_of_motion', {
-    enum: ['sagittal', 'frontal', 'transverse'],
+    enum: PLANES_OF_MOTION,
   }),
   bilateral: boolean('bilateral'),
-  equipment: text('equipment', {
-    enum: ['barbell', 'dumbbell', 'kettlebell', 'machine', 'bodyweight', 'variable', 'other'],
-  }),
+  equipment: text('equipment').array(),
   imageUrl: text('image_url'),
   videoUrl: text('video_url'),
   workPowerConstants: jsonb('work_power_constants').notNull(),
   difficulty: text('difficulty', {
-    enum: ['beginner', 'intermediate', 'advanced'],
+    enum: DIFFICULTY_LEVELS,
   }),
   parentExerciseId: uuid('parent_exercise_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

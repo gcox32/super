@@ -14,7 +14,10 @@ type MovementPattern =
     'isometric'  | 'locomotion' | 'hip flexion' |
     'plyometric' | 'other';
 
-type Equipment = 'barbell' | 'dumbbell' | 'kettlebell' | 'machine' | 'bodyweight' | 'variable' | 'other';
+type Equipment = 'barbell' | 'dumbbell' | 'kettlebell' | 'machine' | 'bodyweight' | 'variable' | 'cable' 
+                | 'band' | 'medicine ball' | 'sled' | 'sandbag' | 'wheel' | 'jump rope' | 'pullup bar'
+                | 'rack' | 'box' | 'swiss ball' | 'foam roller' | 'bench' 
+                | 'other';
 
 type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 
@@ -117,7 +120,7 @@ export interface Exercise {
     muscleGroups:       EffectedMuscleGroups;
     planeOfMotion?:     PlaneOfMotion;
     bilateral?:         boolean;
-    equipment?:         Equipment;
+    equipment?:         Equipment[]; // can be multiple
     imageUrl?:          string;
     videoUrl?:          string;
     workPowerConstants: WorkPowerConstants;

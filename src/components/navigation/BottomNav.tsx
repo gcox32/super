@@ -16,8 +16,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-2 left-2 right-2 z-20 bg-card border-t border-border rounded-4xl">
-      <div className="flex justify-around items-center h-16 rounded-4xl">
+    <nav className="right-2 bottom-2 left-2 z-20 fixed bg-card/70 backdrop-blur-sm border-border-accent border-t-[0.5px] rounded-4xl">
+      <div className="flex justify-around items-center rounded-4xl h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -31,8 +31,8 @@ export default function BottomNav() {
                   : 'text-muted-foreground'
               }`}
             >
-              <span className="text-2xl mb-1"><item.icon className="w-6 h-6" /></span>
-              <span className="text-xs font-medium hidden md:block">{item.name}</span>
+              <span className="mb-1 text-2xl"><item.icon className="w-6 h-6" /></span>
+              <span className="hidden md:block font-medium text-xs">{item.name}</span>
             </Link>
           );
         })}

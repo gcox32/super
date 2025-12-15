@@ -194,7 +194,7 @@ export default function TrainPage() {
     <div className="bg-background pb-20 min-h-screen">
       <div className="md:mx-auto md:max-w-4xl">
         {/* Header */}
-        <section className="px-4 md:px-6 pt-6 pb-4 border-border border-b flex justify-between items-center">
+        <section className="flex justify-between items-center px-4 md:px-6 pt-6 pb-4 border-border border-b">
           <div>
             <h1 className="mb-1 font-bold text-2xl">Train</h1>
             <p className="text-muted-foreground text-sm">
@@ -384,7 +384,7 @@ export default function TrainPage() {
           )}
         </section>
         <section className="px-4 md:px-6 py-6 border-border border-t">
-        <button onClick={() => router.push('/train/build')} className="w-[220px] h-[48px] m-auto bg-brand-primary text-white px-4 py-2 rounded-full flex items-center justify-center gap-2 uppercase font-bold text-sm">
+        <button onClick={() => router.push('/train/build')} className="flex justify-center items-center gap-2 bg-brand-primary m-auto px-4 py-2 rounded-full w-[220px] h-[48px] font-bold text-white text-sm uppercase cursor-pointer">
           Build
         </button>
         </section>
