@@ -86,16 +86,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {typeof document !== 'undefined' &&
         createPortal(
-          <div className="pointer-events-none fixed inset-x-0 top-4 z-[60] flex justify-center px-4">
-            <div className="flex w-full max-w-sm flex-col gap-2">
+          <div className="top-4 z-60 fixed inset-x-0 flex justify-center px-4 pointer-events-none">
+            <div className="flex flex-col gap-2 w-full max-w-sm">
               {toasts.map((toast) => (
                 <button
                   key={toast.id}
                   type="button"
                   onClick={() => dismissToast(toast.id)}
-                  className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-zinc-800/80 bg-zinc-900/95 px-4 py-3 text-left text-sm text-zinc-50 shadow-lg shadow-black/50 backdrop-blur-md transition hover:border-zinc-700 active:scale-[0.99]"
+                  className="flex items-start gap-3 bg-zinc-900/95 shadow-black/50 shadow-lg backdrop-blur-md px-4 py-3 border border-zinc-800/80 hover:border-zinc-700 rounded-2xl text-zinc-50 text-sm text-left active:scale-[0.99] transition pointer-events-auto"
                 >
-                  <div className="mt-0.5 flex-shrink-0">
+                  <div className="mt-0.5 shrink-0">
                     {getIconForVariant(toast.variant ?? 'info')}
                   </div>
                   <div className="flex-1">
@@ -105,7 +105,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                       </div>
                     )}
                     {toast.description && (
-                      <div className="mt-0.5 text-xs text-zinc-400 leading-snug">
+                      <div className="mt-0.5 text-zinc-400 text-xs leading-snug">
                         {toast.description}
                       </div>
                     )}

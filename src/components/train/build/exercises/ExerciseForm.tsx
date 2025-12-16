@@ -370,10 +370,15 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
                   step="0.1"
                   min="0"
                   max="1"
-                  value={formData.workPowerConstants.bodyweightFactor}
+                  value={formData.workPowerConstants.bodyweightFactor || ''}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    handleConstantChange('bodyweightFactor', isNaN(val) ? 0 : val);
+                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                    handleConstantChange('bodyweightFactor', (val === '' || isNaN(val as number)) ? 0 : (val as number));
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      handleConstantChange('bodyweightFactor', 0);
+                    }
                   }}
                   className="px-2 py-1"
                 />
@@ -385,10 +390,15 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
                   step="0.1"
                   min="-1"
                   max="1"
-                  value={formData.workPowerConstants.armLengthFactor}
+                  value={formData.workPowerConstants.armLengthFactor || ''}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    handleConstantChange('armLengthFactor', isNaN(val) ? 0 : val);
+                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                    handleConstantChange('armLengthFactor', (val === '' || isNaN(val as number)) ? 0 : (val as number));
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      handleConstantChange('armLengthFactor', 0);
+                    }
                   }}
                   className="px-2 py-1"
                 />
@@ -400,10 +410,15 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
                   step="0.1"
                   min="-1"
                   max="1"
-                  value={formData.workPowerConstants.legLengthFactor}
+                  value={formData.workPowerConstants.legLengthFactor || ''}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    handleConstantChange('legLengthFactor', isNaN(val) ? 0 : val);
+                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                    handleConstantChange('legLengthFactor', (val === '' || isNaN(val as number)) ? 0 : (val as number));
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      handleConstantChange('legLengthFactor', 0);
+                    }
                   }}
                   className="px-2 py-1"
                 />
@@ -416,13 +431,21 @@ export default function ExerciseForm({ initialData, isEditing = false }: Exercis
                 <FormInput
                   type="number"
                   className="px-2 py-1 w-full"
-                  value={formData.workPowerConstants.defaultDistance.value}
+                  value={formData.workPowerConstants.defaultDistance.value || ''}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value);
+                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
                     handleConstantChange('defaultDistance', {
                       ...formData.workPowerConstants.defaultDistance,
-                      value: isNaN(val) ? 0 : val,
+                      value: (val === '' || isNaN(val as number)) ? 0 : (val as number),
                     });
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      handleConstantChange('defaultDistance', {
+                        ...formData.workPowerConstants.defaultDistance,
+                        value: 0,
+                      });
+                    }
                   }}
                 />
                 <FormSelect

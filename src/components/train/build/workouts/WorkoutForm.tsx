@@ -154,7 +154,7 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
       name,
       description,
       workoutType,
-      estimatedDuration,
+      estimatedDuration: estimatedDuration || 0,
       objectives,
       blocks: blocks.map((b, i) => ({
         ...b,
@@ -162,6 +162,11 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
         exercises: b.exercises.map((e, j) => ({
           ...e,
           order: j + 1,
+          sets: e.sets || 0,
+          measures: {
+            ...e.measures,
+            reps: e.measures.reps || 0,
+          },
         }))
       }))
     };
@@ -225,10 +230,15 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
               <FormLabel>Est. Duration (min)</FormLabel>
               <FormInput 
                 type="number" 
-                value={estimatedDuration} 
+                value={estimatedDuration || ''} 
                 onChange={e => {
-                  const val = parseInt(e.target.value, 10);
-                  setEstimatedDuration(isNaN(val) ? 0 : val);
+                  const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                  setEstimatedDuration(isNaN(val as number) ? 0 : (val as number));
+                }}
+                onBlur={e => {
+                  if (e.target.value === '') {
+                    setEstimatedDuration(0);
+                  }
                 }}
               />
             </FormGroup>
@@ -285,29 +295,44 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
                        <FormLabel className="text-xs">Sets</FormLabel>
                        <FormInput 
                          type="number" 
-                         value={exercise.sets} 
+                         value={exercise.sets || ''} 
                          onChange={e => {
-                           const val = parseInt(e.target.value, 10);
-                           updateExercise(blockIndex, exerciseIndex, { sets: isNaN(val) ? 0 : val });
+                           const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                           updateExercise(blockIndex, exerciseIndex, { 
+                             sets: (val === '' || isNaN(val as number)) ? 0 : (val as number)
+                           });
                          }}
-                         className="px-2 py-1"
+                         onBlur={e => {
+                           if (e.target.value === '') {
+                             updateExercise(blockIndex, exerciseIndex, { sets: 0 });
+                           }
+                         }}
                        />
                     </div>
                     <div className="col-span-3 sm:col-span-2">
                        <FormLabel className="text-xs">Reps</FormLabel>
                        <FormInput 
                          type="number" 
-                         value={exercise.measures.reps || 0} 
+                         value={exercise.measures.reps || ''} 
                          onChange={e => {
-                           const val = parseInt(e.target.value, 10);
+                           const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
                            updateExercise(blockIndex, exerciseIndex, { 
                              measures: { 
                                ...exercise.measures, 
-                               reps: isNaN(val) ? 0 : val,
+                               reps: (val === '' || isNaN(val as number)) ? 0 : (val as number),
                              } 
                            });
                          }}
-                         className="px-2 py-1"
+                         onBlur={e => {
+                           if (e.target.value === '') {
+                             updateExercise(blockIndex, exerciseIndex, { 
+                               measures: { 
+                                 ...exercise.measures, 
+                                 reps: 0,
+                               } 
+                             });
+                           }
+                         }}
                        />
                     </div>
                     <div className="col-span-3 sm:col-span-2">
@@ -316,18 +341,28 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
                          type="number" 
                          value={exercise.measures.externalLoad?.value ?? ''} 
                          onChange={e => {
-                           const val = parseFloat(e.target.value);
+                           const val = e.target.value === '' ? '' : parseFloat(e.target.value);
                            const currentUnit = exercise.measures.externalLoad?.unit || 'kg';
                            updateExercise(blockIndex, exerciseIndex, { 
                              measures: { 
                                ...exercise.measures, 
-                               externalLoad: isNaN(val)
+                               externalLoad: (val === '' || isNaN(val as number))
                                  ? undefined
-                                 : { value: val, unit: currentUnit },
+                                 : { value: val as number, unit: currentUnit },
                              } 
                            });
                          }}
-                         className="px-2 py-1"
+                         onBlur={e => {
+                           if (e.target.value === '') {
+                             const currentUnit = exercise.measures.externalLoad?.unit || 'kg';
+                             updateExercise(blockIndex, exerciseIndex, { 
+                               measures: { 
+                                 ...exercise.measures, 
+                                 externalLoad: undefined,
+                               } 
+                             });
+                           }
+                         }}
                        />
                     </div>
                     <div className="col-span-3 sm:col-span-2">
@@ -353,18 +388,24 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
                     </div>
                     <div className="col-span-3 sm:col-span-2">
                        <FormLabel className="text-xs">Rest (s)</FormLabel>
-                       <FormInput 
-                         type="number" 
-                         step={15}
-                         min={0}
-                         max={300}
-                         value={exercise.restTime || 0} 
+                       <FormSelect
+                         value={exercise.restTime || 0}
                          onChange={e => {
                            const val = parseInt(e.target.value, 10);
                            updateExercise(blockIndex, exerciseIndex, { restTime: (isNaN(val) ? 0 : val) as any });
                          }}
-                         className="px-2 py-1"
-                       />
+                       >
+                         <option value={0}>0</option>
+                         <option value={15}>15</option>
+                         <option value={30}>30</option>
+                         <option value={45}>45</option>
+                         <option value={60}>60</option>
+                         <option value={90}>90</option>
+                         <option value={120}>120</option>
+                         <option value={180}>180</option>
+                         <option value={240}>240</option>
+                         <option value={300}>300</option>
+                       </FormSelect>
                     </div>
                      <div className="flex justify-end col-span-1 pt-4">
                         <button type="button" onClick={() => removeExercise(blockIndex, exerciseIndex)} className="text-muted-foreground hover:text-red-500">

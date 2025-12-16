@@ -33,7 +33,7 @@ export function ExerciseAutocomplete({
         const res = await fetch(`/api/train/exercises/${initialExerciseId}`);
         if (!res.ok || cancelled) return;
         const data = await res.json();
-        if (data.exercise) {
+        if (data.exercise && !cancelled) {
           setSearchTerm(data.exercise.name);
           onChange(data.exercise);
         }
@@ -48,7 +48,8 @@ export function ExerciseAutocomplete({
     return () => {
       cancelled = true;
     };
-  }, [initialExerciseId, onChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialExerciseId]); // Only depend on initialExerciseId, not onChange
 
   // Debounced search
   useEffect(() => {
