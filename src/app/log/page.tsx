@@ -1,11 +1,12 @@
 'use client';
 
-import { Activity, Ribbon, Weight, Camera, BarChart3, PersonStanding } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import type { UserStats } from '@/types/user';
+import { logViews } from './config';
+import Highlights from '@/components/log/Highlights';
 
 type LatestStatsResponse = {
   stats: (UserStats & {
@@ -81,43 +82,7 @@ export default function LogPage() {
               No body stats logged yet. Start by logging your first entry.
             </div>
           ) : (
-            <div className="gap-3 grid grid-cols-2 md:max-w-xl">
-              <div className="bg-card px-4 py-3 border border-border rounded-xl">
-                <div className="flex items-center gap-2 mb-1 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                  <PersonStanding className="w-4 h-4 text-brand-primary" />
-                  Weight
-                </div>
-                <div className="font-semibold text-2xl">
-                  {latestWeight?.value ?? '--'}
-                  {latestWeight?.unit && (
-                    <span className="ml-1 font-normal text-muted-foreground text-sm">
-                      {latestWeight.unit}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 text-muted-foreground text-xs">
-                  As of {(new Date(latestStats.date)).toLocaleDateString()}
-                </div>
-              </div>
-
-              <div className="bg-card px-4 py-3 border border-border rounded-xl">
-                <div className="flex items-center gap-2 mb-1 text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                  <Ribbon className="w-4 h-4 text-brand-primary" />
-                  Body Fat
-                </div>
-                <div className="font-semibold text-2xl">
-                  {latestBodyFat?.value ?? '--'}
-                  {typeof latestBodyFat?.value === 'number' && (
-                    <span className="ml-1 font-normal text-muted-foreground text-sm">
-                      %
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 text-muted-foreground text-xs">
-                  From latest estimate
-                </div>
-              </div>
-            </div>
+            <Highlights latestWeight={latestWeight} latestBodyFat={latestBodyFat} latestStatsDate={latestStats.date ? new Date(latestStats.date).toLocaleDateString() : ''} />
           )}
         </section>
 
@@ -127,56 +92,25 @@ export default function LogPage() {
             Logs
           </h2>
           <div className="gap-3 grid grid-cols-1 md:max-w-xl">
-
-            <Link
-              href="/log/stats"
-              className="flex justify-between items-center bg-card hover:bg-card/80 px-4 py-3 border border-border hover:border-brand-primary rounded-xl transition"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex justify-center items-center bg-brand-primary/10 rounded-full w-10 h-10">
-                  <Activity className="w-5 h-5 text-brand-primary" />
-                </div>
-                <div>
-                  <div className="font-semibold text-sm">Body stats</div>
-                  <div className="text-muted-foreground text-xs">
-                    Weight, body fat, and measurements.
+            {logViews.map((view) => (
+              <Link
+                key={view.name}
+                href={view.href}
+                className={view.active ? `flex justify-between items-center bg-card hover:bg-card/80 px-4 py-3 border border-border hover:border-brand-primary rounded-xl transition` 
+                  : `flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border-accent border-dashed rounded-xl`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={view.active ? `flex justify-center items-center bg-brand-primary/10 rounded-full w-10 h-10` : 
+                    `flex justify-center items-center bg-zinc-800/60 rounded-full w-10 h-10`}>
+                    <view.icon className={view.active ? `w-5 h-5 text-brand-primary` : `w-5 h-5 text-muted-foreground`} />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">{view.name}</div>
+                    <div className="text-muted-foreground text-xs">{view.description}</div>
                   </div>
                 </div>
-              </div>
-            </Link>
-
-            <div className="flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border border-dashed rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="flex justify-center items-center bg-zinc-800/60 rounded-full w-10 h-10">
-                  <Camera className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <div className="font-semibold text-muted-foreground text-sm">
-                    Progress photos
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    Coming soon.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border border-dashed rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="flex justify-center items-center bg-zinc-800/60 rounded-full w-10 h-10">
-                  <BarChart3 className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <div className="font-semibold text-muted-foreground text-sm">
-                    Performance Tracking
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    Coming soon.
-                  </div>
-                </div>
-              </div>
-            </div>
-
+              </Link>
+            ))}
           </div>
         </section>
       </div>

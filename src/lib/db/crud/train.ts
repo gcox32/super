@@ -809,66 +809,128 @@ export async function getUserWorkoutInstances(
   userId: string,
   options?: { workoutId?: string; dateFrom?: Date; dateTo?: Date }
 ): Promise<WorkoutInstance[]> {
-  let whereClause = eq(workoutInstance.userId, userId);
-  
-  if (options?.workoutId) {
-    whereClause = and(
-      eq(workoutInstance.userId, userId),
-      eq(workoutInstance.workoutId, options.workoutId)
-    ) as any;
-  }
+  const results = await db.query.workoutInstance.findMany({
+    where: (wi, { and, eq, gte, lte }) => {
+      const conditions = [eq(wi.userId, userId)];
+      if (options?.workoutId) conditions.push(eq(wi.workoutId, options.workoutId));
+      // Convert dates to strings for comparison if needed, or rely on driver. 
+      // Assuming 'date' column stores timestamp.
+      if (options?.dateFrom) conditions.push(gte(wi.date, options.dateFrom));
+      if (options?.dateTo) conditions.push(lte(wi.date, options.dateTo));
+      return and(...conditions);
+    },
+    orderBy: (wi, { desc }) => [desc(wi.date)],
+    with: {
+      workout: true,
+    },
+  });
 
-  const results = await db
-    .select()
-    .from(workoutInstance)
-    .where(whereClause)
-    .orderBy(desc(workoutInstance.date));
-
-  // Convert date strings to Date objects
-  const converted = results.map((r) => ({
-    ...r,
+  return results.map((r) => ({
+    ...nullToUndefined(r),
     date: new Date(r.date),
+    workout: r.workout ? { ...nullToUndefined(r.workout), createdAt: new Date(r.workout.createdAt), updatedAt: new Date(r.workout.updatedAt) } : undefined,
   })) as WorkoutInstance[];
-
-  // Filter by date range if provided
-  if (options?.dateFrom || options?.dateTo) {
-    return converted.filter((instance) => {
-      const instanceDate = instance.date;
-      if (options.dateFrom && instanceDate < options.dateFrom) return false;
-      if (options.dateTo && instanceDate > options.dateTo) return false;
-      return true;
-    });
-  }
-
-  return converted;
 }
 
 export async function getWorkoutInstanceById(
   instanceId: string,
   userId: string
 ): Promise<WorkoutInstance | null> {
-  const [found] = await db
-    .select()
-    .from(workoutInstance)
-    .where(and(eq(workoutInstance.id, instanceId), eq(workoutInstance.userId, userId)))
-    .limit(1);
+  // 1. Fetch the main instance and block instances
+  const instance = await db.query.workoutInstance.findFirst({
+    where: (wi, { and, eq }) => and(eq(wi.id, instanceId), eq(wi.userId, userId)),
+    with: {
+      workout: true,
+      blockInstances: {
+        with: {
+          workoutBlock: true,
+        },
+      },
+    },
+  });
 
-  if (!found) return null;
+  if (!instance) return null;
+
+  // 2. Fetch exercise instances for all blocks
+  const blockInstanceIds = instance.blockInstances.map((b) => b.id);
+  
+  let allExerciseInstances: any[] = [];
+  
+  if (blockInstanceIds.length > 0) {
+    allExerciseInstances = await db.query.workoutBlockExerciseInstance.findMany({
+      where: (wbei, { inArray }) => inArray(wbei.workoutBlockInstanceId, blockInstanceIds),
+      with: {
+        workoutBlockExercise: {
+          with: {
+            exercise: true
+          }
+        }
+      }
+    });
+  }
+
+  // 3. Stitch them together
+  const blockInstancesMap = new Map();
+  instance.blockInstances.forEach((bi) => {
+    blockInstancesMap.set(bi.id, { 
+      ...bi, 
+      exerciseInstances: [] 
+    });
+  });
+
+  allExerciseInstances.forEach((ei) => {
+    const block = blockInstancesMap.get(ei.workoutBlockInstanceId);
+    if (block) {
+      block.exerciseInstances.push(ei);
+    }
+  });
+
+  // 4. Transform and sort
+  const blockInstances = Array.from(blockInstancesMap.values()).map((bi: any) => ({
+    ...nullToUndefined(bi),
+    date: new Date(bi.date),
+    workoutBlock: bi.workoutBlock ? nullToUndefined(bi.workoutBlock) : undefined,
+    exerciseInstances: bi.exerciseInstances.map((ei: any) => ({
+      ...nullToUndefined(ei),
+      date: new Date(ei.date),
+      workoutBlockExercise: ei.workoutBlockExercise ? {
+        ...nullToUndefined(ei.workoutBlockExercise),
+        exercise: ei.workoutBlockExercise.exercise ? nullToUndefined(ei.workoutBlockExercise.exercise) : undefined
+      } : undefined
+    })).sort((a: any, b: any) => {
+      // Sort by order from definition if available
+      const orderA = a.workoutBlockExercise?.order ?? 0;
+      const orderB = b.workoutBlockExercise?.order ?? 0;
+      return orderA - orderB;
+    })
+  })).sort((a: any, b: any) => {
+    // Sort by order from definition if available
+    const orderA = a.workoutBlock?.order ?? 0;
+    const orderB = b.workoutBlock?.order ?? 0;
+    return orderA - orderB;
+  });
 
   return {
-    ...found,
-    date: new Date(found.date),
+    ...nullToUndefined(instance),
+    date: new Date(instance.date),
+    workout: instance.workout ? { ...nullToUndefined(instance.workout), createdAt: new Date(instance.workout.createdAt), updatedAt: new Date(instance.workout.updatedAt) } : undefined,
+    blockInstances
   } as WorkoutInstance;
 }
 
 export async function updateWorkoutInstance(
   instanceId: string,
   userId: string,
-  updates: Partial<Omit<WorkoutInstance, 'id' | 'userId' | 'workoutId' | 'date'>>
+  updates: Partial<Omit<WorkoutInstance, 'id' | 'userId' | 'workoutId'>>
 ): Promise<WorkoutInstance | null> {
+  const dbUpdates: any = { ...updates };
+  if (dbUpdates.date && typeof dbUpdates.date === 'string') {
+    dbUpdates.date = new Date(dbUpdates.date);
+  }
+
   const [updated] = await db
     .update(workoutInstance)
-    .set(updates)
+    .set(dbUpdates)
     .where(and(eq(workoutInstance.id, instanceId), eq(workoutInstance.userId, userId)))
     .returning();
 
@@ -978,11 +1040,16 @@ export async function getWorkoutBlockInstances(
 export async function updateWorkoutBlockInstance(
   instanceId: string,
   userId: string,
-  updates: Partial<Omit<WorkoutBlockInstance, 'id' | 'userId' | 'workoutInstanceId' | 'workoutBlockId' | 'date'>>
+  updates: Partial<Omit<WorkoutBlockInstance, 'id' | 'userId' | 'workoutInstanceId' | 'workoutBlockId'>>
 ): Promise<WorkoutBlockInstance | null> {
+  const dbUpdates: any = { ...updates };
+  if (dbUpdates.date && typeof dbUpdates.date === 'string') {
+    dbUpdates.date = new Date(dbUpdates.date);
+  }
+
   const [updated] = await db
     .update(workoutBlockInstance)
-    .set(updates)
+    .set(dbUpdates)
     .where(and(eq(workoutBlockInstance.id, instanceId), eq(workoutBlockInstance.userId, userId)))
     .returning();
 
@@ -1025,7 +1092,6 @@ export async function createWorkoutBlockExerciseInstance(
       date: instanceData.date,
       complete: instanceData.complete ?? false,
       personalBest: instanceData.personalBest,
-      duration: instanceData.duration,
       measures: instanceData.measures,
       projected1RM: instanceData.projected1RM,
       rpe: instanceData.rpe,
@@ -1062,13 +1128,18 @@ export async function updateWorkoutBlockExerciseInstance(
   updates: Partial<
     Omit<
       WorkoutBlockExerciseInstance,
-      'id' | 'userId' | 'workoutBlockInstanceId' | 'workoutBlockExerciseId' | 'date'
+      'id' | 'userId' | 'workoutBlockInstanceId' | 'workoutBlockExerciseId'
     >
   >
 ): Promise<WorkoutBlockExerciseInstance | null> {
+  const dbUpdates: any = { ...updates };
+  if (dbUpdates.date && typeof dbUpdates.date === 'string') {
+    dbUpdates.date = new Date(dbUpdates.date);
+  }
+
   const [updated] = await db
     .update(workoutBlockExerciseInstance)
-    .set(updates)
+    .set(dbUpdates)
     .where(
       and(
         eq(workoutBlockExerciseInstance.id, instanceId),

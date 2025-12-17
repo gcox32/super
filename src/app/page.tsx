@@ -79,11 +79,11 @@ export default function Today() {
           </div>
 
           <div className="flex gap-2 mt-4 md:max-w-2xl">
-            <Button variant="primary">
-              Plan Today's Meals
+            <Button variant="primary" className="w-full">
+              Plan Meals
             </Button>
-            <Button variant="outline">
-              Log Meal
+            <Button variant="outline" className="w-full">
+              Log Meals
             </Button>
           </div>
         </section>

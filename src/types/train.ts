@@ -43,7 +43,7 @@ export interface WorkPowerConstants {
     bodyweightFactor: number; // 0 - 1.0 default is 1
 }
 
-interface ExerciseMeasures {
+export interface ExerciseMeasures {
     externalLoad?:      WeightMeasurement;
     includeBodyweight?: boolean;
     reps?:              number;
@@ -148,6 +148,7 @@ export interface WorkoutInstance {
     id: string;
     userId:        User['id'];
     workoutId:     Workout['id'];
+    workout?:      Workout; // hydrated on frontend
     date:          Date;
     complete:      boolean;
     duration?:     TimeMeasurement;
@@ -155,6 +156,7 @@ export interface WorkoutInstance {
     work?:         WorkMeasurement; // weight * distance
     averagePower?: PowerMeasurement; // work / time
     notes?:        string;
+    blockInstances?: WorkoutBlockInstance[]; // hydrated on frontend
 }
 
 export interface WorkoutBlockInstance {
@@ -162,11 +164,13 @@ export interface WorkoutBlockInstance {
     userId:            User['id'];
     workoutInstanceId: WorkoutInstance['id'];
     workoutBlockId:    WorkoutBlock['id'];
+    workoutBlock?:     WorkoutBlock; // hydrated on frontend
     date:              Date;
     complete:          boolean;
     duration?:         TimeMeasurement;
     volume?:           WeightMeasurement; // sets * reps * weight
     notes?:            string;
+    exerciseInstances?: WorkoutBlockExerciseInstance[]; // hydrated on frontend
 }
 
 export interface WorkoutBlockExerciseInstance {
@@ -174,10 +178,10 @@ export interface WorkoutBlockExerciseInstance {
     userId:                 User['id'];
     workoutBlockInstanceId: WorkoutBlockInstance['id'];
     workoutBlockExerciseId: WorkoutBlockExercise['id'];
+    workoutBlockExercise?:  WorkoutBlockExercise; // hydrated on frontend
     date:                   Date;
     complete:               boolean;
     personalBest?:          boolean;
-    duration?:              TimeMeasurement;
     measures:               ExerciseMeasures;
     projected1RM?:          WeightMeasurement;
     rpe?:                   RPE;

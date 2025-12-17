@@ -122,7 +122,7 @@ export const workoutInstance = trainSchema.table('workout_instance', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => user.id),
   workoutId: uuid('workout_id').notNull().references(() => workout.id),
-  date: date('date').notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   complete: boolean('complete').notNull().default(false),
   duration: jsonb('duration'),
   volume: jsonb('volume'),
@@ -138,7 +138,7 @@ export const workoutBlockInstance = trainSchema.table('workout_block_instance', 
     .notNull()
     .references(() => workoutInstance.id, { onDelete: 'cascade' }),
   workoutBlockId: uuid('workout_block_id').notNull().references(() => workoutBlock.id),
-  date: date('date').notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   complete: boolean('complete').notNull().default(false),
   duration: jsonb('duration'),
   volume: jsonb('volume'),
@@ -154,10 +154,9 @@ export const workoutBlockExerciseInstance = trainSchema.table('workout_block_exe
   workoutBlockExerciseId: uuid('workout_block_exercise_id')
     .notNull()
     .references(() => workoutBlockExercise.id),
-  date: date('date').notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   complete: boolean('complete').notNull().default(false),
   personalBest: boolean('personal_best'),
-  duration: jsonb('duration'),
   measures: jsonb('measures').notNull(),
   projected1RM: jsonb('projected_1rm'),
   rpe: integer('rpe'),
@@ -173,7 +172,7 @@ export const performanceLog = trainSchema.table('performance_log', {
 export const performance = trainSchema.table('performance', {
   id: uuid('id').defaultRandom().primaryKey(),
   performanceLogId: uuid('performance_log_id').notNull().references(() => performanceLog.id),
-  date: date('date').notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   duration: jsonb('duration').notNull(),
   volume: jsonb('volume').notNull(),
   work: jsonb('work').notNull(),
@@ -189,7 +188,7 @@ export const projected1RMLog = trainSchema.table('projected_1rm_log', {
 export const projected1RM = trainSchema.table('projected_1rm', {
   id: uuid('id').defaultRandom().primaryKey(),
   projected1RMLogId: uuid('projected_1rm_log_id').notNull().references(() => projected1RMLog.id),
-  date: date('date').notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   exerciseId: uuid('exercise_id').notNull().references(() => exercise.id),
   projected1RM: jsonb('projected_1rm').notNull(),
   notes: text('notes'),
