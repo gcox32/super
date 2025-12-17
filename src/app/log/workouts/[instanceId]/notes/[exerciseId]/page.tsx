@@ -70,13 +70,8 @@ export default function ExerciseNotesPage() {
     if (!instance) return;
     setSaving(true);
     
-    try {
-        // We need to save each set that has changes. 
-        // For simplicity, we'll save all of them, or we could diff.
-        // Given the number of sets is small (usually < 10), parallel requests are fine.
-        
+    try {        
         await Promise.all(sets.map(async (set) => {
-            // In a real app we'd check if dirty, but here we just push state
             const res = await fetch(`/api/train/workout-block-exercise-instances/${set.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -106,7 +101,7 @@ export default function ExerciseNotesPage() {
       <div className="mb-6">
         <BackToLink href={`/log/workouts/${instanceId}`} pageName="Workout" />
         <div className="flex justify-between items-start mt-4">
-            <div>
+            <div className="flex flex-col gap-2 w-full">
                 <h1 className="text-3xl font-bold text-gray-100 my-2">{targetGroup.definition.exercise.name}</h1>
                 <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto my-2">
                     {saving ? <Loader2 className="animate-spin" /> : 'Update'}
@@ -125,37 +120,30 @@ export default function ExerciseNotesPage() {
 
       <div className="space-y-6">
          {sets.map((set, index) => (
-            <div key={set.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-zinc-900/30 rounded-lg border border-zinc-800/50">
-                <div className="md:col-span-1 flex items-center justify-center md:justify-start">
-                     <span className="font-mono text-sm text-muted-foreground bg-zinc-800 w-8 h-8 flex items-center justify-center rounded-full">
-                        {index + 1}
-                     </span>
+            <div key={set.id} className="p-4 bg-zinc-900/30 rounded-lg border border-zinc-800/50 space-y-3">
+                <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-300">Set {index + 1}</span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">RPE</span>
+                        <NumberInput 
+                            className="w-16 h-8 text-sm text-center bg-zinc-800/50 border-zinc-700"
+                            min={1}
+                            max={10}
+                            value={set.rpe}
+                            onValueChange={(val) => {
+                                handleUpdateLocal(set.id, { rpe: val as any });
+                            }}
+                            placeholder="-"
+                        />
+                    </div>
                 </div>
                 
-                <div className="md:col-span-2">
-                    <FormLabel className="mb-1 text-xs">RPE</FormLabel>
-                    <NumberInput 
-                        min="1"
-                        max="10"
-                        value={set.rpe}
-                        onValueChange={(val) => {
-                             // Type cast val to RPE or undefined
-                             handleUpdateLocal(set.id, { rpe: val as any });
-                        }}
-                        placeholder="-"
-                        className="text-center"
-                    />
-                </div>
-
-                <div className="md:col-span-9">
-                    <FormLabel className="mb-1 text-xs">Notes</FormLabel>
-                    <FormTextarea 
-                        value={set.notes ?? ''}
-                        onChange={(e) => handleUpdateLocal(set.id, { notes: e.target.value })}
-                        placeholder="How did this set feel? Technique cues, pain points, etc."
-                        className="min-h-[60px] text-sm"
-                    />
-                </div>
+                <FormTextarea 
+                    value={set.notes ?? ''}
+                    onChange={(e) => handleUpdateLocal(set.id, { notes: e.target.value })}
+                    placeholder="How did this set feel? Technique cues, pain points, etc."
+                    className="min-h-[80px] text-sm bg-zinc-800/20 border-zinc-800 focus:border-brand-primary/50"
+                />
             </div>
          ))}
       </div>

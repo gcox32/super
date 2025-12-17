@@ -13,8 +13,9 @@ import type {
   WorkoutBlockExerciseInstance,
   SessionStep,
 } from '@/types/train';
-import type { TimeMeasurement } from '@/types/measures';
+import { formatClock } from '@/lib/train/helpers';
 
+import { RestTimerDisplay } from '@/components/train/session/RestTimerDisplay';
 import { SessionHeader } from '@/components/train/session/SessionHeader';
 import { SessionProgressBar } from '@/components/train/session/SessionProgressBar';
 import { SessionExerciseDisplay } from '@/components/train/session/SessionExerciseDisplay';
@@ -25,8 +26,6 @@ import { PauseOverlay } from '@/components/train/session/overlays/PauseOverlay';
 import { SettingsOverlay } from '@/components/train/session/overlays/SettingsOverlay';
 import { WorkoutSummaryOverlay } from '@/components/train/session/overlays/WorkoutSummaryOverlay';
 
-// --- Types ---
-// (SessionStep is now in src/types/train.ts)
 
 type WorkoutInstanceResponse = { workoutInstance: WorkoutInstance };
 type BlockInstancesResponse = { instances: WorkoutBlockInstance[] };
@@ -35,24 +34,6 @@ type BlockExercisesResponse = { exercises: WorkoutBlockExercise[] };
 type BlockExerciseInstancesResponse = {
   instances: WorkoutBlockExerciseInstance[];
 };
-
-// --- Helpers ---
-
-function timeToSeconds(duration?: TimeMeasurement | null): number {
-  if (!duration) return 0;
-  const { value, unit } = duration;
-  if (unit === 's') return value;
-  if (unit === 'min') return value * 60;
-  if (unit === 'hr') return value * 3600;
-  return 0;
-}
-
-function formatClock(seconds: number) {
-  const s = Math.max(0, Math.floor(seconds));
-  const mins = Math.floor(s / 60);
-  const secs = s % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -78,8 +59,6 @@ export default function ActiveSessionPage({
   const [error, setError] = useState<string | null>(null);
   const [workoutInstance, setWorkoutInstance] = useState<WorkoutInstance | null>(null);
   const [blocks, setBlocks] = useState<WorkoutBlock[]>([]);
-  // We keep these for lookup, though flattened steps are main driver
-  const [blockExercises, setBlockExercises] = useState<Record<string, WorkoutBlockExercise[]>>({});
   const [exerciseInstances, setExerciseInstances] = useState<Record<string, WorkoutBlockExerciseInstance[]>>({});
 
   // Execution State
@@ -98,7 +77,6 @@ export default function ActiveSessionPage({
   const [reps, setReps] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('lbs');
-  const [inputDirty, setInputDirty] = useState(false);
 
   // Swipe State
   const touchStartY = useRef<number | null>(null);
@@ -184,7 +162,6 @@ export default function ActiveSessionPage({
         }
 
         if (cancelled) return;
-        setBlockExercises(exercisesMap);
         setExerciseInstances(instancesMap);
         
         // 4. Build Steps (Flattened Workout)
@@ -308,7 +285,6 @@ export default function ActiveSessionPage({
       }
     }
     
-    setInputDirty(false);
   }, [currentStepIndex, exerciseInstances, currentStep]);
 
   // Actions
@@ -555,11 +531,11 @@ export default function ActiveSessionPage({
             <SessionInputControls 
               step={currentStep}
               reps={reps}
-              onRepsChange={(val) => { setReps(val); setInputDirty(true); }}
+              onRepsChange={(val) => { setReps(val); }}
               weight={weight}
-              onWeightChange={(val) => { setWeight(val); setInputDirty(true); }}
+              onWeightChange={(val) => { setWeight(val); }}
               weightUnit={weightUnit}
-              onWeightUnitChange={(unit) => { setWeightUnit(unit); setInputDirty(true); }}
+              onWeightUnitChange={(unit) => { setWeightUnit(unit); }}
             />
 
             <SessionFooter 
@@ -572,31 +548,11 @@ export default function ActiveSessionPage({
         )}
 
         {isResting && (
-          <div className="flex flex-col justify-center items-center gap-4 mt-6 mb-10">
-            <div className="font-medium text-zinc-400 text-xs uppercase tracking-[0.2em]">
-              Rest
-            </div>
-            <div className="font-black tabular-nums text-6xl tracking-tight">
-              {formatClock(restSecondsRemaining)}
-            </div>
-            {currentStep.exercise.restTime && (
-              <div className="text-zinc-500 text-xs">
-                Planned rest: {currentStep.exercise.restTime}s
-              </div>
-            )}
-            <div className="flex gap-3 mt-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  // convert to 10s chunks or pause by setting remaining to 0 and letting effect advance
-                  endRestAndAdvance();
-                }}
-              >
-                Skip Rest
-              </Button>
-            </div>
-          </div>
+          <RestTimerDisplay 
+            restSecondsRemaining={restSecondsRemaining} 
+            currentStep={currentStep} 
+            endRestAndAdvance={endRestAndAdvance} 
+          />
         )}
 
       </div>

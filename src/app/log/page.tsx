@@ -93,23 +93,37 @@ export default function LogPage() {
           </h2>
           <div className="gap-3 grid grid-cols-1 md:max-w-xl">
             {logViews.map((view) => (
-              <Link
-                key={view.name}
-                href={view.href}
-                className={view.active ? `flex justify-between items-center bg-card hover:bg-card/80 px-4 py-3 border border-border hover:border-brand-primary rounded-xl transition` 
-                  : `flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border-accent border-dashed rounded-xl`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={view.active ? `flex justify-center items-center bg-brand-primary/10 rounded-full w-10 h-10` : 
-                    `flex justify-center items-center bg-zinc-800/60 rounded-full w-10 h-10`}>
-                    <view.icon className={view.active ? `w-5 h-5 text-brand-primary` : `w-5 h-5 text-muted-foreground`} />
+              <div key={`${view.name}-log-section`}>
+                {view.active ?
+                  <Link
+                    key={view.name}
+                    href={view.href}
+                    className='flex justify-between items-center bg-card hover:bg-card/80 px-4 py-3 border border-border hover:border-brand-primary rounded-xl transition'
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className='flex justify-center items-center bg-brand-primary/10 rounded-full w-10 h-10'>
+                        <view.icon className='w-5 h-5 text-brand-primary' />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm">{view.name}</div>
+                        <div className="text-muted-foreground text-xs">{view.description}</div>
+                      </div>
+                    </div>
+                  </Link>
+                  :
+                  <div key={view.name} className="flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border-accent border-dashed rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="flex justify-center items-center bg-zinc-800/60 rounded-full w-10 h-10">
+                        <view.icon className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm">{view.name}</div>
+                        <div className="text-muted-foreground text-xs">{view.description}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-sm">{view.name}</div>
-                    <div className="text-muted-foreground text-xs">{view.description}</div>
-                  </div>
-                </div>
-              </Link>
+                }
+              </div>
             ))}
           </div>
         </section>

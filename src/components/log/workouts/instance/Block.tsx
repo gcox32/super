@@ -2,13 +2,16 @@
 
 import type { ExerciseMeasures, WorkoutBlockExercise, WorkoutBlockExerciseInstance, WorkoutBlockInstance } from "@/types/train";
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { FileText, Plus, X } from "lucide-react";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { useParams } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 interface WorkoutInstanceBlockProps {
     blockInstance: WorkoutBlockInstance;
     handleUpdateSetLocal: (setId: string, updates: Partial<WorkoutBlockExerciseInstance>) => void;
+    handleAddSet: (blockInstanceId: string, exerciseId: string) => Promise<void>;
+    handleDeleteSet: (setId: string, blockInstanceId: string) => Promise<void>;
 }
 
 const getGroupedExercises = (blockInstance: any) => {
@@ -32,7 +35,7 @@ const getGroupedExercises = (blockInstance: any) => {
     return Object.values(groups).sort((a, b) => a.definition.order - b.definition.order);
 };
 
-export default function WorkoutInstanceBlock({ blockInstance, handleUpdateSetLocal }: WorkoutInstanceBlockProps) {
+export default function WorkoutInstanceBlock({ blockInstance, handleUpdateSetLocal, handleAddSet, handleDeleteSet }: WorkoutInstanceBlockProps) {
     const { instanceId } = useParams();
     
     const updateMeasure = (setId: string, currentMeasures: ExerciseMeasures, key: keyof ExerciseMeasures, value: any) => {
@@ -84,11 +87,12 @@ export default function WorkoutInstanceBlock({ blockInstance, handleUpdateSetLoc
                                             <th className="px-3 py-2 rounded-l-md w-12 text-center">Set</th>
                                             <th className="px-3 py-2 w-24">Reps</th>
                                             <th className="px-3 py-2 w-32">Load</th>
+                                            <th className="px-3 py-2 w-10"></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-zinc-800/50">
                                         {group.sets.map((set, index) => (
-                                            <tr key={set.id} className="hover:bg-zinc-800/30">
+                                            <tr key={set.id} className="hover:bg-zinc-800/30 group/row">
                                                 <td className="px-3 py-2 text-center font-medium text-muted-foreground">
                                                     {index + 1}
                                                 </td>
@@ -113,10 +117,31 @@ export default function WorkoutInstanceBlock({ blockInstance, handleUpdateSetLoc
                                                         </span>
                                                     </div>
                                                 </td>
+                                                <td className="px-3 py-2 pr-0">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteSet(set.id, blockInstance.id)}
+                                                        className="text-xs h-7 text-muted-foreground hover:text-brand-primary px-2"
+                                                        title="Delete Set"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </Button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
+                                <div className="mt-2 px-3">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleAddSet(blockInstance.id, group.definition.id)}
+                                        className="text-xs h-7 text-muted-foreground hover:text-brand-primary px-2"
+                                    >
+                                        <Plus className="w-3 h-3 mr-1" /> Add Set
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     ))}

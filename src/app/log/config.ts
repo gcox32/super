@@ -1,4 +1,4 @@
-import { Activity, Camera, BarChart3, Dumbbell } from 'lucide-react';
+import { Activity, Camera, Dumbbell, Timer } from 'lucide-react';
 
 export const logViews = [
     {
@@ -25,7 +25,7 @@ export const logViews = [
     {
         name: 'Performance',
         href: '/log/performance',
-        icon: BarChart3,
+        icon: Timer,
         description: 'Coming soon.',
         active: false,
     },

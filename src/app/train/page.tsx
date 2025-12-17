@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
-import { Play, Calendar, Loader2, Trash, Eye, Hammer } from 'lucide-react';
+import { Play, Calendar, Loader2, Trash } from 'lucide-react';
 import type {
   ProtocolInstance,
   Workout,
@@ -18,7 +18,6 @@ type ApiListResponse<T> = { [key: string]: T[] };
 async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, {
     ...init,
-    // Always use fresh data for training
     cache: 'no-store',
   });
 
@@ -171,7 +170,6 @@ export default function TrainPage() {
     }
   }
 
-
   async function handleDeleteWorkoutInstance(workoutInstanceId: string) {
     try {
       await fetchJson(`/api/train/workout-instances/${workoutInstanceId}`, {
@@ -182,13 +180,6 @@ export default function TrainPage() {
       console.error('Failed to delete workout instance', err);
     }
   }
-
-  // This week stats from recent instances
-  const sessionsThisWeek = recentWorkoutInstances.length;
-  const totalMinutesThisWeek = recentWorkoutInstances.reduce(
-    (sum, instance) => sum + timeToMinutes(instance.duration ?? null),
-    0
-  );
 
   return (
     <div className="bg-background pb-20 min-h-screen">
@@ -365,7 +356,7 @@ export default function TrainPage() {
                         {instance.complete ? 'Completed' : 'In progress'}
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-between">
                       <Link href={`/train/session/${instance.id}`}>
                         <Button variant="outline" size="sm">
                           <Play className="mr-1 w-4 h-4" />
@@ -384,9 +375,11 @@ export default function TrainPage() {
           )}
         </section>
         <section className="px-4 md:px-6 py-6 border-border border-t">
-        <button onClick={() => router.push('/train/build')} className="flex justify-center items-center gap-2 bg-brand-primary m-auto px-4 py-2 rounded-full w-[220px] h-[48px] font-bold text-white text-sm uppercase cursor-pointer">
-          Build
-        </button>
+          <Link href="/train/build">
+            <Button variant="primary" size="lg" className="w-full">
+              Build
+            </Button>
+          </Link>
         </section>
       </div>
     </div>

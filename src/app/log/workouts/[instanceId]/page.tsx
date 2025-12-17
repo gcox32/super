@@ -51,6 +51,84 @@ export default function WorkoutInstanceDetailPage() {
         });
     };
 
+    const handleAddSet = async (blockInstanceId: string, exerciseId: string) => {
+        if (!instance) return;
+        
+        // Find existing sets to copy measures from last set
+        const block = instance.blockInstances?.find(b => b.id === blockInstanceId);
+        const existingSets = block?.exerciseInstances?.filter(e => e.workoutBlockExerciseId === exerciseId) || [];
+        const lastSet = existingSets.length > 0 ? existingSets[existingSets.length - 1] : null;
+        
+        const newSetData = {
+            workoutBlockInstanceId: blockInstanceId,
+            workoutBlockExerciseId: exerciseId,
+            date: instance.date, // Use workout date
+            complete: false,
+            measures: lastSet ? { ...lastSet.measures } : {}, // Copy measures or empty
+            notes: '',
+            rpe: undefined
+        };
+
+        try {
+            const res = await fetch('/api/train/workout-block-exercise-instances', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSetData)
+            });
+
+            if (!res.ok) throw new Error('Failed to create set');
+            const { instance: newInstance } = await res.json();
+
+            // Update state
+            setInstance(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    blockInstances: prev.blockInstances?.map(block => {
+                        if (block.id !== blockInstanceId) return block;
+                        return {
+                            ...block,
+                            exerciseInstances: [...(block.exerciseInstances || []), newInstance]
+                        };
+                    })
+                };
+            });
+            showToast({ title: 'Set added', variant: 'success' });
+        } catch (err) {
+            console.error(err);
+            showToast({ title: 'Failed to add set', variant: 'error' });
+        }
+    };
+
+    const handleDeleteSet = async (setId: string, blockInstanceId: string) => {
+        try {
+            const res = await fetch(`/api/train/workout-block-exercise-instances/${setId}`, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) throw new Error('Failed to delete set');
+
+            // Update state
+            setInstance(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    blockInstances: prev.blockInstances?.map(block => {
+                        if (block.id !== blockInstanceId) return block;
+                        return {
+                            ...block,
+                            exerciseInstances: block.exerciseInstances?.filter(ex => ex.id !== setId)
+                        };
+                    })
+                };
+            });
+            showToast({ title: 'Set deleted', variant: 'success' });
+        } catch (err) {
+            console.error(err);
+            showToast({ title: 'Failed to delete set', variant: 'error' });
+        }
+    };
+
     const handleSave = async () => {
         if (!instance) return;
         setSaving(true);
@@ -124,6 +202,8 @@ export default function WorkoutInstanceDetailPage() {
                         key={blockInstance.id} 
                         blockInstance={blockInstance} 
                         handleUpdateSetLocal={handleUpdateSetLocal} 
+                        handleAddSet={handleAddSet}
+                        handleDeleteSet={handleDeleteSet}
                     />
                 ))}
             </div>
