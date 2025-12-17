@@ -168,18 +168,40 @@ export default function ActiveSessionPage({
         const builtSteps: SessionStep[] = [];
         (blocksRes.blocks || []).forEach(block => {
           const exercises = exercisesMap[block.id] || [];
-          exercises.forEach(ex => {
-            const setCheck = ex.sets || 1;
-            for (let i = 0; i < setCheck; i++) {
-              builtSteps.push({
-                uniqueId: `${block.id}-${ex.id}-${i}`,
-                block,
-                exercise: ex,
-                setIndex: i,
-                totalSets: setCheck,
+          
+          if (block.circuit) {
+            // Circuit mode: cycle through exercises (set 1 of all exercises, then set 2 of all exercises, etc.)
+            const maxSets = Math.max(...exercises.map(ex => ex.sets || 1), 1);
+            for (let setIndex = 0; setIndex < maxSets; setIndex++) {
+              exercises.forEach(ex => {
+                const totalSets = ex.sets || 1;
+                // Only add step if this exercise has a set at this index
+                if (setIndex < totalSets) {
+                  builtSteps.push({
+                    uniqueId: `${block.id}-${ex.id}-${setIndex}`,
+                    block,
+                    exercise: ex,
+                    setIndex,
+                    totalSets,
+                  });
+                }
               });
             }
-          });
+          } else {
+            // Straight sets mode: all sets of exercise 1, then all sets of exercise 2, etc.
+            exercises.forEach(ex => {
+              const setCheck = ex.sets || 1;
+              for (let i = 0; i < setCheck; i++) {
+                builtSteps.push({
+                  uniqueId: `${block.id}-${ex.id}-${i}`,
+                  block,
+                  exercise: ex,
+                  setIndex: i,
+                  totalSets: setCheck,
+                });
+              }
+            });
+          }
         });
         setSteps(builtSteps);
 
@@ -248,7 +270,7 @@ export default function ActiveSessionPage({
     if (!isResting || isPaused) return;
     if (!timerSoundsEnabled) return;
     if (!countdownAudioRef.current) return;
-    if (restSecondsRemaining <= 2 || restSecondsRemaining > 3) return;
+    if (restSecondsRemaining !== 3) return;
 
     try {
       const audio = countdownAudioRef.current;
