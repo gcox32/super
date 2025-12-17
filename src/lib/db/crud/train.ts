@@ -787,12 +787,17 @@ export async function createWorkoutInstance(
   userId: string,
   instanceData: Omit<WorkoutInstance, 'id' | 'userId'>
 ): Promise<WorkoutInstance> {
+  // Convert date string to Date object if needed (from JSON parsing)
+  const dateValue = typeof instanceData.date === 'string' 
+    ? new Date(instanceData.date) 
+    : instanceData.date;
+
   const [newInstance] = await db
     .insert(workoutInstance)
     .values({
       userId,
       workoutId: instanceData.workoutId,
-      date: instanceData.date,
+      date: dateValue,
       complete: instanceData.complete ?? false,
       duration: instanceData.duration,
       volume: instanceData.volume,
@@ -1117,13 +1122,18 @@ export async function createWorkoutBlockInstance(
   userId: string,
   instanceData: Omit<WorkoutBlockInstance, 'id' | 'userId'>
 ): Promise<WorkoutBlockInstance> {
+  // Convert date string to Date object if needed (from JSON parsing)
+  const dateValue = typeof instanceData.date === 'string' 
+    ? new Date(instanceData.date) 
+    : instanceData.date;
+
   const [newInstance] = await db
     .insert(workoutBlockInstance)
     .values({
       userId,
       workoutInstanceId: instanceData.workoutInstanceId,
       workoutBlockId: instanceData.workoutBlockId,
-      date: instanceData.date,
+      date: dateValue,
       complete: instanceData.complete ?? false,
       duration: instanceData.duration,
       volume: instanceData.volume,
