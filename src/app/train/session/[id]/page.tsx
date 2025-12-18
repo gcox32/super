@@ -78,12 +78,10 @@ export default function ActiveSessionPage({
   const [weight, setWeight] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('lbs');
 
-  // Swipe State
-  const touchStartY = useRef<number | null>(null);
-
   // Audio refs
   const countdownAudioRef = useRef<HTMLAudioElement | null>(null);
   const completeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUnlockedRef = useRef<boolean>(false);
 
   // Derived
   const currentStep = steps[currentStepIndex];
@@ -112,6 +110,46 @@ export default function ActiveSessionPage({
     } catch {
       // ignore
     }
+  }, []);
+
+  // Initialize audio elements and unlock autoplay (browser policy workaround)
+  useEffect(() => {
+    // Preload and prepare audio elements
+    if (countdownAudioRef.current) {
+      countdownAudioRef.current.load();
+    }
+    if (completeAudioRef.current) {
+      completeAudioRef.current.load();
+    }
+
+    // Unlock audio on first user interaction (required by browser autoplay policies)
+    const unlockAudio = async () => {
+      if (audioUnlockedRef.current) return;
+      
+      try {
+        // Try to play and immediately pause to unlock audio
+        if (countdownAudioRef.current) {
+          await countdownAudioRef.current.play();
+          countdownAudioRef.current.pause();
+          countdownAudioRef.current.currentTime = 0;
+        }
+        audioUnlockedRef.current = true;
+      } catch {
+        // Audio will be unlocked on next user interaction
+      }
+    };
+
+    // Unlock on any user interaction
+    const events = ['click', 'touchstart', 'keydown'];
+    events.forEach(event => {
+      document.addEventListener(event, unlockAudio, { once: true });
+    });
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, unlockAudio);
+      });
+    };
   }, []);
 
   // Load Data
@@ -256,7 +294,34 @@ export default function ActiveSessionPage({
 
     const interval = setInterval(() => {
       setRestSecondsRemaining((s) => {
-        if (s <= 1) {
+        const nextValue = s - 1;
+        
+        // Play countdown sound when reaching 3 seconds
+        if (nextValue === 3 && timerSoundsEnabled && countdownAudioRef.current) {
+          try {
+            const audio = countdownAudioRef.current;
+            // Check if audio is ready to play
+            if (audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+              audio.currentTime = 0;
+              const playPromise = audio.play();
+              if (playPromise !== undefined) {
+                playPromise.catch((err) => {
+                  // If autoplay fails, try to unlock on next interaction
+                  if (err.name === 'NotAllowedError' || err.name === 'NotSupportedError') {
+                    audioUnlockedRef.current = false;
+                  }
+                  // Silently handle other playback errors
+                  console.debug('Countdown audio playback failed:', err);
+                });
+              }
+            }
+          } catch (err) {
+            // Silently handle any errors
+            console.debug('Countdown audio error:', err);
+          }
+        }
+        
+        if (nextValue <= 0) {
           clearInterval(interval);
           // Automatically advance when rest completes
           if (currentStepIndex < steps.length - 1) {
@@ -267,28 +332,12 @@ export default function ActiveSessionPage({
           setIsResting(false);
           return 0;
         }
-        return s - 1;
+        return nextValue;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isResting, isPaused, restSecondsRemaining, currentStepIndex, steps.length, workoutInstance]);
-
-  // Rest countdown audio (final 3 seconds)
-  useEffect(() => {
-    if (!isResting || isPaused) return;
-    if (!timerSoundsEnabled) return;
-    if (!countdownAudioRef.current) return;
-    if (restSecondsRemaining !== 3) return;
-
-    try {
-      const audio = countdownAudioRef.current;
-      audio.currentTime = 0;
-      void audio.play();
-    } catch {
-      // ignore playback errors
-    }
-  }, [isResting, isPaused, restSecondsRemaining, timerSoundsEnabled]);
+  }, [isResting, isPaused, restSecondsRemaining, currentStepIndex, steps.length, workoutInstance, timerSoundsEnabled]);
 
   // Sync Input with Current Step's Data (if exists)
   useEffect(() => {
@@ -491,9 +540,6 @@ export default function ActiveSessionPage({
   const handleEndSession = () => {
     router.push('/train');
   };
-
-  // Swipe Handlers
-  // Removed touch swipe handlers in favor of explicit back button
 
   const finishWorkout = async () => {
     if (!workoutInstance) return;

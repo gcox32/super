@@ -25,7 +25,7 @@ export default function LogPage() {
     async function loadLatest() {
       try {
         setLoading(true);
-        const res = await fetch('/api/user/stats?latest=true', { cache: 'no-store' });
+        const res = await fetch('/api/me/stats?latest=true', { cache: 'no-store' });
         if (!res.ok) {
           const body = (await res.json().catch(() => null)) as { error?: string } | null;
           throw new Error(body?.error || 'Failed to load stats');

@@ -5,6 +5,7 @@ import {
   createWorkoutBlockExerciseInstance,
 } from '@/lib/db/crud';
 import type { WorkoutBlockExerciseInstance } from '@/types/train';
+import { calculateProjected1RMFromMeasures } from '@/lib/log/train/projected-max';
 
 // GET /api/train/workouts/[workoutId]/blocks/[blockId]/exercises/[exerciseId]/instances - Get exercise instances for a specific exercise
 export async function GET(
@@ -42,11 +43,16 @@ export async function POST(
     const instanceData = await parseBody<
       Omit<WorkoutBlockExerciseInstance, 'id' | 'userId'>
     >(request);
+    
+    // Calculate projected 1RM if measures contain reps and weight
+    const projected1RM = calculateProjected1RMFromMeasures(instanceData.measures);
+    
     const instance = await createWorkoutBlockExerciseInstance(
       userId,
       {
         ...instanceData,
         workoutBlockExerciseId: exerciseId,
+        projected1RM: projected1RM ?? instanceData.projected1RM,
       }
     );
     return { instance };

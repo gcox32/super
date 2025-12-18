@@ -206,12 +206,12 @@ export default function TodaySessions() {
         <h3 className="mb-1 font-semibold">
           {selected
             ? selected.name || `${selected.workoutType} Workout`
-            : "Start"}
+            : "Get to Work"}
         </h3>
         <p className="text-muted-foreground text-sm">
           {selected?.estimatedDuration
             ? `~${selected.estimatedDuration} min`
-            : 'Select a workout'}
+            : 'Pick something'}
         </p>
       </div>
 

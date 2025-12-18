@@ -1,4 +1,5 @@
-import { WeightMeasurement } from "@/types/measures";
+import { WeightMeasurement, ProjectedMaxMeasurement } from "@/types/measures";
+import { ExerciseMeasures } from "@/types/train";
 
 function clamp(x: number, min: number, max: number) {
     return Math.max(min, Math.min(max, x));
@@ -73,5 +74,29 @@ export function calculateProjectedMax(
             epley,
             brzycki,
         },
+    };
+}
+
+/**
+ * Calculate projected 1RM from exercise measures.
+ * Returns undefined if measures don't contain sufficient data (reps and weight).
+ */
+export function calculateProjected1RMFromMeasures(
+    measures: ExerciseMeasures
+): ProjectedMaxMeasurement | undefined {
+    // Need both reps and external load to calculate 1RM
+    if (!measures.reps || !measures.externalLoad) {
+        return undefined;
+    }
+
+    const reps = measures.reps;
+    const weight = measures.externalLoad;
+
+    // Calculate the projected max
+    const result = calculateProjectedMax(reps, weight);
+
+    return {
+        value: result.projectedMax,
+        confidence: result.confidence,
     };
 }

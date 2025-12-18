@@ -19,7 +19,7 @@ export default function StatsLogPage() {
   async function loadStats() {
     try {
       setLoading(true);
-      const res = await fetch('/api/user/stats', { cache: 'no-store' });
+      const res = await fetch('/api/me/stats', { cache: 'no-store' });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(body?.error || 'Failed to load stats');
@@ -43,7 +43,7 @@ export default function StatsLogPage() {
 
   async function handleDelete(id: string) {
     try {
-      const res = await fetch(`/api/user/stats/${id}`, {
+      const res = await fetch(`/api/me/stats/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) {

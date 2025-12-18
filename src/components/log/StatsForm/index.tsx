@@ -143,7 +143,7 @@ export default function StatsForm({ onSuccess }: StatsFormProps) {
       const bodyFatStrategy = getPreference('bodyFatStrategy');
       const bodyFatMaxDaysOld = getPreference('bodyFatMaxDaysOld');
 
-      const res = await fetch('/api/user/stats', {
+      const res = await fetch('/api/me/stats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

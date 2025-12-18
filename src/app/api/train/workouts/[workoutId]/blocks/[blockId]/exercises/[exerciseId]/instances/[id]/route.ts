@@ -5,6 +5,7 @@ import {
   deleteWorkoutBlockExerciseInstance,
 } from '@/lib/db/crud';
 import type { WorkoutBlockExerciseInstance } from '@/types/train';
+import { calculateProjected1RMFromMeasures } from '@/lib/log/train/projected-max';
 
 // PATCH /api/train/workouts/[workoutId]/blocks/[blockId]/exercises/[exerciseId]/instances/[id] - Update an exercise instance
 export async function PATCH(
@@ -21,6 +22,18 @@ export async function PATCH(
         >
       >
     >(request);
+
+    // If measures are being updated, recalculate projected 1RM
+    if (updates.measures) {
+      const projected1RM = calculateProjected1RMFromMeasures(updates.measures);
+      if (projected1RM) {
+        updates.projected1RM = projected1RM;
+      } else {
+        // If we can't calculate (missing reps/weight), clear the projected1RM
+        // Use null to explicitly clear the value in the database
+        updates.projected1RM = null as any;
+      }
+    }
 
     const updated = await updateWorkoutBlockExerciseInstance(id, userId, updates);
     if (!updated) {

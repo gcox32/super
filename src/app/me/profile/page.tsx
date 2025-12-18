@@ -50,7 +50,7 @@ export default function MeProfilePage() {
       try {
         setLoading(true);
 
-        const res = await fetch('/api/user/profile', { cache: 'no-store' });
+        const res = await fetch('/api/me/profile', { cache: 'no-store' });
         if (!res.ok) {
           const body = (await res.json().catch(() => null)) as
             | { error?: string }
@@ -119,7 +119,7 @@ export default function MeProfilePage() {
         activityLevel: form.activityLevel || undefined,
       };
 
-      const res = await fetch('/api/user/profile', {
+      const res = await fetch('/api/me/profile', {
         method,
         headers: {
           'Content-Type': 'application/json',
