@@ -30,9 +30,9 @@ export default function WorkoutInstanceDetailPage() {
     };
 
     const handleConfirmDelete = async () => {
-        if (!workoutInstanceToDelete) return;
+        if (!workoutInstanceToDelete || !workoutInstanceToDelete.workoutId) return;
         try {
-            await fetchJson(`/api/train/workout-instances/${workoutInstanceToDelete.id}`, {
+            await fetchJson(`/api/train/workouts/${workoutInstanceToDelete.workoutId}/instances/${workoutInstanceToDelete.id}`, {
                 method: 'DELETE',
             });
         } catch (err) {
@@ -48,7 +48,7 @@ export default function WorkoutInstanceDetailPage() {
     useEffect(() => {
         async function fetchInstance() {
             try {
-                const res = await fetch(`/api/train/workout-instances/${instanceId}`);
+                const res = await fetch(`/api/train/workouts/instances/${instanceId}`);
                 if (res.ok) {
                     const data = await res.json();
                     setInstance(data.workoutInstance);
@@ -96,8 +96,20 @@ export default function WorkoutInstanceDetailPage() {
             rpe: undefined
         };
 
+        if (!instance.workoutId) {
+            showToast({ title: 'Workout instance missing workoutId', variant: 'error' });
+            return;
+        }
+        
+        // Find block and exercise to get their IDs
+        const blockInstance = instance.blockInstances?.find(b => b.id === blockInstanceId);
+        if (!blockInstance?.workoutBlock?.id) {
+            showToast({ title: 'Block not found', variant: 'error' });
+            return;
+        }
+        
         try {
-            const res = await fetch('/api/train/workout-block-exercise-instances', {
+            const res = await fetch(`/api/train/workouts/${instance.workoutId}/blocks/${blockInstance.workoutBlock.id}/exercises/${exerciseId}/instances`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newSetData)
@@ -128,8 +140,25 @@ export default function WorkoutInstanceDetailPage() {
     };
 
     const handleDeleteSet = async (setId: string, blockInstanceId: string) => {
+        if (!instance?.workoutId) {
+            showToast({ title: 'Workout instance missing workoutId', variant: 'error' });
+            return;
+        }
+        
+        // Find block and exercise to get their IDs
+        const blockInstance = instance.blockInstances?.find(b => b.id === blockInstanceId);
+        if (!blockInstance?.workoutBlock?.id) {
+            showToast({ title: 'Block not found', variant: 'error' });
+            return;
+        }
+        const exercise = blockInstance.exerciseInstances?.find(e => e.id === setId);
+        if (!exercise?.workoutBlockExerciseId) {
+            showToast({ title: 'Exercise not found', variant: 'error' });
+            return;
+        }
+        
         try {
-            const res = await fetch(`/api/train/workout-block-exercise-instances/${setId}`, {
+            const res = await fetch(`/api/train/workouts/${instance.workoutId}/blocks/${blockInstance.workoutBlock.id}/exercises/${exercise.workoutBlockExerciseId}/instances/${setId}`, {
                 method: 'DELETE'
             });
 
@@ -167,7 +196,8 @@ export default function WorkoutInstanceDetailPage() {
                 duration: instance.duration
             };
 
-            await fetch(`/api/train/workout-instances/${instanceId}`, {
+            if (!instance.workoutId) throw new Error('Workout instance missing workoutId');
+            await fetch(`/api/train/workouts/${instance.workoutId}/instances/${instanceId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(instanceUpdates),
@@ -182,8 +212,17 @@ export default function WorkoutInstanceDetailPage() {
                 }
             });
 
+            if (!instance.workoutId) throw new Error('Workout instance missing workoutId');
             await Promise.all(allSets.map(async (set) => {
-                const res = await fetch(`/api/train/workout-block-exercise-instances/${set.id}`, {
+                // Need to find blockId and exerciseId from the set
+                const blockInstance = instance.blockInstances?.find(b => 
+                    b.exerciseInstances?.some(e => e.id === set.id)
+                );
+                if (!blockInstance?.workoutBlock?.id) throw new Error(`Block not found for set ${set.id}`);
+                const exercise = blockInstance.exerciseInstances?.find(e => e.id === set.id);
+                if (!exercise?.workoutBlockExerciseId) throw new Error(`Exercise not found for set ${set.id}`);
+                
+                const res = await fetch(`/api/train/workouts/${instance.workoutId}/blocks/${blockInstance.workoutBlock.id}/exercises/${exercise.workoutBlockExerciseId}/instances/${set.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

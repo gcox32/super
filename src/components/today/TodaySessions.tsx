@@ -47,7 +47,7 @@ export default function TodaySessions() {
 
         const [workoutsData, instancesData] = await Promise.all([
           fetchJson<ApiListResponse<Workout>>('/api/train/workouts'),
-          fetchJson<{ workoutInstances: WorkoutInstance[] }>(`/api/train/workout-instances?dateFrom=${yesterday.toISOString()}`)
+          fetchJson<{ workoutInstances: WorkoutInstance[] }>(`/api/train/workouts/instances?dateFrom=${yesterday.toISOString()}`)
         ]);
 
         if (cancelled) return;
@@ -83,7 +83,7 @@ export default function TodaySessions() {
     setStartingWorkoutId(selectedWorkoutId);
     try {
       const res = await fetchJson<{ workoutInstance: WorkoutInstance }>(
-        '/api/train/workout-instances',
+        '/api/train/workout/instances',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -119,21 +119,21 @@ export default function TodaySessions() {
   });
 
   if (isLoading) {
-    return <div className="p-8 text-center flex justify-center items-center w-full h-full text-muted-foreground"><Loader2 className="w-8 h-8 text-brand-primary animate-spin" /></div>;
+    return <div className="flex justify-center items-center p-8 w-full h-full text-muted-foreground text-center"><Loader2 className="w-8 h-8 text-brand-primary animate-spin" /></div>;
   }
 
   if (loadError) {
-    return <div className="p-8 text-center text-destructive">Error: {loadError}</div>;
+    return <div className="p-8 text-destructive text-center">Error: {loadError}</div>;
   }
 
   // CASE 1: In Progress
   if (inProgressInstance) {
     const workoutName = inProgressInstance.workout?.name || 'Workout';
     return (
-      <div className="bg-card p-6 border border-border rounded-lg shadow-sm">
+      <div className="bg-card shadow-sm p-6 border border-border rounded-lg">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <span className="inline-block bg-primary/10 mb-2 px-2 py-1 rounded text-primary text-xs font-medium">
+            <span className="inline-block bg-primary/10 mb-2 px-2 py-1 rounded font-medium text-primary text-xs">
               In Progress
             </span>
             <h3 className="font-bold text-xl">{workoutName}</h3>
@@ -161,10 +161,10 @@ export default function TodaySessions() {
   if (completedTodayInstance && !showPrompt) {
     const workoutName = completedTodayInstance.workout?.name || 'Workout';
     return (
-      <div className="bg-card p-6 border border-border rounded-lg shadow-sm">
+      <div className="bg-card shadow-sm p-6 border border-border rounded-lg">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <span className="inline-block bg-success/10 mb-2 px-2 py-1 rounded text-success text-xs font-medium">
+            <span className="inline-block bg-success/10 mb-2 px-2 py-1 rounded font-medium text-success text-xs">
               Completed
             </span>
             <h3 className="font-bold text-xl">{workoutName}</h3>
@@ -226,7 +226,7 @@ export default function TodaySessions() {
           {workouts.map((w) => (
             <option key={w.id} value={w.id}>
               {w.name || `${w.workoutType} Workout`}
-              {w.estimatedDuration ? ` • ~${w.estimatedDuration} min` : ''}
+              {w.estimatedDuration ? ` (${w.estimatedDuration} min)` : ''}
             </option>
           ))}
         </select>

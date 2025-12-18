@@ -2,7 +2,18 @@
 
 This directory contains SQL migration scripts for setting up the database schema in Supabase.
 
-## Migration Files
+## Quick Start: Fresh Database Setup
+
+For **new database setups**, use the consolidated schema file:
+
+**`000_complete_schema.sql`** - Complete database schema initialization
+- Contains all tables, indexes, triggers, and RLS policies in their final state
+- Incorporates all changes from migrations 001-017
+- Use this for fresh database installations instead of running migrations sequentially
+
+## Migration Files (For Existing Databases)
+
+For existing databases, run migrations in numerical order:
 
 1. **001_initial_schema.sql** - Creates the initial database schema including:
    - Public schema (user domain)
@@ -26,9 +37,46 @@ This directory contains SQL migration scripts for setting up the database schema
    - User access policies (users can only access their own data)
    - Public read access for reference data (exercises, foods, muscle groups)
 
+5. **005_add_parent_exercise.sql** - Adds parent exercise relationship
+
+6. **006_add_variable_equipment.sql** - Adds 'variable' to equipment types
+
+7. **007_fix_search_path.sql** - Fixes trigger function search path
+
+8. **008_fix_rls_performance.sql** - Optimizes RLS policies for performance
+
+9. **009_remove_wbei_duration.sql** - Removes duration from workout block exercise instance
+
+10. **010_change_instance_dates_to_timestamp.sql** - Changes instance dates to timestamptz
+
+11. **011_add_created_at_to_wbei.sql** - Adds created_at to workout block exercise instance
+
+12. **012_remove_wbei_date_from_wbei.sql** - Removes date column from workout block exercise instance
+
+13. **013_add_arm_leg_length_to_user_stats.sql** - Adds arm/leg length to user stats
+
+14. **014_add_phase_between_protocol_and_workout.sql** - Adds Phase entity between Protocol and Workout
+
+15. **015_add_phase_instance.sql** - Adds PhaseInstance table
+
+16. **016_add_image_url_to_protocol_phase_workout.sql** - Adds image_url to protocol, phase, and workout
+
+17. **017_replace_phase_workout_with_workout_ids.sql** - Replaces phase_workout junction table with workout_ids array
+
 ## Running Migrations
 
-### Using Supabase CLI
+### Fresh Database Setup (Recommended)
+
+For a **new database**, use the consolidated schema:
+
+1. Go to your Supabase project dashboard
+2. Navigate to SQL Editor
+3. Run `000_complete_schema.sql`
+4. Verify that all tables, indexes, triggers, and policies are created
+
+### Existing Database Migration
+
+For **existing databases**, use Supabase CLI to run migrations sequentially:
 
 1. Install the Supabase CLI:
    ```bash
@@ -45,11 +93,13 @@ This directory contains SQL migration scripts for setting up the database schema
    supabase db push
    ```
 
-### Using Supabase Dashboard
+This will run migrations 001-017 in order.
+
+### Using Supabase Dashboard (Manual)
 
 1. Go to your Supabase project dashboard
 2. Navigate to SQL Editor
-3. Run each migration file in order (001, 002, 003, 004)
+3. Run each migration file in numerical order (001, 002, 003, ...)
 4. Verify that all tables, indexes, and policies are created
 
 ### Using Drizzle Kit

@@ -2,7 +2,7 @@ import { MuscleGroup } from "./anatomy";
 import { User } from "./user";
 import { 
     DistanceMeasurement, TimeMeasurement, WeightMeasurement, CaloriesMeasurement, 
-    PaceMeasurement, LongTimeMeasurement, WorkMeasurement, PowerMeasurement 
+    PaceMeasurement, LongTimeMeasurement, WorkMeasurement, PowerMeasurement, ProjectedMaxMeasurement
 } from "./measures";
 
 // helpers
@@ -59,10 +59,25 @@ export interface Protocol {
     name:           string;
     objectives:     string[];
     description?:   string;
-    workouts?:      Workout[]; // hydrated on frontend
+    imageUrl?:      string;
+    phases?:        Phase[]; // hydrated on frontend
+    notes?:         string;
+    createdAt:      Date;
+    updatedAt:      Date;
+}
+
+export interface Phase {
+    id:             string;
+    protocolId:     Protocol['id'];
+    name:           string;
+    purpose?:       string; // e.g., "establish a rhythm", "build strength", "hypertrophy"
+    imageUrl?:      string;
     duration:       LongTimeMeasurement;
     daysPerWeek:    number;
     includes2ADays: boolean;
+    workoutIds?:    string[]; // ordered array of workout IDs (workouts remain independent)
+    workouts?:      Workout[]; // hydrated on frontend when needed
+    order:          number;
     notes?:         string;
     createdAt:      Date;
     updatedAt:      Date;
@@ -75,6 +90,7 @@ export interface Workout {
     name?:              string;
     objectives?:        string[];
     description?:       string;
+    imageUrl?:          string;
     blocks?:            WorkoutBlock[]; // hydrated on frontend
     estimatedDuration?: number; // in minutes
     createdAt:          Date;
@@ -141,7 +157,20 @@ export interface ProtocolInstance {
     complete:   boolean;
     duration?:  LongTimeMeasurement; // in minutes
     notes?:     string;
+}
 
+export interface PhaseInstance {
+    id:         string;
+    userId:     User['id'];
+    protocolInstanceId: ProtocolInstance['id'];
+    phaseId:    Phase['id'];
+    phase?:     Phase; // hydrated on frontend
+    active:     boolean;
+    startDate:  Date;
+    endDate?:   Date | null;
+    complete:   boolean;
+    duration?:  LongTimeMeasurement;
+    notes?:     string;
 }
 
 export interface WorkoutInstance {
@@ -183,7 +212,7 @@ export interface WorkoutBlockExerciseInstance {
     complete:               boolean;
     personalBest?:          boolean;
     measures:               ExerciseMeasures;
-    projected1RM?:          WeightMeasurement;
+    projected1RM?:          ProjectedMaxMeasurement;
     rpe?:                   RPE;
     notes?:                 string;
 }
@@ -217,7 +246,7 @@ export interface Projected1RM {
     projected1RMLogId: Projected1RMLog['id'];
     date:              Date;
     exerciseId:        Exercise['id'];
-    projected1RM:      WeightMeasurement;
+    projected1RM:      ProjectedMaxMeasurement;
     notes?:            string;
 }
 

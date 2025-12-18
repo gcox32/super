@@ -14,3 +14,4 @@ export type PercentageMeasurement = { value: number; unit: '%' };
 
 export type WorkMeasurement      = { value: number; unit: 'J' | 'kJ' | 'ftlb' | 'cal' | 'kcal' };
 export type PowerMeasurement     = { value: number; unit: 'W' | 'kW' | 'hp' };
+export type ProjectedMaxMeasurement = { value: WeightMeasurement; confidence: number };

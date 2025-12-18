@@ -3,7 +3,7 @@ import { ExerciseMeasures, WorkoutBlockExerciseInstance, WorkPowerConstants } fr
 import { defaultWorkPowerConstants } from "@/components/train/build/exercises/options";
 import { PowerMeasurement, TimeMeasurement, WorkMeasurement } from "@/types/measures";
 
-export const calculateOutput = (userStats: UserStats, exercises: WorkoutBlockExerciseInstance[], duration: TimeMeasurement | null, acceleration = 9.81) => {
+export function calculateOutput(userStats: UserStats, exercises: WorkoutBlockExerciseInstance[], duration: TimeMeasurement | null, acceleration = 9.81) {
     // Validate required inputs
     if (!userStats?.weight || !userStats?.armLength || !userStats?.legLength) {
       throw new Error('User stats are required to calculate work power');

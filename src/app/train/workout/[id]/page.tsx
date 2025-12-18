@@ -69,7 +69,7 @@ export default function ViewWorkoutPage({
     setStarting(true);
     try {
       const res = await fetchJson<{ workoutInstance: WorkoutInstance }>(
-        '/api/train/workout-instances',
+        '/api/train/workout/instances',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

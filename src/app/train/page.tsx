@@ -10,6 +10,8 @@ import type {
   Workout,
   WorkoutInstance,
   Protocol,
+  Phase,
+  PhaseInstance,
 } from '@/types/train';
 import { fetchJson, formatDate, timeToMinutes, formatMinutesAsHours } from '@/lib/train/helpers';
 
@@ -20,7 +22,9 @@ export default function TrainPage() {
   const [activeProtocolInstance, setActiveProtocolInstance] =
     useState<ProtocolInstance | null>(null);
   const [activeProtocol, setActiveProtocol] = useState<Protocol | null>(null);
-  const [protocolWorkouts, setProtocolWorkouts] = useState<Workout[]>([]);
+  const [activePhaseInstance, setActivePhaseInstance] = useState<PhaseInstance | null>(null);
+  const [activePhase, setActivePhase] = useState<Phase | null>(null);
+  const [phaseWorkouts, setPhaseWorkouts] = useState<Workout[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [recentWorkoutInstances, setRecentWorkoutInstances] = useState<
     WorkoutInstance[]
@@ -43,11 +47,11 @@ export default function TrainPage() {
         const [protocolInstancesRes, workoutsRes, workoutInstancesRes] =
           await Promise.all([
             fetchJson<ApiListResponse<ProtocolInstance>>(
-              '/api/train/protocol-instances?activeOnly=true'
+              '/api/train/protocols/instances?activeOnly=true'
             ),
             fetchJson<ApiListResponse<Workout>>('/api/train/workouts'),
             fetchJson<ApiListResponse<WorkoutInstance>>(
-              `/api/train/workout-instances?dateFrom=${startOfWeek.toISOString()}`
+              `/api/train/workouts/instances?dateFrom=${startOfWeek.toISOString()}`
             ),
           ]);
 
@@ -64,24 +68,64 @@ export default function TrainPage() {
         );
 
         if (activeInstance) {
-          const [protocolRes, protocolWorkoutsRes] = await Promise.all([
-            fetchJson<{ protocol: Protocol }>(
-              `/api/train/protocols/${activeInstance.protocolId}`
-            ),
-            fetchJson<ApiListResponse<Workout>>(
-              `/api/train/protocols/${activeInstance.protocolId}/workouts`
-            ),
-          ]);
+          // Get protocol with phases
+          const protocolRes = await fetchJson<{ protocol: Protocol }>(
+            `/api/train/protocols/${activeInstance.protocolId}`
+          );
 
-          if (!cancelled) {
-            setActiveProtocol(protocolRes.protocol);
-            setProtocolWorkouts(
-              (protocolWorkoutsRes.workouts as Workout[]) ?? []
+          if (cancelled) return;
+          setActiveProtocol(protocolRes.protocol);
+
+          // Get phases for the protocol
+          const phasesRes = await fetchJson<{ phases: Phase[] }>(
+            `/api/train/protocols/${activeInstance.protocolId}/phases`
+          );
+
+          if (cancelled) return;
+          const phases = phasesRes.phases || [];
+
+          // Get active phase instance
+          const phaseInstancesRes = await fetchJson<{ phaseInstances: PhaseInstance[] }>(
+            `/api/train/protocols/${activeInstance.protocolId}/instances/${activeInstance.id}/phase-instances`
+          );
+
+          if (cancelled) return;
+          const activePhaseInst = phaseInstancesRes.phaseInstances.find(
+            (pi: PhaseInstance) => pi.active && !pi.complete
+          ) || phaseInstancesRes.phaseInstances[0] || null;
+
+          setActivePhaseInstance(activePhaseInst);
+
+          // Determine which phase to show (active phase instance or first phase)
+          const phaseToShow = activePhaseInst
+            ? phases.find(p => p.id === activePhaseInst.phaseId) || null
+            : phases[0] || null;
+
+          setActivePhase(phaseToShow);
+
+          // Get workouts for the active phase
+          if (phaseToShow?.workoutIds && phaseToShow.workoutIds.length > 0) {
+            const workoutPromises = phaseToShow.workoutIds.map(workoutId =>
+              fetchJson<{ workout: Workout }>(`/api/train/workouts/${workoutId}`)
+                .then(res => res.workout)
+                .catch(() => null)
             );
+            const fetchedWorkouts = (await Promise.all(workoutPromises)).filter(
+              (w): w is Workout => w !== null
+            );
+            if (!cancelled) {
+              setPhaseWorkouts(fetchedWorkouts);
+            }
+          } else {
+            if (!cancelled) {
+              setPhaseWorkouts([]);
+            }
           }
         } else {
           setActiveProtocol(null);
-          setProtocolWorkouts([]);
+          setActivePhase(null);
+          setActivePhaseInstance(null);
+          setPhaseWorkouts([]);
         }
       } catch (error) {
         console.error('Failed to load training data', error);
@@ -101,16 +145,21 @@ export default function TrainPage() {
   const workoutsById = new Map(workouts.map((w) => [w.id, w]));
 
   async function handleStartWorkout(workoutId: string) {
-    if (startingWorkoutId) return;
+    if (startingWorkoutId || !workoutId) return;
     setStartingWorkoutId(workoutId);
     try {
+      // Need to get workoutId from the workout object to use nested route
+      const workout = workouts.find(w => w.id === workoutId);
+      if (!workout) {
+        throw new Error('Workout not found');
+      }
+
       const res = await fetchJson<{ workoutInstance: WorkoutInstance }>(
-        '/api/train/workout-instances',
+        `/api/train/workouts/${workoutId}/instances`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            workoutId,
             date: new Date().toISOString().split('T')[0], // Today's date as YYYY-MM-DD
             complete: false,
           }),
@@ -161,7 +210,8 @@ export default function TrainPage() {
                     </h3>
                     <p className="text-muted-foreground text-xs">
                       Started {formatDate(activeProtocolInstance.startDate)} •{' '}
-                      {activeProtocol.daysPerWeek} days / week
+                      {activeProtocol.phases?.length || 0} phases
+                      {activePhase && ` • Phase: ${activePhase.name}`}
                     </p>
                   </div>
                 </div>
@@ -202,12 +252,19 @@ export default function TrainPage() {
           </div>
         </section>
 
-        {/* Available Workouts */}
-        {activeProtocolInstance && activeProtocol && protocolWorkouts.length > 0 && (
+        {/* Current Phase Workouts */}
+        {activeProtocolInstance && activeProtocol && activePhase && phaseWorkouts.length > 0 && (
           <section className="px-4 md:px-6 py-6 border-border border-t">
-            <h2 className="mb-4 font-semibold text-lg">Available Workouts</h2>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="font-semibold text-lg">Current Phase: {activePhase.name}</h2>
+                {activePhase.purpose && (
+                  <p className="mt-1 text-muted-foreground text-sm">{activePhase.purpose}</p>
+                )}
+              </div>
+            </div>
             <div className="space-y-3">
-              {protocolWorkouts.map((workout) => (
+              {phaseWorkouts.map((workout) => (
                 <div
                   key={workout.id}
                   className="bg-card p-4 border border-border rounded-lg"
@@ -267,6 +324,14 @@ export default function TrainPage() {
           </section>
         )}
 
+        <section className="px-4 md:px-6 py-6 border-border border-t">
+          <Link href="/train/build">
+            <Button variant="primary" size="lg" className="w-full">
+              Build
+            </Button>
+          </Link>
+        </section>
+        
         {/* Upcoming / Recent Sessions */}
         <section className="px-4 md:px-6 py-6 border-border border-t">
           <h2 className="mb-4 font-semibold text-lg">Recent Sessions</h2>
@@ -327,13 +392,7 @@ export default function TrainPage() {
             </div>
           )}
         </section>
-        <section className="px-4 md:px-6 py-6 border-border border-t">
-          <Link href="/train/build">
-            <Button variant="primary" size="lg" className="w-full">
-              Build
-            </Button>
-          </Link>
-        </section>
+
       </div>
     </div>
   );

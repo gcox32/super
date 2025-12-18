@@ -23,9 +23,23 @@ export const protocol = trainSchema.table('protocol', {
   name: text('name').notNull(),
   objectives: text('objectives').array().notNull(),
   description: text('description'),
+  imageUrl: text('image_url'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const phase = trainSchema.table('phase', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  protocolId: uuid('protocol_id').notNull().references(() => protocol.id),
+  name: text('name').notNull(),
+  purpose: text('purpose'),
+  imageUrl: text('image_url'),
   duration: jsonb('duration').notNull(),
   daysPerWeek: integer('days_per_week').notNull(),
   includes2ADays: boolean('includes_2a_days').notNull().default(false),
+  workoutIds: text('workout_ids').array(),
+  order: integer('order').notNull(),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -40,18 +54,11 @@ export const workout = trainSchema.table('workout', {
   name: text('name'),
   objectives: text('objectives').array(),
   description: text('description'),
+  imageUrl: text('image_url'),
   estimatedDuration: integer('estimated_duration'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
-
-export const protocolWorkout = trainSchema.table('protocol_workout', {
-  protocolId: uuid('protocol_id').notNull().references(() => protocol.id),
-  workoutId: uuid('workout_id').notNull().references(() => workout.id),
-  order: integer('order').notNull(),
-}, (table) => ({
-  pk: unique().on(table.protocolId, table.workoutId),
-}));
 
 export const workoutBlock = trainSchema.table('workout_block', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -110,6 +117,19 @@ export const protocolInstance = trainSchema.table('protocol_instance', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => user.id),
   protocolId: uuid('protocol_id').notNull().references(() => protocol.id),
+  active: boolean('active').notNull().default(true),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date'),
+  complete: boolean('complete').notNull().default(false),
+  duration: jsonb('duration'),
+  notes: text('notes'),
+});
+
+export const phaseInstance = trainSchema.table('phase_instance', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => user.id),
+  protocolInstanceId: uuid('protocol_instance_id').notNull().references(() => protocolInstance.id, { onDelete: 'cascade' }),
+  phaseId: uuid('phase_id').notNull().references(() => phase.id),
   active: boolean('active').notNull().default(true),
   startDate: date('start_date').notNull(),
   endDate: date('end_date'),
@@ -196,7 +216,15 @@ export const projected1RM = trainSchema.table('projected_1rm', {
 
 // Relations
 export const protocolRelations = relations(protocol, ({ many }) => ({
-  protocolWorkouts: many(protocolWorkout),
+  phases: many(phase),
+}));
+
+export const phaseRelations = relations(phase, ({ one, many }) => ({
+  protocol: one(protocol, {
+    fields: [phase.protocolId],
+    references: [protocol.id],
+  }),
+  instances: many(phaseInstance),
 }));
 
 export const workoutRelations = relations(workout, ({ one, many }) => ({
@@ -204,20 +232,8 @@ export const workoutRelations = relations(workout, ({ one, many }) => ({
     fields: [workout.userId],
     references: [user.id],
   }),
-  protocolWorkouts: many(protocolWorkout),
   blocks: many(workoutBlock),
   instances: many(workoutInstance),
-}));
-
-export const protocolWorkoutRelations = relations(protocolWorkout, ({ one }) => ({
-  protocol: one(protocol, {
-    fields: [protocolWorkout.protocolId],
-    references: [protocol.id],
-  }),
-  workout: one(workout, {
-    fields: [protocolWorkout.workoutId],
-    references: [workout.id],
-  }),
 }));
 
 export const workoutBlockRelations = relations(workoutBlock, ({ one, many }) => ({
@@ -254,7 +270,7 @@ export const workoutBlockExerciseRelations = relations(workoutBlockExercise, ({ 
   instances: many(workoutBlockExerciseInstance),
 }));
 
-export const protocolInstanceRelations = relations(protocolInstance, ({ one }) => ({
+export const protocolInstanceRelations = relations(protocolInstance, ({ one, many }) => ({
   user: one(user, {
     fields: [protocolInstance.userId],
     references: [user.id],
@@ -262,6 +278,22 @@ export const protocolInstanceRelations = relations(protocolInstance, ({ one }) =
   protocol: one(protocol, {
     fields: [protocolInstance.protocolId],
     references: [protocol.id],
+  }),
+  phaseInstances: many(phaseInstance),
+}));
+
+export const phaseInstanceRelations = relations(phaseInstance, ({ one }) => ({
+  user: one(user, {
+    fields: [phaseInstance.userId],
+    references: [user.id],
+  }),
+  protocolInstance: one(protocolInstance, {
+    fields: [phaseInstance.protocolInstanceId],
+    references: [protocolInstance.id],
+  }),
+  phase: one(phase, {
+    fields: [phaseInstance.phaseId],
+    references: [phase.id],
   }),
 }));
 

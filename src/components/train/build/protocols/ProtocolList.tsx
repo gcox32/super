@@ -5,16 +5,7 @@ import Link from 'next/link';
 import { Protocol } from '@/types/train';
 import Button from '@/components/ui/Button';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { Plus, Calendar, Clock, Target, Trash2 } from 'lucide-react';
-import { LongTimeMeasurement } from '@/types/measures';
-
-function formatDuration(duration: LongTimeMeasurement) {
-  const { value, unit } = duration;
-  if (value === 1) {
-    return `1 ${unit.slice(0, -1)}`; // Remove 's' for singular
-  }
-  return `${value} ${unit}`;
-}
+import { Plus, Calendar, Target, Trash2 } from 'lucide-react';
 
 export default function ProtocolList() {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
@@ -87,19 +78,12 @@ export default function ProtocolList() {
               <div className="p-6 rounded-lg shadow-sm border border-gray-200 hover:border-brand-primary transition-colors h-full bg-card">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-semibold text-gray-300">{protocol.name || 'Untitled Protocol'}</h3>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {protocol.daysPerWeek} days/week
-                  </span>
                 </div>
                 <p className="text-sm text-gray-500 line-clamp-2 mb-4 min-h-[2.5em]">
                   {protocol.description || 'No description provided.'}
                 </p>
 
                 <div className="flex items-center text-xs text-gray-400 gap-4 mb-3">
-                  <div className="flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {formatDuration(protocol.duration)}
-                  </div>
                   <div className="flex items-center">
                     <Calendar className="h-3 w-3 mr-1" />
                     {new Date(protocol.createdAt).toLocaleDateString()}

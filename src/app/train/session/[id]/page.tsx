@@ -120,22 +120,27 @@ export default function ActiveSessionPage({
     async function load() {
       try {
         setLoading(true);
-        // 1. Get Instance
-        const wi = await fetchJson<WorkoutInstanceResponse>(`/api/train/workout-instances/${id}`);
+        // 1. Get Instance using direct lookup route
+        const wi = await fetchJson<WorkoutInstanceResponse>(`/api/train/workouts/instances/${id}`);
         if (cancelled) return;
+        if (!wi.workoutInstance?.workoutId) {
+          throw new Error('Workout instance missing workoutId');
+        }
         setWorkoutInstance(wi.workoutInstance);
 
         // 2. Get Blocks & Block Instances
-        const [biRes, blocksRes] = await Promise.all([
+        const blocksRes = await fetchJson<BlocksResponse>(
+          `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks`
+        );
+        
+        // Get block instances for each block
+        const blockInstancesPromises = blocksRes.blocks.map(block =>
           fetchJson<BlockInstancesResponse>(
-            `/api/train/workout-block-instances?workoutInstanceId=${id}`
-          ),
-          wi.workoutInstance?.workoutId
-            ? fetchJson<BlocksResponse>(
-                `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks`
-              )
-            : Promise.resolve({ blocks: [] }),
-        ]);
+            `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks/${block.id}/instances?workoutInstanceId=${id}`
+          ).then(res => ({ blockId: block.id, instances: res.instances }))
+        );
+        const blockInstancesResults = await Promise.all(blockInstancesPromises);
+        const biRes = { instances: blockInstancesResults.flatMap(r => r.instances) };
 
         if (cancelled) return;
         setBlocks(blocksRes.blocks || []);
@@ -152,10 +157,14 @@ export default function ActiveSessionPage({
 
           const blockInstance = biRes.instances.find(bi => bi.workoutBlockId === block.id);
           if (blockInstance) {
-            const instRes = await fetchJson<BlockExerciseInstancesResponse>(
-                `/api/train/workout-block-exercise-instances?workoutBlockInstanceId=${blockInstance.id}`
-              );
-            instancesMap[block.id] = instRes.instances || [];
+            // Get exercise instances for each exercise in the block
+            const exerciseInstancesPromises = exRes.exercises.map(exercise =>
+              fetchJson<BlockExerciseInstancesResponse>(
+                `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks/${block.id}/exercises/${exercise.id}/instances?workoutBlockInstanceId=${blockInstance.id}`
+              ).then(res => res.instances || [])
+            );
+            const allExerciseInstances = (await Promise.all(exerciseInstancesPromises)).flat();
+            instancesMap[block.id] = allExerciseInstances;
           } else {
             instancesMap[block.id] = [];
           }
@@ -365,11 +374,13 @@ export default function ActiveSessionPage({
       inst.notes?.startsWith(`set:${currentStep.setIndex}:`)
     );
 
+    if (!workoutInstance?.workoutId) return;
+
     try {
       let saved: WorkoutBlockExerciseInstance;
       if (existing) {
         const res = await fetchJson<{ instance: WorkoutBlockExerciseInstance }>(
-          `/api/train/workout-block-exercise-instances/${existing.id}`,
+          `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises/${currentStep.exercise.id}/instances/${existing.id}`,
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -379,7 +390,7 @@ export default function ActiveSessionPage({
         saved = res.instance;
       } else {
         const res = await fetchJson<{ instance: WorkoutBlockExerciseInstance }>(
-          `/api/train/workout-block-exercise-instances`,
+          `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises/${currentStep.exercise.id}/instances`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -403,16 +414,22 @@ export default function ActiveSessionPage({
   }
 
   async function ensureBlockInstance(blockId: string): Promise<string | null> {
+    if (!workoutInstance?.workoutId) return null;
+    
     try {
+      // Get block to find its workoutId
+      const block = blocks.find(b => b.id === blockId);
+      if (!block) return null;
+
       const res = await fetchJson<BlockInstancesResponse>(
-        `/api/train/workout-block-instances?workoutInstanceId=${id}`
+        `/api/train/workouts/${workoutInstance.workoutId}/blocks/${blockId}/instances?workoutInstanceId=${id}`
       );
       const existing = res.instances.find(bi => bi.workoutBlockId === blockId);
       if (existing) return existing.id;
 
       // Create
       const createRes = await fetchJson<{ instance: WorkoutBlockInstance }>(
-        '/api/train/workout-block-instances',
+        `/api/train/workouts/${workoutInstance.workoutId}/blocks/${blockId}/instances`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -491,7 +508,7 @@ export default function ActiveSessionPage({
         }
       }
        await fetchJson(
-        `/api/train/workout-instances/${workoutInstance.id}`,
+        `/api/train/workouts/${workoutInstance.workoutId}/instances/${workoutInstance.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

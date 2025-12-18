@@ -20,7 +20,7 @@ export default function WorkoutNotesPage() {
   useEffect(() => {
     async function fetchInstance() {
       try {
-        const res = await fetch(`/api/train/workout-instances/${instanceId}`);
+        const res = await fetch(`/api/train/workout/instances/${instanceId}`);
         if (res.ok) {
           const data = await res.json();
           setInstance(data.workoutInstance);
@@ -41,7 +41,7 @@ export default function WorkoutNotesPage() {
     setSaving(true);
     
     try {
-      const res = await fetch(`/api/train/workout-instances/${instanceId}`, {
+      const res = await fetch(`/api/train/workout/instances/${instanceId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes }),
@@ -65,16 +65,16 @@ export default function WorkoutNotesPage() {
   if (!instance) return <div className="p-8">Workout not found</div>;
 
   return (
-    <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-2xl mb-20">
+    <div className="mx-auto mb-20 px-4 sm:px-6 lg:px-8 py-8 max-w-2xl">
       <div className="mb-6">
         <BackToLink href={`/log/workouts/${instanceId}`} pageName="Workout" />
         <div className="flex justify-between items-start mt-4">
             <div>
-                <h1 className="text-3xl font-bold text-gray-100 my-2">{instance.workout?.name ?? 'Workout'}</h1>
-                <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto my-2">
+                <h1 className="my-2 font-bold text-gray-100 text-3xl">{instance.workout?.name ?? 'Workout'}</h1>
+                <Button onClick={handleSave} disabled={saving} className="my-2 w-full sm:w-auto">
                     {saving ? <Loader2 className="animate-spin" /> : 'Update'}
                 </Button>
-                <div className="text-sm text-gray-400 mt-2">
+                <div className="mt-2 text-gray-400 text-sm">
                     {new Date(instance.date).toLocaleDateString()}
                 </div>
             </div>
@@ -82,7 +82,7 @@ export default function WorkoutNotesPage() {
       </div>
 
       <div className="space-y-6">
-        <div className="p-6 bg-zinc-900/30 rounded-lg border border-zinc-800/50">
+        <div className="bg-zinc-900/30 p-6 border border-zinc-800/50 rounded-lg">
             <FormLabel className="mb-2">General Notes</FormLabel>
             <FormTextarea 
                 value={notes}

@@ -16,12 +16,13 @@ function nullToUndefined<T extends Record<string, any>>(obj: T): T {
 }
 import {
   protocol,
-  protocolWorkout,
+  phase,
   workout,
   workoutBlock,
   workoutBlockExercise,
   exercise,
   protocolInstance,
+  phaseInstance,
   workoutInstance,
   workoutBlockInstance,
   workoutBlockExerciseInstance,
@@ -32,11 +33,13 @@ import {
 } from '../schema';
 import type {
   Protocol,
+  Phase,
   Workout,
   WorkoutBlock,
   WorkoutBlockExercise,
   Exercise,
   ProtocolInstance,
+  PhaseInstance,
   WorkoutInstance,
   WorkoutBlockInstance,
   WorkoutBlockExerciseInstance,
@@ -49,7 +52,7 @@ import type {
 // ============================================================================
 
 export async function createProtocol(
-  protocolData: Omit<Protocol, 'id' | 'createdAt' | 'updatedAt' | 'workouts'>
+  protocolData: Omit<Protocol, 'id' | 'createdAt' | 'updatedAt' | 'phases'>
 ): Promise<Protocol> {
   const [newProtocol] = await db
     .insert(protocol)
@@ -57,9 +60,7 @@ export async function createProtocol(
       name: protocolData.name,
       objectives: protocolData.objectives,
       description: protocolData.description,
-      duration: protocolData.duration,
-      daysPerWeek: protocolData.daysPerWeek,
-      includes2ADays: protocolData.includes2ADays,
+      imageUrl: protocolData.imageUrl,
       notes: protocolData.notes,
     })
     .returning();
@@ -67,31 +68,9 @@ export async function createProtocol(
   return {
     ...newProtocol,
     description: newProtocol.description ?? undefined,
+    imageUrl: newProtocol.imageUrl ?? undefined,
     notes: newProtocol.notes ?? undefined,
   } as Protocol;
-}
-
-export async function setProtocolWorkouts(
-  protocolId: string,
-  workoutIds: string[]
-): Promise<void> {
-  return await db.transaction(async (tx) => {
-    // Remove existing associations
-    await tx
-      .delete(protocolWorkout)
-      .where(eq(protocolWorkout.protocolId, protocolId));
-
-    if (workoutIds.length > 0) {
-      // Create new associations
-      await tx.insert(protocolWorkout).values(
-        workoutIds.map((workoutId, index) => ({
-          protocolId,
-          workoutId,
-          order: index + 1,
-        }))
-      );
-    }
-  });
 }
 
 export async function getProtocols(): Promise<Protocol[]> {
@@ -99,6 +78,7 @@ export async function getProtocols(): Promise<Protocol[]> {
   return results.map((r) => ({
     ...r,
     description: r.description ?? undefined,
+    imageUrl: r.imageUrl ?? undefined,
     notes: r.notes ?? undefined,
   })) as Protocol[];
 }
@@ -115,13 +95,14 @@ export async function getProtocolById(protocolId: string): Promise<Protocol | nu
   return {
     ...found,
     description: found.description ?? undefined,
+    imageUrl: found.imageUrl ?? undefined,
     notes: found.notes ?? undefined,
   } as Protocol;
 }
 
 export async function updateProtocol(
   protocolId: string,
-  updates: Partial<Omit<Protocol, 'id' | 'createdAt' | 'updatedAt' | 'workouts'>>
+  updates: Partial<Omit<Protocol, 'id' | 'createdAt' | 'updatedAt' | 'phases'>>
 ): Promise<Protocol | null> {
   const [updated] = await db
     .update(protocol)
@@ -134,6 +115,7 @@ export async function updateProtocol(
   return {
     ...updated,
     description: updated.description ?? undefined,
+    imageUrl: updated.imageUrl ?? undefined,
     notes: updated.notes ?? undefined,
   } as Protocol;
 }
@@ -141,6 +123,124 @@ export async function updateProtocol(
 export async function deleteProtocol(protocolId: string): Promise<boolean> {
   await db.delete(protocol).where(eq(protocol.id, protocolId));
   return true;
+}
+
+// ============================================================================
+// PHASE CRUD
+// ============================================================================
+
+export async function createPhase(
+  phaseData: Omit<Phase, 'id' | 'createdAt' | 'updatedAt' | 'workouts'>
+): Promise<Phase> {
+  const [newPhase] = await db
+    .insert(phase)
+    .values({
+      protocolId: phaseData.protocolId,
+      name: phaseData.name,
+      purpose: phaseData.purpose,
+      imageUrl: phaseData.imageUrl,
+      duration: phaseData.duration,
+      daysPerWeek: phaseData.daysPerWeek,
+      includes2ADays: phaseData.includes2ADays,
+      workoutIds: phaseData.workoutIds,
+      order: phaseData.order,
+      notes: phaseData.notes,
+    })
+    .returning();
+
+  return {
+    ...newPhase,
+    purpose: newPhase.purpose ?? undefined,
+    imageUrl: newPhase.imageUrl ?? undefined,
+    workoutIds: newPhase.workoutIds ?? undefined,
+    notes: newPhase.notes ?? undefined,
+  } as Phase;
+}
+
+export async function getPhases(protocolId: string): Promise<Phase[]> {
+  const phases = await db
+    .select()
+    .from(phase)
+    .where(eq(phase.protocolId, protocolId))
+    .orderBy(phase.order);
+
+  return phases.map((r) => ({
+    ...r,
+    purpose: r.purpose ?? undefined,
+    imageUrl: r.imageUrl ?? undefined,
+    workoutIds: r.workoutIds ?? undefined,
+    notes: r.notes ?? undefined,
+  })) as Phase[];
+}
+
+export async function getPhaseById(phaseId: string): Promise<Phase | null> {
+  const [found] = await db
+    .select()
+    .from(phase)
+    .where(eq(phase.id, phaseId))
+    .limit(1);
+
+  if (!found) return null;
+
+  return {
+    ...found,
+    purpose: found.purpose ?? undefined,
+    imageUrl: found.imageUrl ?? undefined,
+    workoutIds: found.workoutIds ?? undefined,
+    notes: found.notes ?? undefined,
+  } as Phase;
+}
+
+export async function updatePhase(
+  phaseId: string,
+  updates: Partial<Omit<Phase, 'id' | 'protocolId' | 'createdAt' | 'updatedAt' | 'workouts'>>
+): Promise<Phase | null> {
+  const [updated] = await db
+    .update(phase)
+    .set(updates)
+    .where(eq(phase.id, phaseId))
+    .returning();
+
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    purpose: updated.purpose ?? undefined,
+    imageUrl: updated.imageUrl ?? undefined,
+    workoutIds: updated.workoutIds ?? undefined,
+    notes: updated.notes ?? undefined,
+  } as Phase;
+}
+
+export async function deletePhase(phaseId: string): Promise<boolean> {
+  await db.delete(phase).where(eq(phase.id, phaseId));
+  return true;
+}
+
+// Helper function to get workouts for a phase (if workoutIds are provided)
+// Workouts remain independent - this is just a convenience function
+export async function getPhaseWorkouts(phaseId: string): Promise<Workout[]> {
+  const phaseData = await getPhaseById(phaseId);
+  if (!phaseData || !phaseData.workoutIds || phaseData.workoutIds.length === 0) {
+    return [];
+  }
+
+  const workouts = await db
+    .select()
+    .from(workout)
+    .where(inArray(workout.id, phaseData.workoutIds));
+
+  // Create a map to preserve order from workoutIds array
+  const workoutMap = new Map(workouts.map((w) => [w.id, w]));
+
+  // Return workouts in the order specified by workoutIds
+  return phaseData.workoutIds
+    .map((id) => workoutMap.get(id))
+    .filter((w): w is typeof workouts[0] => w !== undefined)
+    .map((r) => ({
+      ...nullToUndefined(r),
+      blocks: [], // Blocks are loaded separately
+    })) as Workout[];
 }
 
 // ============================================================================
@@ -171,6 +271,7 @@ export async function createFullWorkout(
         name: workoutData.name,
         objectives: workoutData.objectives,
         description: workoutData.description,
+        imageUrl: workoutData.imageUrl,
         estimatedDuration: workoutData.estimatedDuration,
       })
       .returning();
@@ -253,6 +354,7 @@ export async function createWorkout(
       name: workoutData.name,
       objectives: workoutData.objectives,
       description: workoutData.description,
+      imageUrl: workoutData.imageUrl,
       estimatedDuration: workoutData.estimatedDuration,
     })
     .returning();
@@ -276,36 +378,6 @@ export async function getUserWorkouts(userId: string): Promise<Workout[]> {
   })) as Workout[];
 }
 
-export async function getProtocolWorkouts(protocolId: string): Promise<Workout[]> {
-  // Get workout IDs from protocol_workout junction table, ordered by order field
-  const protocolWorkouts = await db
-    .select()
-    .from(protocolWorkout)
-    .where(eq(protocolWorkout.protocolId, protocolId))
-    .orderBy(protocolWorkout.order);
-
-  if (protocolWorkouts.length === 0) {
-    return [];
-  }
-
-  const workoutIds = protocolWorkouts.map((pw) => pw.workoutId);
-  const workouts = await db
-    .select()
-    .from(workout)
-    .where(inArray(workout.id, workoutIds));
-
-  // Create a map to preserve order from protocol_workout
-  const workoutMap = new Map(workouts.map((w) => [w.id, w]));
-  
-  // Return workouts in the order specified by protocol_workout.order
-  return protocolWorkouts
-    .map((pw) => workoutMap.get(pw.workoutId))
-    .filter((w): w is typeof workouts[0] => w !== undefined)
-    .map((r) => ({
-      ...nullToUndefined(r),
-      blocks: [], // Blocks are loaded separately
-    })) as Workout[];
-}
 
 export async function getWorkoutById(
   workoutId: string,
@@ -742,6 +814,25 @@ export async function getUserProtocolInstances(
   })) as ProtocolInstance[];
 }
 
+export async function getProtocolInstanceById(
+  instanceId: string,
+  userId: string
+): Promise<ProtocolInstance | null> {
+  const [found] = await db
+    .select()
+    .from(protocolInstance)
+    .where(and(eq(protocolInstance.id, instanceId), eq(protocolInstance.userId, userId)))
+    .limit(1);
+
+  if (!found) return null;
+
+  return {
+    ...found,
+    startDate: new Date(found.startDate),
+    endDate: found.endDate ? new Date(found.endDate) : null,
+  } as ProtocolInstance;
+}
+
 export async function updateProtocolInstance(
   instanceId: string,
   userId: string,
@@ -771,10 +862,126 @@ export async function deleteProtocolInstance(
   instanceId: string,
   userId: string
 ): Promise<boolean> {
-  // CASCADE will handle workout_instances
+  // CASCADE will handle phase_instances
   const result = await db
     .delete(protocolInstance)
     .where(and(eq(protocolInstance.id, instanceId), eq(protocolInstance.userId, userId)));
+
+  return true;
+}
+
+// ============================================================================
+// PHASE INSTANCE CRUD
+// ============================================================================
+
+export async function createPhaseInstance(
+  userId: string,
+  instanceData: Omit<PhaseInstance, 'id' | 'userId' | 'phase'>
+): Promise<PhaseInstance> {
+  const [newInstance] = await db
+    .insert(phaseInstance)
+    .values({
+      userId,
+      protocolInstanceId: instanceData.protocolInstanceId,
+      phaseId: instanceData.phaseId,
+      active: instanceData.active ?? true,
+      startDate: instanceData.startDate,
+      endDate: instanceData.endDate,
+      complete: instanceData.complete ?? false,
+      duration: instanceData.duration,
+      notes: instanceData.notes ?? null,
+    } as any)
+    .returning();
+
+  return {
+    ...newInstance,
+    startDate: new Date(newInstance.startDate),
+    endDate: newInstance.endDate ? new Date(newInstance.endDate) : null,
+  } as PhaseInstance;
+}
+
+export async function getPhaseInstances(
+  userId: string,
+  options?: { protocolInstanceId?: string; phaseId?: string; activeOnly?: boolean }
+): Promise<PhaseInstance[]> {
+  const conditions = [eq(phaseInstance.userId, userId)];
+  
+  if (options?.protocolInstanceId) {
+    conditions.push(eq(phaseInstance.protocolInstanceId, options.protocolInstanceId));
+  }
+  
+  if (options?.phaseId) {
+    conditions.push(eq(phaseInstance.phaseId, options.phaseId));
+  }
+  
+  if (options?.activeOnly) {
+    conditions.push(eq(phaseInstance.active, true));
+  }
+
+  const results = await db
+    .select()
+    .from(phaseInstance)
+    .where(and(...conditions))
+    .orderBy(desc(phaseInstance.startDate));
+
+  return results.map((r) => ({
+    ...r,
+    startDate: new Date(r.startDate),
+    endDate: r.endDate ? new Date(r.endDate) : null,
+  })) as PhaseInstance[];
+}
+
+export async function getPhaseInstanceById(
+  instanceId: string,
+  userId: string
+): Promise<PhaseInstance | null> {
+  const [found] = await db
+    .select()
+    .from(phaseInstance)
+    .where(and(eq(phaseInstance.id, instanceId), eq(phaseInstance.userId, userId)))
+    .limit(1);
+
+  if (!found) return null;
+
+  return {
+    ...found,
+    startDate: new Date(found.startDate),
+    endDate: found.endDate ? new Date(found.endDate) : null,
+  } as PhaseInstance;
+}
+
+export async function updatePhaseInstance(
+  instanceId: string,
+  userId: string,
+  updates: Partial<Omit<PhaseInstance, 'id' | 'userId' | 'protocolInstanceId' | 'phaseId' | 'phase'>>
+): Promise<PhaseInstance | null> {
+  // Convert Date objects to strings for database
+  const dbUpdates: any = { ...updates };
+  if (updates.startDate) dbUpdates.startDate = updates.startDate;
+  if (updates.endDate !== undefined) dbUpdates.endDate = updates.endDate ?? null;
+
+  const [updated] = await db
+    .update(phaseInstance)
+    .set(dbUpdates)
+    .where(and(eq(phaseInstance.id, instanceId), eq(phaseInstance.userId, userId)))
+    .returning();
+
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    startDate: new Date(updated.startDate),
+    endDate: updated.endDate ? new Date(updated.endDate) : null,
+  } as PhaseInstance;
+}
+
+export async function deletePhaseInstance(
+  instanceId: string,
+  userId: string
+): Promise<boolean> {
+  const result = await db
+    .delete(phaseInstance)
+    .where(and(eq(phaseInstance.id, instanceId), eq(phaseInstance.userId, userId)));
 
   return true;
 }

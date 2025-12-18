@@ -26,7 +26,7 @@ export default function ExerciseNotesPage() {
   useEffect(() => {
     async function fetchInstance() {
       try {
-        const res = await fetch(`/api/train/workout-instances/${instanceId}`);
+        const res = await fetch(`/api/train/workouts/instances/${instanceId}`);
         if (res.ok) {
           const data = await res.json();
           setInstance(data.workoutInstance);
@@ -71,12 +71,23 @@ export default function ExerciseNotesPage() {
   };
 
   const handleSave = async () => {
-    if (!instance) return;
+    if (!instance || !instance.workoutId) return;
     setSaving(true);
+    
+    // Find block and exercise IDs
+    const blockInstance = instance.blockInstances?.find(b => 
+      b.exerciseInstances?.some(e => e.workoutBlockExerciseId === exerciseId)
+    );
+    const blockId = blockInstance?.workoutBlock?.id;
+    if (!blockId) {
+      showToast({ title: 'Block not found', variant: 'error' });
+      setSaving(false);
+      return;
+    }
     
     try {        
         await Promise.all(sets.map(async (set) => {
-            const res = await fetch(`/api/train/workout-block-exercise-instances/${set.id}`, {
+            const res = await fetch(`/api/train/workouts/${instance.workoutId}/blocks/${blockId}/exercises/${exerciseId}/instances/${set.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -101,20 +112,20 @@ export default function ExerciseNotesPage() {
   if (!targetGroup) return <div className="p-8">Exercise not found in this workout</div>;
 
   return (
-    <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-2xl mb-20">
+    <div className="mx-auto mb-20 px-4 sm:px-6 lg:px-8 py-8 max-w-2xl">
       <div className="mb-6">
         <BackToLink href={`/log/workouts/${instanceId}`} pageName="Workout" />
         <div className="flex justify-between items-start mt-4">
             <div className="flex flex-col gap-2 w-full">
-                <h1 className="text-3xl font-bold text-gray-100 my-2">{targetGroup.definition.exercise.name}</h1>
-                <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto my-2">
+                <h1 className="my-2 font-bold text-gray-100 text-3xl">{targetGroup.definition.exercise.name}</h1>
+                <Button onClick={handleSave} disabled={saving} className="my-2 w-full sm:w-auto">
                     {saving ? <Loader2 className="animate-spin" /> : 'Update'}
                 </Button>
                 <div className="flex items-center gap-2 mt-2">
-                    <span className="text-sm text-muted-foreground bg-zinc-800 px-2 py-1 rounded border border-zinc-700">
+                    <span className="bg-zinc-800 px-2 py-1 border border-zinc-700 rounded text-muted-foreground text-sm">
                         {targetBlock?.workoutBlockType}
                     </span>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-gray-400 text-sm">
                         {sets.length} sets
                     </span>
                 </div>
@@ -124,13 +135,13 @@ export default function ExerciseNotesPage() {
 
       <div className="space-y-6">
          {sets.map((set, index) => (
-            <div key={set.id} className="p-4 bg-zinc-900/30 rounded-lg border border-zinc-800/50 space-y-3">
-                <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-300">Set {index + 1}</span>
+            <div key={set.id} className="space-y-3 bg-zinc-900/30 p-4 border border-zinc-800/50 rounded-lg">
+                <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-300 text-sm">Set {index + 1}</span>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">RPE</span>
+                        <span className="text-muted-foreground text-xs">RPE</span>
                         <NumberInput 
-                            className="w-16 h-8 text-sm text-center bg-zinc-800/50 border-zinc-700"
+                            className="bg-zinc-800/50 border-zinc-700 w-16 h-8 text-sm text-center"
                             min={1}
                             max={10}
                             value={set.rpe}
@@ -146,7 +157,7 @@ export default function ExerciseNotesPage() {
                     value={set.notes ?? ''}
                     onChange={(e) => handleUpdateLocal(set.id, { notes: e.target.value })}
                     placeholder="How did this set feel? Technique cues, pain points, etc."
-                    className="min-h-[80px] text-sm bg-zinc-800/20 border-zinc-800 focus:border-brand-primary/50"
+                    className="bg-zinc-800/20 border-zinc-800 focus:border-brand-primary/50 min-h-[80px] text-sm"
                 />
             </div>
          ))}
