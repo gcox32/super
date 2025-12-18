@@ -371,11 +371,11 @@ export function estimateBodyFat(input: BodyFatInput): BodyFatResult {
     if (estimates.length >= 2) {
         const bfs = estimates.map((e) => e.bf);
         const spread = Math.max(...bfs) - Math.min(...bfs);
-        if (spread >= 10) {
+        if (spread >= 20) {
             flags.push({
                 code: "EXTREME_METHOD_DISAGREEMENT",
                 message:
-                    "Methods disagree by 10+ percentage points. This often indicates tape placement issues or a body type outside these formulas' assumptions.",
+                    "Methods disagree by 20+ percentage points. This often indicates tape placement issues or a body type outside these formulas' assumptions.",
                 severity: "warn",
             });
         }
