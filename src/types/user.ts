@@ -1,4 +1,13 @@
-import { LiquidMeasurement, HeightMeasurement, WeightMeasurement, PercentageMeasurement, DistanceMeasurement, LongTimeMeasurement } from "./measures"; 
+import { 
+    LiquidMeasurement, 
+    HeightMeasurement, 
+    WeightMeasurement, 
+    PercentageMeasurement, 
+    DistanceMeasurement, 
+    LongTimeMeasurement, 
+    TimeMeasurement, 
+    RepetitionsMeasurement,
+} from "./measures"; 
 import { Exercise, PerformanceLog, Projected1RMLog } from "./train";
 import { SleepLog, SupplementSchedule, WaterIntakeLog } from "./fuel";
 
@@ -14,6 +23,9 @@ type Gender = 'male' | 'female';
 
 type ActivityLevel = 'sedentary' | 'lightly active' | 'moderately active' | 'very active' | 'extra active';
 
+export type GoalComponentType = 'bodyweight' | 'bodycomposition' | 'tape' | 'strength' | 'time' | 'repetitions' | 'skill' | 'other';
+export type GoalComponentConditional = 'equals' | 'greater than' | 'less than' | 'greater than or equal to' | 'less than or equal to' | 'not equal to';
+export type GoalComponentValue = DistanceMeasurement | PercentageMeasurement | WeightMeasurement | HeightMeasurement | TimeMeasurement | RepetitionsMeasurement | string;
 // user profile
 export interface UserProfile {
     id:                        string; // supabase id
@@ -66,6 +78,9 @@ export interface UserGoalComponent {
     id:           string;
     name:         string;
     description?: string;
+    type?:        GoalComponentType;
+    conditional?: GoalComponentConditional;
+    value?:       GoalComponentValue;
     priority:     number;
     complete:     boolean;
     notes?:       string;

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { UserGoal } from '@/types/user';
+import { UserGoal, UserStats } from '@/types/user';
 import { GoalForm } from '@/components/goals/GoalForm';
 import Button from '@/components/ui/Button';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
@@ -11,6 +11,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CheckCircle, Circle } from 'lucide-react';
+import { evaluateGoalComponents } from '@/lib/goals/evaluateComponent';
 
 export default function GoalDetailPage() {
     const params = useParams();
@@ -18,20 +19,24 @@ export default function GoalDetailPage() {
     const goalId = params.id as string;
 
     const [goal, setGoal] = useState<UserGoal | null>(null);
+    const [latestStats, setLatestStats] = useState<UserStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [togglingComponent, setTogglingComponent] = useState<string | null>(null);
 
     const { showToast } = useToast();
 
     const fetchGoal = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/me/goals/${goalId}`);
-            if (!res.ok) {
-                if (res.status === 404) {
+            const [goalRes, statsRes] = await Promise.all([
+                fetch(`/api/me/goals/${goalId}`),
+                fetch('/api/me/stats?latest=true')
+            ]);
+
+            if (!goalRes.ok) {
+                if (goalRes.status === 404) {
                     showToast({
                         title: 'Error',
                         description: 'Goal not found',
@@ -42,8 +47,30 @@ export default function GoalDetailPage() {
                 }
                 throw new Error('Failed to fetch goal');
             }
-            const data = await res.json();
-            setGoal(data.goal);
+
+            const goalData = await goalRes.json();
+            let goal = goalData.goal as UserGoal;
+
+            // Fetch and evaluate components if stats are available
+            if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                const stats = statsData.stats as UserStats | null;
+                setLatestStats(stats);
+
+                // Evaluate components based on latest stats
+                if (goal.components && goal.components.length > 0) {
+                    const evaluatedComponents = evaluateGoalComponents(goal.components, stats);
+                    const allComplete = evaluatedComponents.length > 0 && evaluatedComponents.every(c => c.complete);
+                    
+                    goal = {
+                        ...goal,
+                        components: evaluatedComponents,
+                        complete: allComplete,
+                    };
+                }
+            }
+
+            setGoal(goal);
         } catch (error) {
             console.error(error);
             showToast({
@@ -102,52 +129,6 @@ export default function GoalDetailPage() {
         }
     };
 
-    const handleToggleComponent = async (componentId: string) => {
-        if (!goal || !goal.components) return;
-        
-        setTogglingComponent(componentId);
-        
-        // Optimistically update the local state
-        const updatedComponents = goal.components.map(comp =>
-            comp.id === componentId
-                ? { ...comp, complete: !comp.complete, updatedAt: new Date() }
-                : comp
-        );
-
-        // Determine if goal should be complete (all components complete)
-        const allComplete = updatedComponents.length > 0 && updatedComponents.every(c => c.complete);
-
-        // Update local state immediately
-        setGoal({
-            ...goal,
-            components: updatedComponents,
-            complete: allComplete,
-        });
-
-        try {
-            const res = await fetch(`/api/me/goals/${goalId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    components: updatedComponents,
-                    complete: allComplete,
-                }),
-            });
-
-            if (!res.ok) throw new Error('Failed to update component');
-        } catch (error) {
-            console.error(error);
-            // Revert the optimistic update on error
-            setGoal(goal);
-            showToast({ 
-                title: 'Error', 
-                description: 'Failed to update component', 
-                variant: 'error' 
-            });
-        } finally {
-            setTogglingComponent(null);
-        }
-    };
 
     if (isLoading) {
         return (
@@ -176,10 +157,7 @@ export default function GoalDetailPage() {
     if (isEditing) {
         return (
             <PageLayout
-                breadcrumbHref={`/me/goals/${goalId}`}
-                breadcrumbText={goal.name || 'Goal'}
                 title="Edit Goal"
-                subtitle="Edit your goal"
             >
                 <GoalForm
                     initialData={goal}
@@ -220,9 +198,6 @@ export default function GoalDetailPage() {
                 <div className="flex flex-col bg-card p-4 border border-border rounded-lg">
                     <div className="flex justify-between items-center gap-4">
                         <div className="flex flex-1 items-center gap-3">
-                            <div className={cn("mt-1", goal.complete ? "text-brand-primary" : "text-muted-foreground")}>
-                                {goal.complete ? <CheckCircle size={24} /> : <Circle size={24} />}
-                            </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
                                     <h2 className={cn("font-semibold text-xl", goal.complete && "line-through text-muted-foreground")}>
@@ -290,12 +265,9 @@ export default function GoalDetailPage() {
                                 .map((component) => (
                                     <div
                                         key={component.id}
-                                        onClick={() => handleToggleComponent(component.id)}
                                         className={cn(
-                                            "relative p-3 border border-border rounded-lg transition-colors cursor-pointer",
-                                            component.complete && "bg-muted/30",
-                                            togglingComponent === component.id && "opacity-50",
-                                            "hover:bg-hover"
+                                            "relative p-3 border border-border rounded-lg",
+                                            component.complete && "bg-muted/30"
                                         )}
                                     >
                                         <div className="flex items-start gap-3">
@@ -330,7 +302,7 @@ export default function GoalDetailPage() {
                                                 )}
                                             </div>
                                         </div>
-                                        <span className="right-3 bottom-3 absolute text-muted-foreground text-xs">
+                                        <span className="top-3 right-3 absolute text-muted-foreground text-xs">
                                             Priority: {component.priority}
                                         </span>
                                     </div>

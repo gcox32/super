@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { UserGoalComponent } from '@/types/user';
-import { FormGroup, FormLabel, FormInput, FormTextarea } from '@/components/ui/Form';
+import { UserGoalComponent, GoalComponentType, GoalComponentConditional, GoalComponentValue } from '@/types/user';
+import { FormGroup, FormLabel, FormInput, FormTextarea, FormSelect } from '@/components/ui/Form';
 import Button from '@/components/ui/Button';
 import { TogglePill } from '@/components/ui/TogglePill';
 import { NumberInput } from '@/components/ui/NumberInput';
 import { Plus, X, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { WeightMeasurement, HeightMeasurement, PercentageMeasurement, DistanceMeasurement, TimeMeasurement, RepetitionsMeasurement } from '@/types/measures';
 
 interface GoalComponentsSectionProps {
     components: UserGoalComponent[];
@@ -182,6 +183,73 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                             />
                                         </FormGroup>
 
+                                        <FormGroup>
+                                            <FormLabel htmlFor={`component-type-${component.id}`}>
+                                                Type
+                                            </FormLabel>
+                                            <FormSelect
+                                                id={`component-type-${component.id}`}
+                                                value={component.type || ''}
+                                                onChange={(e) => {
+                                                    const newType = e.target.value as GoalComponentType | '';
+                                                    updateComponent(component.id, { 
+                                                        type: newType || undefined,
+                                                        // Clear value when type changes to avoid type mismatches
+                                                        value: undefined
+                                                    });
+                                                }}
+                                            >
+                                                <option value="">Select type...</option>
+                                                <option value="bodyweight">Body Weight</option>
+                                                <option value="bodycomposition">Body Composition</option>
+                                                <option value="tape">Tape Measurement</option>
+                                                <option value="strength">Strength</option>
+                                                <option value="time">Time</option>
+                                                <option value="repetitions">Repetitions</option>
+                                                <option value="skill">Skill</option>
+                                                <option value="other">Other</option>
+                                            </FormSelect>
+                                        </FormGroup>
+
+                                        {component.type && (
+                                            <>
+                                                <FormGroup>
+                                                    <FormLabel htmlFor={`component-conditional-${component.id}`}>
+                                                        Condition
+                                                    </FormLabel>
+                                                    <FormSelect
+                                                        id={`component-conditional-${component.id}`}
+                                                        value={component.conditional || ''}
+                                                        onChange={(e) => {
+                                                            const newConditional = e.target.value as GoalComponentConditional | '';
+                                                            updateComponent(component.id, { 
+                                                                conditional: newConditional || undefined
+                                                            });
+                                                        }}
+                                                    >
+                                                        <option value="">Select condition...</option>
+                                                        <option value="equals">Equals</option>
+                                                        <option value="greater than">Greater Than</option>
+                                                        <option value="less than">Less Than</option>
+                                                        <option value="greater than or equal to">Greater Than or Equal To</option>
+                                                        <option value="less than or equal to">Less Than or Equal To</option>
+                                                        <option value="not equal to">Not Equal To</option>
+                                                    </FormSelect>
+                                                </FormGroup>
+
+                                                {component.conditional && component.type !== 'skill' && component.type !== 'other' && (
+                                                    <FormGroup>
+                                                        <FormLabel htmlFor={`component-value-${component.id}`}>
+                                                            Target Value
+                                                        </FormLabel>
+                                                        {renderValueInput(component, (value) => 
+                                                            updateComponent(component.id, { value })
+                                                        )}
+                                                    </FormGroup>
+                                                )}
+                                            </>
+                                        )}
+
                                         <div className="flex flex-col gap-4">
                                             <FormGroup className="flex flex-row justify-end items-center gap-4 w-full">
                                                 <FormLabel htmlFor={`component-priority-${component.id}`}>
@@ -253,6 +321,129 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                 </div>
             )}
         </FormGroup>
+    );
+}
+
+function renderValueInput(
+    component: UserGoalComponent,
+    onChange: (value: GoalComponentValue) => void
+) {
+    const type = component.type;
+    const currentValue = component.value;
+
+    if (!type || type === 'skill' || type === 'other') {
+        return (
+            <FormInput
+                type="text"
+                value={typeof currentValue === 'string' ? currentValue : ''}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="Enter value..."
+            />
+        );
+    }
+
+    // For measurement types, render value and unit inputs
+    if (type === 'bodyweight') {
+        const weight = currentValue as WeightMeasurement | undefined;
+        return (
+            <div className="flex gap-2">
+                <NumberInput
+                    value={weight?.value}
+                    onValueChange={(value) => onChange({ value: value ?? 0, unit: weight?.unit || 'kg' } as WeightMeasurement)}
+                    className="flex-1"
+                    placeholder="Value"
+                />
+                <FormSelect
+                    value={weight?.unit || 'kg'}
+                    onChange={(e) => onChange({ value: weight?.value ?? 0, unit: e.target.value as 'kg' | 'lbs' } as WeightMeasurement)}
+                    className="w-24"
+                >
+                    <option value="kg">kg</option>
+                    <option value="lbs">lbs</option>
+                </FormSelect>
+            </div>
+        );
+    }
+
+    if (type === 'bodycomposition') {
+        const percentage = currentValue as PercentageMeasurement | undefined;
+        return (
+            <div className="flex gap-2">
+                <NumberInput
+                    value={percentage?.value}
+                    onValueChange={(value) => onChange({ value: value ?? 0, unit: '%' } as PercentageMeasurement)}
+                    className="flex-1"
+                    placeholder="Percentage"
+                />
+                <span className="flex items-center text-muted-foreground">%</span>
+            </div>
+        );
+    }
+
+    if (type === 'tape') {
+        const distance = currentValue as DistanceMeasurement | undefined;
+        return (
+            <div className="flex gap-2">
+                <NumberInput
+                    value={distance?.value}
+                    onValueChange={(value) => onChange({ value: value ?? 0, unit: distance?.unit || 'cm' } as DistanceMeasurement)}
+                    className="flex-1"
+                    placeholder="Value"
+                />
+                <FormSelect
+                    value={distance?.unit || 'cm'}
+                    onChange={(e) => onChange({ value: distance?.value ?? 0, unit: e.target.value as 'cm' | 'in' } as DistanceMeasurement)}
+                    className="w-24"
+                >
+                    <option value="cm">cm</option>
+                    <option value="in">in</option>
+                </FormSelect>
+            </div>
+        );
+    }
+
+    if (type === 'time') {
+        const time = currentValue as TimeMeasurement | undefined;
+        return (
+            <div className="flex gap-2">
+                <NumberInput
+                    value={time?.value}
+                    onValueChange={(value) => onChange({ value: value ?? 0, unit: time?.unit || 'min' } as TimeMeasurement)}
+                    className="flex-1"
+                    placeholder="Time"
+                />
+                <FormSelect
+                    value={time?.unit || 'min'}
+                    onChange={(e) => onChange({ value: time?.value ?? 0, unit: e.target.value as 's' | 'min' | 'hr' } as TimeMeasurement)}
+                    className="w-24"
+                >
+                    <option value="s">s</option>
+                    <option value="min">min</option>
+                    <option value="hr">hr</option>
+                </FormSelect>
+            </div>
+        );
+    }
+
+    if (type === 'repetitions') {
+        const reps = currentValue as RepetitionsMeasurement | undefined;
+        return (
+            <NumberInput
+                value={reps?.value}
+                onValueChange={(value) => onChange({ value: value ?? 0, unit: 'reps' } as RepetitionsMeasurement)}
+                placeholder="Repetitions"
+            />
+        );
+    }
+
+    // Default fallback
+    return (
+        <FormInput
+            type="text"
+            value={typeof currentValue === 'string' ? currentValue : ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Enter value..."
+        />
     );
 }
 
