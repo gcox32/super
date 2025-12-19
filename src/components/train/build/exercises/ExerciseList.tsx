@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Exercise } from '@/types/train';
 import Button from '@/components/ui/Button';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit2 } from 'lucide-react';
 
 export default function ExerciseList() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -48,42 +48,8 @@ export default function ExerciseList() {
     return () => clearTimeout(timer);
   }, [searchTerm, currentPage]);
 
-  const handleDeleteClick = (e: React.MouseEvent, exercise: Exercise) => {
-    e.preventDefault(); // Prevent navigation
-    e.stopPropagation();
-    setExerciseToDelete(exercise);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!exerciseToDelete) return;
-
-    try {
-      const res = await fetch(`/api/train/exercises/${exerciseToDelete.id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setExercises(prev => prev.filter(e => e.id !== exerciseToDelete.id));
-      } else {
-        console.error('Failed to delete exercise');
-      }
-    } catch (err) {
-      console.error('Error deleting exercise', err);
-    }
-  };
-
   return (
     <div className="space-y-6 pb-20">
-      <ConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Exercise"
-        message={`Are you sure you want to delete "${exerciseToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        confirmVariant="danger"
-      />
       <div className="flex sm:flex-row flex-col justify-between items-start sm:items-center gap-4">
         <div className="relative w-full sm:max-w-md">
           <div className="left-0 absolute inset-y-0 flex items-center pl-3 pointer-events-none">
@@ -127,14 +93,7 @@ export default function ExerciseList() {
                       <div className="font-medium text-sm truncate" style={{ color: 'color-mix(in srgb, var(--color-brand-primary) 70%, white)' }}>
                         {exercise.name}
                       </div>
-
-                      <button
-                        onClick={(e) => handleDeleteClick(e, exercise)}
-                        className="flex items-center text-red-500 hover:text-red-700 transition-colors"
-                      >
-                        <Trash2 className="mr-1 w-4 h-4" />
-                        <span className="hidden sm:inline">Delete</span>
-                      </button>
+                      <Edit2 className="w-4 h-4" />
                     </div>
                   </Link>
                 </li>

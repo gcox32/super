@@ -1,17 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Protocol } from '@/types/train';
 import Button from '@/components/ui/Button';
-import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { Plus, Calendar, Target, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Target } from 'lucide-react';
 
 export default function ProtocolList() {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [protocolToDelete, setProtocolToDelete] = useState<Protocol | null>(null);
 
   useEffect(() => {
     fetch('/api/train/protocols')
@@ -21,42 +18,8 @@ export default function ProtocolList() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleDeleteClick = (e: React.MouseEvent, protocol: Protocol) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setProtocolToDelete(protocol);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!protocolToDelete) return;
-
-    try {
-      const res = await fetch(`/api/train/protocols/${protocolToDelete.id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setProtocols(prev => prev.filter(p => p.id !== protocolToDelete.id));
-      } else {
-        console.error('Failed to delete protocol');
-      }
-    } catch (err) {
-      console.error('Error deleting protocol', err);
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <ConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Protocol"
-        message={`Are you sure you want to delete "${protocolToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        confirmVariant="danger"
-      />
       <div className="flex flex-col justify-between">
         <Link href="/train/build/protocols/new">
           <Button className="w-full">
@@ -87,14 +50,6 @@ export default function ProtocolList() {
                     <Calendar className="h-3 w-3 mr-1" />
                     {new Date(protocol.createdAt).toLocaleDateString()}
                   </div>
-
-                  <button
-                    onClick={(e) => handleDeleteClick(e, protocol)}
-                    className="ml-auto p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                    title="Delete Protocol"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </div>
 
                 {protocol.objectives && protocol.objectives.length > 0 && (

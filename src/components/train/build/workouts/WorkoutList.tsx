@@ -1,17 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Workout } from '@/types/train';
 import Button from '@/components/ui/Button';
-import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { Plus, Calendar, Clock, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Clock } from 'lucide-react';
 
 export default function WorkoutList() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [workoutToDelete, setWorkoutToDelete] = useState<Workout | null>(null);
 
   useEffect(() => {
     fetch('/api/train/workouts')
@@ -21,42 +18,8 @@ export default function WorkoutList() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleDeleteClick = (e: React.MouseEvent, workout: Workout) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setWorkoutToDelete(workout);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!workoutToDelete) return;
-
-    try {
-      const res = await fetch(`/api/train/workouts/${workoutToDelete.id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setWorkouts(prev => prev.filter(w => w.id !== workoutToDelete.id));
-      } else {
-        console.error('Failed to delete workout');
-      }
-    } catch (err) {
-      console.error('Error deleting workout', err);
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <ConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Workout"
-        message={`Are you sure you want to delete "${workoutToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        confirmVariant="danger"
-      />
       <div className="flex flex-col justify-between">
         
         <Link href="/train/build/workouts/new" className="w-full">
@@ -94,14 +57,6 @@ export default function WorkoutList() {
                     <Calendar className="mr-1 w-3 h-3" />
                     {new Date(workout.createdAt).toLocaleDateString()}
                   </div>
-
-                  <button
-                    onClick={(e) => handleDeleteClick(e, workout)}
-                    className="hover:bg-red-50 ml-auto p-1 rounded-full text-red-400 hover:text-red-600 transition-colors"
-                    title="Delete Workout"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             </Link>
