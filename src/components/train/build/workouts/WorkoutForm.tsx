@@ -41,24 +41,43 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
     }
   ]);
 
-  // Track which exercises have load fields expanded
-  const [expandedLoads, setExpandedLoads] = useState<Set<string>>(new Set());
+  // Track which measure type is active for each exercise (null = none, 'load' | 'distance' | 'calories' | 'time')
+  const [activeMeasures, setActiveMeasures] = useState<Map<string, 'load' | 'distance' | 'calories' | 'time' | null>>(new Map());
   
-  const toggleLoad = (blockIndex: number, exerciseIndex: number) => {
+  const toggleMeasure = (blockIndex: number, exerciseIndex: number, measureType: 'load' | 'distance' | 'calories' | 'time') => {
     const key = `${blockIndex}-${exerciseIndex}`;
-    setExpandedLoads(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
+    const current = activeMeasures.get(key);
+    
+    // If clicking the same measure type, collapse it
+    if (current === measureType) {
+      setActiveMeasures(prev => {
+        const next = new Map(prev);
+        next.set(key, null);
+        return next;
+      });
+    } else {
+      // Switch to the new measure type and clear other measures
+      setActiveMeasures(prev => {
+        const next = new Map(prev);
+        next.set(key, measureType);
+        return next;
+      });
+      
+      // Clear other measure values when switching
+      const exercise = blocks[blockIndex].exercises[exerciseIndex];
+      const clearedMeasures: any = { ...exercise.measures };
+      
+      if (measureType !== 'load') clearedMeasures.externalLoad = undefined;
+      if (measureType !== 'distance') clearedMeasures.distance = undefined;
+      if (measureType !== 'calories') clearedMeasures.calories = undefined;
+      if (measureType !== 'time') clearedMeasures.time = undefined;
+      
+      updateExercise(blockIndex, exerciseIndex, { measures: clearedMeasures });
+    }
   };
 
-  const isLoadExpanded = (blockIndex: number, exerciseIndex: number) => {
-    return expandedLoads.has(`${blockIndex}-${exerciseIndex}`);
+  const getActiveMeasure = (blockIndex: number, exerciseIndex: number): 'load' | 'distance' | 'calories' | 'time' | null => {
+    return activeMeasures.get(`${blockIndex}-${exerciseIndex}`) ?? null;
   };
 
   const populateForm = (w: Workout) => {
@@ -90,16 +109,23 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
 
     if (mappedBlocks.length > 0) {
       setBlocks(mappedBlocks);
-      // Auto-expand load fields for exercises that already have load values
-      const loadsToExpand = new Set<string>();
+      // Auto-expand measure fields for exercises that already have measure values
+      const measuresToExpand = new Map<string, 'load' | 'distance' | 'calories' | 'time'>();
       mappedBlocks.forEach((block, blockIndex) => {
         block.exercises.forEach((ex, exIndex) => {
+          const key = `${blockIndex}-${exIndex}`;
           if (ex.measures?.externalLoad?.value !== undefined) {
-            loadsToExpand.add(`${blockIndex}-${exIndex}`);
+            measuresToExpand.set(key, 'load');
+          } else if (ex.measures?.distance?.value !== undefined) {
+            measuresToExpand.set(key, 'distance');
+          } else if (ex.measures?.calories?.value !== undefined) {
+            measuresToExpand.set(key, 'calories');
+          } else if (ex.measures?.time?.value !== undefined) {
+            measuresToExpand.set(key, 'time');
           }
         });
       });
-      setExpandedLoads(loadsToExpand);
+      setActiveMeasures(measuresToExpand);
     }
   };
 
@@ -265,8 +291,8 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
           <FormTitle>{isEditing ? 'Edit Workout' : 'Create Workout'}</FormTitle>
           
           {!isEditing && availableWorkouts.length > 0 && (
-            <div className="mb-6 bg-brand-primary/5 p-4 border border-brand-primary/20 rounded-lg">
-                <div className="flex items-center gap-2 mb-2 text-brand-primary text-sm font-medium">
+            <div className="bg-brand-primary/5 mb-6 p-4 border border-brand-primary/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-2 font-medium text-brand-primary text-sm">
                     <Copy className="w-4 h-4" />
                     <span>Copy from existing workout</span>
                 </div>
@@ -369,7 +395,7 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
 
               <div className="space-y-3 pl-4 border-border border-l-2">
                 {block.exercises.map((exercise, exerciseIndex) => {
-                  const loadExpanded = isLoadExpanded(blockIndex, exerciseIndex);
+                  const activeMeasure = getActiveMeasure(blockIndex, exerciseIndex);
                   return (
                   <div key={exerciseIndex} className="space-y-2 bg-background/50 p-3 border border-border rounded">
                     {/* First row: Exercise, Sets, Reps, Rest */}
@@ -449,81 +475,266 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
                       </div>
                     </div>
                     
-                    {/* Second row: Load (left) and Delete (right) */}
+                    {/* Second row: Measure selection (left) and Delete (right) */}
                     <div className="flex justify-between items-center">
-                      {loadExpanded ? (
+                      {activeMeasure ? (
                         <div className="flex-1 max-w-xs">
                           <div className="flex justify-start items-center gap-2 mb-1">
-                            <FormLabel className="text-xs">Load</FormLabel>
+                            <FormLabel className="text-xs capitalize">{activeMeasure}</FormLabel>
                             <button
                               type="button"
-                              onClick={() => toggleLoad(blockIndex, exerciseIndex)}
+                              onClick={() => toggleMeasure(blockIndex, exerciseIndex, activeMeasure)}
                               className="text-muted-foreground hover:text-foreground transition-colors"
-                              title="Hide Load"
+                              title={`Hide ${activeMeasure}`}
                             >
                               <ChevronUp className="w-3 h-3" />
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <FormInput 
-                              type="number" 
-                              value={exercise.measures.externalLoad?.value ?? ''} 
-                              onChange={e => {
-                                const val = e.target.value === '' ? '' : parseFloat(e.target.value);
-                                const currentUnit = exercise.measures.externalLoad?.unit || 'kg';
-                                updateExercise(blockIndex, exerciseIndex, { 
-                                  measures: { 
-                                    ...exercise.measures, 
-                                    externalLoad: (val === '' || isNaN(val as number))
-                                      ? undefined
-                                      : { value: val as number, unit: currentUnit },
-                                  } 
-                                });
-                              }}
-                              onBlur={e => {
-                                if (e.target.value === '') {
-                                  const currentUnit = exercise.measures.externalLoad?.unit || 'kg';
-                                  updateExercise(blockIndex, exerciseIndex, { 
-                                    measures: { 
-                                      ...exercise.measures, 
-                                      externalLoad: undefined,
-                                    } 
-                                  });
-                                }
-                              }}
-                              className="flex-1"
-                            />
-                            <FormSelect
-                              value={exercise.measures.externalLoad?.unit || 'kg'}
-                              onChange={e => {
-                                const unit = e.target.value as 'kg' | 'lbs';
-                                const currentValue = exercise.measures.externalLoad?.value;
-                                updateExercise(blockIndex, exerciseIndex, { 
-                                  measures: { 
-                                    ...exercise.measures, 
-                                    externalLoad: currentValue !== undefined
-                                      ? { value: currentValue, unit }
-                                      : { value: 0, unit },
-                                  } 
-                                });
-                              }}
-                              className="w-20"
-                            >
-                              <option value="kg">kg</option>
-                              <option value="lbs">lbs</option>
-                            </FormSelect>
+                            {activeMeasure === 'load' && (
+                              <>
+                                <FormInput 
+                                  type="number" 
+                                  value={exercise.measures.externalLoad?.value ?? ''} 
+                                  onChange={e => {
+                                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                    const currentUnit = exercise.measures.externalLoad?.unit || 'kg';
+                                    updateExercise(blockIndex, exerciseIndex, { 
+                                      measures: { 
+                                        ...exercise.measures, 
+                                        externalLoad: (val === '' || isNaN(val as number))
+                                          ? undefined
+                                          : { value: val as number, unit: currentUnit },
+                                        // Clear other measures when setting load
+                                        distance: undefined,
+                                        calories: undefined,
+                                        time: undefined,
+                                      } 
+                                    });
+                                  }}
+                                  onBlur={e => {
+                                    if (e.target.value === '') {
+                                      updateExercise(blockIndex, exerciseIndex, { 
+                                        measures: { 
+                                          ...exercise.measures, 
+                                          externalLoad: undefined,
+                                        } 
+                                      });
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <FormSelect
+                                  value={exercise.measures.externalLoad?.unit || 'kg'}
+                                  onChange={e => {
+                                    const unit = e.target.value as 'kg' | 'lbs';
+                                    const currentValue = exercise.measures.externalLoad?.value;
+                                    updateExercise(blockIndex, exerciseIndex, { 
+                                      measures: { 
+                                        ...exercise.measures, 
+                                        externalLoad: currentValue !== undefined
+                                          ? { value: currentValue, unit }
+                                          : { value: 0, unit },
+                                      } 
+                                    });
+                                  }}
+                                  className="w-20"
+                                >
+                                  <option value="kg">kg</option>
+                                  <option value="lbs">lbs</option>
+                                </FormSelect>
+                              </>
+                            )}
+                            {activeMeasure === 'distance' && (
+                              <>
+                                <FormInput 
+                                  type="number" 
+                                  value={exercise.measures.distance?.value ?? ''} 
+                                  onChange={e => {
+                                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                    const currentUnit = exercise.measures.distance?.unit || 'm';
+                                    updateExercise(blockIndex, exerciseIndex, { 
+                                      measures: { 
+                                        ...exercise.measures, 
+                                        distance: (val === '' || isNaN(val as number))
+                                          ? undefined
+                                          : { value: val as number, unit: currentUnit },
+                                        // Clear other measures when setting distance
+                                        externalLoad: undefined,
+                                        calories: undefined,
+                                        time: undefined,
+                                      } 
+                                    });
+                                  }}
+                                  onBlur={e => {
+                                    if (e.target.value === '') {
+                                      updateExercise(blockIndex, exerciseIndex, { 
+                                        measures: { 
+                                          ...exercise.measures, 
+                                          distance: undefined,
+                                        } 
+                                      });
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <FormSelect
+                                  value={exercise.measures.distance?.unit || 'm'}
+                                  onChange={e => {
+                                    const unit = e.target.value as 'cm' | 'm' | 'in' | 'ft' | 'yd' | 'mi' | 'km';
+                                    const currentValue = exercise.measures.distance?.value;
+                                    updateExercise(blockIndex, exerciseIndex, { 
+                                      measures: { 
+                                        ...exercise.measures, 
+                                        distance: currentValue !== undefined
+                                          ? { value: currentValue, unit }
+                                          : { value: 0, unit },
+                                      } 
+                                    });
+                                  }}
+                                  className="w-24"
+                                >
+                                  <option value="cm">cm</option>
+                                  <option value="m">m</option>
+                                  <option value="km">km</option>
+                                  <option value="in">in</option>
+                                  <option value="ft">ft</option>
+                                  <option value="yd">yd</option>
+                                  <option value="mi">mi</option>
+                                </FormSelect>
+                              </>
+                            )}
+                            {activeMeasure === 'calories' && (
+                              <>
+                                <FormInput 
+                                  type="number" 
+                                  value={exercise.measures.calories?.value ?? ''} 
+                                  onChange={e => {
+                                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                    updateExercise(blockIndex, exerciseIndex, { 
+                                      measures: { 
+                                        ...exercise.measures, 
+                                        calories: (val === '' || isNaN(val as number))
+                                          ? undefined
+                                          : { value: val as number, unit: 'cal' },
+                                        // Clear other measures when setting calories
+                                        externalLoad: undefined,
+                                        distance: undefined,
+                                        time: undefined,
+                                      } 
+                                    });
+                                  }}
+                                  onBlur={e => {
+                                    if (e.target.value === '') {
+                                      updateExercise(blockIndex, exerciseIndex, { 
+                                        measures: { 
+                                          ...exercise.measures, 
+                                          calories: undefined,
+                                        } 
+                                      });
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <span className="self-center px-2 text-muted-foreground text-xs">cal</span>
+                              </>
+                            )}
+                            {activeMeasure === 'time' && (
+                              <>
+                                <FormInput 
+                                  type="number" 
+                                  value={exercise.measures.time?.value ?? ''} 
+                                  onChange={e => {
+                                    const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                    const currentUnit = exercise.measures.time?.unit || 's';
+                                    updateExercise(blockIndex, exerciseIndex, { 
+                                      measures: { 
+                                        ...exercise.measures, 
+                                        time: (val === '' || isNaN(val as number))
+                                          ? undefined
+                                          : { value: val as number, unit: currentUnit },
+                                        // Clear other measures when setting time
+                                        externalLoad: undefined,
+                                        distance: undefined,
+                                        calories: undefined,
+                                      } 
+                                    });
+                                  }}
+                                  onBlur={e => {
+                                    if (e.target.value === '') {
+                                      updateExercise(blockIndex, exerciseIndex, { 
+                                        measures: { 
+                                          ...exercise.measures, 
+                                          time: undefined,
+                                        } 
+                                      });
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <FormSelect
+                                  value={exercise.measures.time?.unit || 's'}
+                                  onChange={e => {
+                                    const unit = e.target.value as 's' | 'min' | 'hr';
+                                    const currentValue = exercise.measures.time?.value;
+                                    updateExercise(blockIndex, exerciseIndex, { 
+                                      measures: { 
+                                        ...exercise.measures, 
+                                        time: currentValue !== undefined
+                                          ? { value: currentValue, unit }
+                                          : { value: 0, unit },
+                                      } 
+                                    });
+                                  }}
+                                  className="w-20"
+                                >
+                                  <option value="s">s</option>
+                                  <option value="min">min</option>
+                                  <option value="hr">hr</option>
+                                </FormSelect>
+                              </>
+                            )}
                           </div>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => toggleLoad(blockIndex, exerciseIndex)}
-                          className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs transition-colors"
-                          title="Add Load"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span className="text-[10px]">Load</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleMeasure(blockIndex, exerciseIndex, 'load')}
+                            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs transition-colors"
+                            title="Add Load"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span className="text-[10px]">Load</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleMeasure(blockIndex, exerciseIndex, 'distance')}
+                            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs transition-colors"
+                            title="Add Distance"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span className="text-[10px]">Distance</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleMeasure(blockIndex, exerciseIndex, 'calories')}
+                            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs transition-colors"
+                            title="Add Calories"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span className="text-[10px]">Calories</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleMeasure(blockIndex, exerciseIndex, 'time')}
+                            className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs transition-colors"
+                            title="Add Time"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span className="text-[10px]">Time</span>
+                          </button>
+                        </div>
                       )}
                       <button 
                         type="button" 

@@ -107,17 +107,19 @@ export function ExerciseAutocomplete({
     setSearchTerm(exercise.name);
     setOptions([]);
     onChange(exercise);
-    clearSelection();
+    // handleClickOutside(new MouseEvent('click'));
   };
+
+  function handleClickOutside(event: MouseEvent) {
+    if (!containerRef.current) return;
+    if (!containerRef.current.contains(event.target as Node)) {
+      setOptions([]);
+    }
+  }
 
   // Close suggestions when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(event.target as Node)) {
-        setOptions([]);
-      }
-    }
+    handleClickOutside(new MouseEvent('click'));
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {

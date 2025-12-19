@@ -85,6 +85,11 @@ export default function ActiveSessionPage({
   const [reps, setReps] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('lbs');
+  const [distance, setDistance] = useState<string>('');
+  const [distanceUnit, setDistanceUnit] = useState<'cm' | 'm' | 'in' | 'ft' | 'yd' | 'mi' | 'km'>('m');
+  const [time, setTime] = useState<string>('');
+  const [timeUnit, setTimeUnit] = useState<'s' | 'min' | 'hr'>('s');
+  const [calories, setCalories] = useState<string>('');
 
   // Audio refs
   const countdownAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -365,9 +370,16 @@ export default function ActiveSessionPage({
     if (!currentStep) return;
     
     // 1. Determine defaults from Target or Previous Set
+    const hasCalories = currentStep.exercise.measures.calories !== undefined;
+    
     let defaultReps = currentStep.exercise.measures.reps?.toString() || '';
     let defaultWeight = currentStep.exercise.measures.externalLoad?.value?.toString() || '';
     let defaultUnit = currentStep.exercise.measures.externalLoad?.unit || 'lbs';
+    let defaultDistance = '';
+    let defaultDistanceUnit: 'cm' | 'm' | 'in' | 'ft' | 'yd' | 'mi' | 'km' = 'm';
+    let defaultTime = '';
+    let defaultTimeUnit: 's' | 'min' | 'hr' = 's';
+    let defaultCalories = hasCalories ? (currentStep.exercise.measures.calories?.value?.toString() || '') : '';
 
     // Check previous step for "carry forward" logic
     if (currentStepIndex > 0) {
@@ -390,12 +402,32 @@ export default function ActiveSessionPage({
             defaultUnit = prevMatch.measures.externalLoad.unit;
           }
         }
+        if (prevMatch?.measures.distance?.value) {
+          defaultDistance = prevMatch.measures.distance.value.toString();
+          if (prevMatch.measures.distance.unit) {
+            defaultDistanceUnit = prevMatch.measures.distance.unit;
+          }
+        }
+        if (prevMatch?.measures.time?.value) {
+          defaultTime = prevMatch.measures.time.value.toString();
+          if (prevMatch.measures.time.unit) {
+            defaultTimeUnit = prevMatch.measures.time.unit;
+          }
+        }
+        if (prevMatch?.measures.calories?.value) {
+          defaultCalories = prevMatch.measures.calories.value.toString();
+        }
       }
     }
 
     setReps(defaultReps);
     setWeight(defaultWeight);
     setWeightUnit(defaultUnit);
+    setDistance(defaultDistance);
+    setDistanceUnit(defaultDistanceUnit);
+    setTime(defaultTime);
+    setTimeUnit(defaultTimeUnit);
+    setCalories(defaultCalories);
     
     // 2. Override with existing saved data for THIS step
     const blockInsts = exerciseInstances[currentStep.block.id] || [];
@@ -405,12 +437,31 @@ export default function ActiveSessionPage({
     );
     
     if (match) {
-      if (match.measures.reps) setReps(match.measures.reps.toString());
+      // If calories is defined, prioritize calories over reps
+      const hasCaloriesDefined = currentStep.exercise.measures.calories !== undefined;
+      if (hasCaloriesDefined && match.measures.calories?.value) {
+        setCalories(match.measures.calories.value.toString());
+      } else if (match.measures.reps) {
+        setReps(match.measures.reps.toString());
+      }
+      
       if (match.measures.externalLoad?.value) {
         setWeight(match.measures.externalLoad.value.toString());
       }
       if (match.measures.externalLoad?.unit) {
         setWeightUnit(match.measures.externalLoad.unit);
+      }
+      if (match.measures.distance?.value) {
+        setDistance(match.measures.distance.value.toString());
+      }
+      if (match.measures.distance?.unit) {
+        setDistanceUnit(match.measures.distance.unit);
+      }
+      if (match.measures.time?.value) {
+        setTime(match.measures.time.value.toString());
+      }
+      if (match.measures.time?.unit) {
+        setTimeUnit(match.measures.time.unit);
       }
     }
     
@@ -423,17 +474,50 @@ export default function ActiveSessionPage({
     const blockInstanceId = await ensureBlockInstance(currentStep.block.id);
     if (!blockInstanceId) return;
 
+    // Build measures object with complementary measures
+    const measures: any = {
+      ...currentStep.exercise.measures,
+    };
+
+    // Determine what's defined in the exercise
+    const hasDistance = currentStep.exercise.measures.distance !== undefined;
+    const hasTime = currentStep.exercise.measures.time !== undefined;
+    const hasCalories = currentStep.exercise.measures.calories !== undefined;
+
+    // If calories is defined, calories replace reps as the primary measure
+    if (hasCalories) {
+      if (calories) {
+        measures.calories = { value: Number(calories), unit: 'cal' };
+      }
+      // If calories is defined, also record time (duration)
+      if (time) {
+        measures.time = { value: Number(time), unit: timeUnit };
+      }
+    } else {
+      // Otherwise, use reps and load as before
+      if (reps) {
+        measures.reps = Number(reps);
+      }
+      if (weight) {
+        measures.externalLoad = { value: Number(weight), unit: weightUnit };
+      }
+    }
+
+    // Add complementary measures based on what's defined in the exercise
+    // If distance is defined, record time (how long it took)
+    if (hasDistance && time) {
+      measures.time = { value: Number(time), unit: timeUnit };
+    }
+    // If time is defined, record distance (how far they went)
+    if (hasTime && distance) {
+      measures.distance = { value: Number(distance), unit: distanceUnit };
+    }
+
     const payload = {
       workoutBlockInstanceId: blockInstanceId,
       workoutBlockExerciseId: currentStep.exercise.id,
       complete: true,
-      measures: {
-        ...currentStep.exercise.measures,
-        reps: reps ? Number(reps) : undefined,
-        externalLoad: weight
-          ? { value: Number(weight), unit: weightUnit }
-          : undefined,
-      },
+      measures,
       notes: `set:${currentStep.setIndex}:`,
     };
 
@@ -883,6 +967,16 @@ export default function ActiveSessionPage({
               onWeightChange={(val) => { setWeight(val); }}
               weightUnit={weightUnit}
               onWeightUnitChange={(unit) => { setWeightUnit(unit); }}
+              distance={distance}
+              onDistanceChange={(val) => { setDistance(val); }}
+              distanceUnit={distanceUnit}
+              onDistanceUnitChange={(unit) => { setDistanceUnit(unit); }}
+              time={time}
+              onTimeChange={(val) => { setTime(val); }}
+              timeUnit={timeUnit}
+              onTimeUnitChange={(unit) => { setTimeUnit(unit); }}
+              calories={calories}
+              onCaloriesChange={(val) => { setCalories(val); }}
             />
 
             <SessionFooter 
