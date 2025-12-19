@@ -216,7 +216,7 @@ export default function StatsForm({ onSuccess }: StatsFormProps) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="bg-zinc-950/60 focus:bg-zinc-900/80 px-3 py-2 border border-zinc-800 focus:border-brand-primary rounded-lg outline-none ring-0 w-[94%]! text-white text-sm transition-colors"
+            className="bg-zinc-950/60 focus:bg-zinc-900/80 px-3 py-2 border border-zinc-800 focus:border-brand-primary rounded-lg outline-none ring-0 w-[93%]! text-white text-sm transition-colors"
           />
         </div>
 
