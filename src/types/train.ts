@@ -56,6 +56,8 @@ export interface ExerciseMeasures {
     calories?:          CaloriesMeasurement;
 }
 
+export type ExerciseMeasureType = keyof ExerciseMeasures;
+
 // `train` schema for supabase
 export interface Protocol {
     id:             string;

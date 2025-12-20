@@ -6,9 +6,9 @@ import {
     DistanceMeasurement, 
     LongTimeMeasurement, 
     TimeMeasurement, 
-    RepetitionsMeasurement,
+    RepetitionsMeasurement
 } from "./measures"; 
-import { Exercise, PerformanceLog, Projected1RMLog } from "./train";
+import { Exercise, ExerciseMeasures, ExerciseMeasureType, PerformanceLog, Projected1RMLog } from "./train";
 import { SleepLog, SupplementSchedule, WaterIntakeLog } from "./fuel";
 
 // `user` schema for supabase
@@ -92,7 +92,7 @@ export interface UserGoalCriteria {
     id:          string;
     conditional: GoalComponentConditional;
     value:       GoalComponentValue;
-    type?:       GoalComponentType; // e.g. 'time' or 'distance' for a running goal
+    type?:       GoalComponentType | ExerciseMeasureType; // e.g. 'time' or 'distance' for a running goal
     initialValue?: GoalComponentValue; // To track starting progress
     measurementSite?: keyof Omit<TapeMeasurement, 'id'>; // For tape measurements
 }

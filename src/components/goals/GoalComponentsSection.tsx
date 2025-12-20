@@ -8,7 +8,7 @@ import { Plus, X, GripVertical, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WeightMeasurement, HeightMeasurement, PercentageMeasurement, DistanceMeasurement, TimeMeasurement, RepetitionsMeasurement } from '@/types/measures';
 import { ExerciseAutocomplete } from '@/components/train/build/exercises/ExerciseAutocomplete';
-import { Exercise } from '@/types/train';
+import { Exercise, ExerciseMeasureType } from '@/types/train';
 
 interface GoalComponentsSectionProps {
     components: UserGoalComponent[];
@@ -318,14 +318,36 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                                                  <FormLabel className="text-xs mb-1">Type</FormLabel>
                                                                  <FormSelect
                                                                     value={criteria.type || component.type || ''}
-                                                                    onChange={(e) => updateCriteria(component.id, criteria.id, { type: e.target.value as GoalComponentType })}
+                                                                    onChange={(e) => updateCriteria(component.id, criteria.id, { type: e.target.value as GoalComponentType | ExerciseMeasureType })}
                                                                  >
-                                                                    <option value="bodyweight">Body Weight</option>
-                                                                    <option value="bodycomposition">Body Comp</option>
-                                                                    <option value="tape">Tape</option>
-                                                                    <option value="strength">Strength</option>
-                                                                    <option value="time">Time</option>
-                                                                    <option value="repetitions">Repetitions</option>
+                                                                    {/* Exercise Related Types - Only show if exercise is selected? Or always? */}
+                                                                    {component.exerciseId && (
+                                                                        <optgroup label="Exercise Measures">
+                                                                            <option value="externalLoad">Load (Weight)</option>
+                                                                            <option value="reps">Reps</option>
+                                                                            <option value="distance">Distance</option>
+                                                                            <option value="time">Time</option>
+                                                                            <option value="pace">Pace</option>
+                                                                            <option value="height">Height</option>
+                                                                            <option value="calories">Calories</option>
+                                                                        </optgroup>
+                                                                    )}
+                                                                    
+                                                                    {/* Standard Types */}
+                                                                    <optgroup label="Body Stats">
+                                                                        <option value="bodyweight">Body Weight</option>
+                                                                        <option value="bodycomposition">Body Comp</option>
+                                                                        <option value="tape">Tape</option>
+                                                                    </optgroup>
+                                                                    
+                                                                    {/* Fallback Types */}
+                                                                    {!component.exerciseId && (
+                                                                        <optgroup label="General">
+                                                                            <option value="strength">Strength (Legacy)</option>
+                                                                            <option value="time">Time (Legacy)</option>
+                                                                            <option value="repetitions">Repetitions (Legacy)</option>
+                                                                        </optgroup>
+                                                                    )}
                                                                  </FormSelect>
                                                             </div>
 
@@ -459,7 +481,7 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
 }
 
 function renderValueInput(
-    type: GoalComponentType | undefined,
+    type: GoalComponentType | ExerciseMeasureType | undefined,
     currentValue: GoalComponentValue | undefined,
     onChange: (value: GoalComponentValue) => void
 ) {
@@ -512,7 +534,7 @@ function renderValueInput(
         );
     }
 
-    if (type === 'tape') {
+    if (type === 'tape' || type === 'distance' || type === 'height') {
         const distance = currentValue as DistanceMeasurement | undefined;
         return (
             <div className="flex gap-2">
@@ -524,11 +546,15 @@ function renderValueInput(
                 />
                 <FormSelect
                     value={distance?.unit || 'cm'}
-                    onChange={(e) => onChange({ value: distance?.value ?? 0, unit: e.target.value as 'cm' | 'in' } as DistanceMeasurement)}
+                    onChange={(e) => onChange({ value: distance?.value ?? 0, unit: e.target.value as 'cm' | 'in' | 'm' | 'km' | 'ft' | 'miles' } as DistanceMeasurement)}
                     className="w-24"
                 >
                     <option value="cm">cm</option>
                     <option value="in">in</option>
+                    <option value="m">m</option>
+                    <option value="km">km</option>
+                    <option value="ft">ft</option>
+                    <option value="miles">mi</option>
                 </FormSelect>
             </div>
         );
@@ -557,7 +583,7 @@ function renderValueInput(
         );
     }
 
-    if (type === 'repetitions') {
+    if (type === 'reps' || type === 'repetitions') {
         const reps = currentValue as RepetitionsMeasurement | undefined;
         return (
             <NumberInput
@@ -568,7 +594,7 @@ function renderValueInput(
         );
     }
 
-    if (type === 'strength') {
+    if (type === 'externalLoad' || type === 'strength') {
          const weight = currentValue as WeightMeasurement | undefined;
         return (
             <div className="flex gap-2">
@@ -587,6 +613,41 @@ function renderValueInput(
                     <option value="lbs">lbs</option>
                 </FormSelect>
             </div>
+        );
+    }
+
+    if (type === 'pace') {
+        const pace = currentValue as any; // PaceMeasurement type check needed or assumed
+        return (
+             <div className="flex gap-2">
+                <NumberInput
+                    value={pace?.value}
+                    onValueChange={(value) => onChange({ value: value ?? 0, unit: pace?.unit || 'min/km' } as any)}
+                    className="flex-1"
+                    placeholder="Pace"
+                />
+                <FormSelect
+                    value={pace?.unit || 'min/km'}
+                    onChange={(e) => onChange({ value: pace?.value ?? 0, unit: e.target.value } as any)}
+                    className="w-24"
+                >
+                    <option value="min/km">min/km</option>
+                    <option value="min/mile">min/mi</option>
+                    <option value="mph">mph</option>
+                    <option value="kph">kph</option>
+                </FormSelect>
+            </div>
+        );
+    }
+
+    if (type === 'calories') {
+        const cals = currentValue as any;
+        return (
+            <NumberInput
+                value={cals?.value}
+                onValueChange={(value) => onChange({ value: value ?? 0, unit: 'cal' } as any)}
+                placeholder="Calories"
+            />
         );
     }
 

@@ -64,9 +64,9 @@ export const userGoalComponent = pgTable('user_goal_component', {
 export const userGoalCriteria = pgTable('user_goal_criteria', {
   id: uuid('id').defaultRandom().primaryKey(),
   componentId: uuid('component_id').notNull().references(() => userGoalComponent.id, { onDelete: 'cascade' }),
-  type: text('type', { 
-    enum: ['bodyweight', 'bodycomposition', 'tape', 'strength', 'time', 'repetitions', 'skill', 'other'] 
-  }),
+  // Updated to include exercise measures. We use a broader check or just text since enum is getting large/dynamic.
+  // The application layer validates against GoalComponentType | ExerciseMeasureType
+  type: text('type'), 
   conditional: text('conditional', { 
     enum: ['equals', 'greater than', 'less than', 'greater than or equal to', 'less than or equal to', 'not equal to'] 
   }).notNull(),
