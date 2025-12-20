@@ -75,17 +75,26 @@ export interface UserGoal {
 }
 
 export interface UserGoalComponent {
-    id:           string;
-    name:         string;
-    description?: string;
-    type?:        GoalComponentType;
-    conditional?: GoalComponentConditional;
-    value?:       GoalComponentValue;
-    priority:     number;
-    complete:     boolean;
-    notes?:       string;
-    createdAt:    Date;
-    updatedAt:    Date;
+    id:               string;
+    name:             string;
+    description?:     string;
+    type?:            GoalComponentType;
+    priority:         number;
+    complete:         boolean;
+    exerciseId?:      Exercise['id']; // For strength, time, repetitions
+    criteria?:        UserGoalCriteria[]; // Multiple conditions
+    notes?:           string;
+    createdAt:        Date;
+    updatedAt:        Date;
+}
+
+export interface UserGoalCriteria {
+    id:          string;
+    conditional: GoalComponentConditional;
+    value:       GoalComponentValue;
+    type?:       GoalComponentType; // e.g. 'time' or 'distance' for a running goal
+    initialValue?: GoalComponentValue; // To track starting progress
+    measurementSite?: keyof Omit<TapeMeasurement, 'id'>; // For tape measurements
 }
 
 export interface UserStatsLog {

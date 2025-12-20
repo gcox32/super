@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { UserGoal, UserGoalComponent } from '@/types/user';
 import { LongTimeMeasurement } from '@/types/measures';
 import {
@@ -8,13 +8,11 @@ import {
     FormLabel,
     FormInput,
     FormTextarea,
-    FormSelect,
     FormActions,
     FormError
 } from '@/components/ui/Form';
 import Button from '@/components/ui/Button';
 import { TogglePill } from '@/components/ui/TogglePill';
-import { NumberInput } from '@/components/ui/NumberInput';
 import { GoalComponentsSection } from './GoalComponentsSection';
 import { Loader2, Trash2 } from 'lucide-react';
 
@@ -67,7 +65,7 @@ export function GoalForm({ initialData, onSubmit, onCancel, onDelete, isSubmitti
 
     return (
         <FormWrapper>
-            <FormCard>
+            <FormCard className="mb-4">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormGroup>
                         <FormLabel htmlFor="name">Goal Name</FormLabel>

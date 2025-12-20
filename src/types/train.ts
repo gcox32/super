@@ -232,10 +232,10 @@ export interface Performance {
     id:               string;
     performanceLogId: PerformanceLog['id'];
     date:             Date;
-    duration:         TimeMeasurement;
-    volume:           WeightMeasurement; // sets * reps * weight
-    work:             WorkMeasurement; // weight * distance
-    power:            PowerMeasurement; // work / time
+    duration:         TimeMeasurement; // workout duration
+    volume:           WeightMeasurement; // workout volume
+    work:             WorkMeasurement; // using work calculation formula
+    power:            PowerMeasurement; // using power calculation formula
     notes?:           string;
 }
 

@@ -1,4 +1,4 @@
-import { UserGoalComponent, UserStats, TapeMeasurement } from '@/types/user';
+import { UserGoalComponent, UserStats, TapeMeasurement, UserGoalCriteria } from '@/types/user';
 import { 
     WeightMeasurement, 
     PercentageMeasurement, 
@@ -10,75 +10,105 @@ import {
  * Compares the component's target value against current user stats
  */
 export function evaluateComponent(component: UserGoalComponent, stats: UserStats | null): boolean {
-    // If component doesn't have type, conditional, or value, fall back to manual completion
-    if (!component.type || !component.conditional || !component.value) {
-        return component.complete;
-    }
-
     if (!stats) {
         return component.complete; // No stats to compare against
     }
 
-    // Evaluate based on component type
-    switch (component.type) {
+    // New multi-criteria evaluation
+    if (component.criteria && component.criteria.length > 0) {
+        // All criteria must be met (AND logic)
+        const allCriteriaMet = component.criteria.every(criteria => {
+            return evaluateCriteria(criteria, stats, component);
+        });
+        
+        return allCriteriaMet;
+    }
+
+    // Fallback if no criteria (incomplete migration or manual only)
+    return component.complete;
+}
+
+function evaluateCriteria(criteria: UserGoalCriteria, stats: UserStats, parentComponent: UserGoalComponent): boolean {
+    const type = criteria.type || parentComponent.type;
+    
+    switch (type) {
         case 'bodyweight':
-            return evaluateWeightComponent(component, stats);
-        
+            return evaluateWeightComponent(criteria.value, criteria.conditional, stats);
         case 'bodycomposition':
-            return evaluateBodyCompositionComponent(component, stats);
-        
+            return evaluateBodyCompositionComponent(criteria.value, criteria.conditional, stats);
         case 'tape':
-            return evaluateTapeComponent(component, stats);
-        
+             // Use criteria specific site if available, otherwise check if parent has one? But parent one is removed in refactor.
+             // If criteria has no site, it might be checking "any" or just invalid.
+            return evaluateTapeComponent(criteria.value, criteria.conditional, criteria.measurementSite, stats);
         case 'strength':
         case 'time':
         case 'repetitions':
-            // These would require performance log data - for now return current status
-            // TODO: Implement when performance log access is available
-            return component.complete;
-        
-        case 'skill':
-        case 'other':
-            // These are subjective - return current manual status
-            return component.complete;
-        
+            // Needs performance log
+            return false; // Default to false for now or keep previous state?
         default:
-            return component.complete;
+            return false;
     }
 }
 
-function evaluateWeightComponent(component: UserGoalComponent, stats: UserStats): boolean {
-    if (!component.value || typeof component.value === 'string') return component.complete;
+function evaluateWeightComponent(value: any, conditional: string | undefined, stats: UserStats): boolean {
+    if (!value || typeof value === 'string' || !conditional) return false;
     
-    const targetValue = component.value as WeightMeasurement;
+    const targetValue = value as WeightMeasurement;
     const currentValue = stats.weight;
     
-    if (!currentValue) return component.complete;
+    if (!currentValue) return false;
     
     // Convert both to same unit for comparison
     const targetKg = targetValue.unit === 'kg' ? targetValue.value : targetValue.value * 0.453592;
     const currentKg = currentValue.unit === 'kg' ? currentValue.value : currentValue.value * 0.453592;
     
-    return compareValues(currentKg, targetKg, component.conditional!);
+    return compareValues(currentKg, targetKg, conditional);
 }
 
-function evaluateBodyCompositionComponent(component: UserGoalComponent, stats: UserStats): boolean {
-    if (!component.value || typeof component.value === 'string') return component.complete;
+function evaluateBodyCompositionComponent(value: any, conditional: string | undefined, stats: UserStats): boolean {
+    if (!value || typeof value === 'string' || !conditional) return false;
     
-    const targetValue = component.value as PercentageMeasurement;
+    const targetValue = value as PercentageMeasurement;
     const currentValue = stats.bodyFatPercentage;
     
-    if (!currentValue) return component.complete;
+    if (!currentValue) return false;
     
-    return compareValues(currentValue.value, targetValue.value, component.conditional!);
+    return compareValues(currentValue.value, targetValue.value, conditional);
 }
 
-export function evaluateTapeComponent(component: UserGoalComponent, stats: UserStats): boolean {
-    if (!component.value || typeof component.value === 'string') return component.complete;
-    if (!stats.tapeMeasurements) return component.complete;
+export function evaluateTapeComponent(
+    value: any, 
+    conditional: string | undefined, 
+    measurementSite: keyof Omit<TapeMeasurement, 'id'> | undefined, 
+    stats: UserStats
+): boolean {
+    if (!value || typeof value === 'string' || !conditional) return false;
+    if (!stats.tapeMeasurements) return false;
     
-    const targetValue = component.value as DistanceMeasurement;
+    const targetValue = value as DistanceMeasurement;
 
+    // If a specific site is selected, check only that site
+    if (measurementSite) {
+        const field = measurementSite;
+        const currentMeasurement = stats.tapeMeasurements[field];
+        
+        if (
+            currentMeasurement && 
+            typeof currentMeasurement === 'object' && 
+            'unit' in currentMeasurement && 
+            'value' in currentMeasurement && 
+            typeof currentMeasurement.value === 'number'
+        ) {
+            // Convert to same unit
+            const targetCm = targetValue.unit === 'cm' ? targetValue.value : targetValue.value * 2.54;
+            const currentCm = currentMeasurement.unit === 'cm' ? currentMeasurement.value : currentMeasurement.value * 2.54;
+            
+            return compareValues(currentCm, targetCm, conditional);
+        }
+        return false;
+    }
+
+    // Fallback: check ANY tape measurement if no specific site (legacy behavior, maybe remove?)
     const tapeFields: (keyof TapeMeasurement)[] = [
         'neck', 'shoulders', 'chest', 'waist', 'hips',
         'leftArm', 'rightArm', 'leftLeg', 'rightLeg',
@@ -98,7 +128,7 @@ export function evaluateTapeComponent(component: UserGoalComponent, stats: UserS
             const targetCm = targetValue.unit === 'cm' ? targetValue.value : targetValue.value * 2.54;
             const currentCm = currentMeasurement.unit === 'cm' ? currentMeasurement.value : currentMeasurement.value * 2.54;
             
-            if (compareValues(currentCm, targetCm, component.conditional!)) {
+            if (compareValues(currentCm, targetCm, conditional)) {
                 return true;
             }
         }
@@ -148,4 +178,3 @@ export function evaluateGoalComponents(
         };
     });
 }
-

@@ -193,7 +193,7 @@ export default function GoalDetailPage() {
             title={goal.name || 'Goal'}
             subtitle={goal.description}
         >
-            <div className="space-y-6">
+            <div className="space-y-6 mb-8">
                 {/* Goal Status and Actions */}
                 <div className="flex flex-col bg-card p-4 border border-border rounded-lg">
                     <div className="flex justify-between items-center gap-4">

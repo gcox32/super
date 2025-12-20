@@ -15,6 +15,8 @@ import {
   user,
   userProfile,
   userGoal,
+  userGoalComponent,
+  userGoalCriteria,
   userStatsLog,
   userStats,
   tapeMeasurement,
@@ -22,7 +24,7 @@ import {
   userImage,
   userProfileKeyExercise,
 } from '../schema';
-import type { User, UserProfile, UserGoal, UserGoalComponent, UserStats, TapeMeasurement, UserImage } from '@/types/user';
+import type { User, UserProfile, UserGoal, UserGoalComponent, UserStats, TapeMeasurement, UserImage, UserGoalCriteria, GoalComponentType, GoalComponentConditional } from '@/types/user';
 
 // ============================================================================
 // USER CRUD
@@ -210,72 +212,61 @@ export async function updateUserProfile(
 // USER GOAL CRUD
 // ============================================================================
 
-// Helper to deserialize components from JSONB (convert date strings to Date objects)
-function deserializeComponents(components: any): UserGoalComponent[] | undefined {
-  if (!components || !Array.isArray(components)) {
-    return undefined;
-  }
-  return components.map((comp: any) => ({
-    ...comp,
-    createdAt: comp.createdAt ? new Date(comp.createdAt) : new Date(),
-    updatedAt: comp.updatedAt ? new Date(comp.updatedAt) : new Date(),
-  }));
-}
+async function fetchGoalComponents(goalId: string): Promise<UserGoalComponent[]> {
+  const components = await db
+    .select()
+    .from(userGoalComponent)
+    .where(eq(userGoalComponent.goalId, goalId))
+    .orderBy(userGoalComponent.priority);
 
-// Helper to serialize components for JSONB (convert Date objects to ISO strings)
-// Also handles cases where dates come as strings from JSON parsing
-function serializeComponents(components: UserGoalComponent[] | undefined): any {
-  if (!components || !Array.isArray(components)) {
-    return null;
-  }
-  return components.map((comp) => {
-    // Handle createdAt - could be Date, string, or undefined
-    let createdAt: string | undefined;
-    if (comp.createdAt instanceof Date) {
-      createdAt = comp.createdAt.toISOString();
-    } else if (typeof comp.createdAt === 'string') {
-      createdAt = comp.createdAt;
-    } else {
-      createdAt = new Date().toISOString();
-    }
+  // Fetch criteria for each component
+  const componentsWithCriteria = await Promise.all(
+    components.map(async (comp) => {
+      const criteria = await db
+        .select()
+        .from(userGoalCriteria)
+        .where(eq(userGoalCriteria.componentId, comp.id));
 
-    // Handle updatedAt - could be Date, string, or undefined
-    let updatedAt: string | undefined;
-    if (comp.updatedAt instanceof Date) {
-      updatedAt = comp.updatedAt.toISOString();
-    } else if (typeof comp.updatedAt === 'string') {
-      updatedAt = comp.updatedAt;
-    } else {
-      updatedAt = new Date().toISOString();
-    }
+      // Map DB type to TS type for UserGoalCriteria
+      const mappedCriteria: UserGoalCriteria[] = criteria.map(c => ({
+        id: c.id,
+        type: c.type as GoalComponentType | undefined,
+        conditional: c.conditional as GoalComponentConditional,
+        value: c.value as any, // Cast JSONB to expected type
+        initialValue: c.initialValue as any,
+        measurementSite: c.measurementSite as any,
+      }));
 
-    return {
-      id: comp.id,
-      name: comp.name,
-      description: comp.description,
-      type: comp.type,
-      conditional: comp.conditional,
-      value: comp.value,
-      priority: comp.priority,
-      complete: comp.complete,
-      notes: comp.notes,
-      createdAt,
-      updatedAt,
-    };
-  });
+      return {
+        ...nullToUndefined(comp),
+        type: comp.type as GoalComponentType | undefined,
+        createdAt: new Date(comp.createdAt),
+        updatedAt: new Date(comp.updatedAt),
+        exerciseId: comp.exerciseId || undefined,
+        criteria: mappedCriteria,
+        // Legacy fields mapping for backward compatibility if needed, else undefined
+        conditional: undefined,
+        value: undefined,
+        measurementSite: undefined,
+      } as UserGoalComponent;
+    })
+  );
+
+  return componentsWithCriteria;
 }
 
 export async function createUserGoal(
   userId: string,
   goalData: Omit<UserGoal, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 ): Promise<UserGoal> {
+  // Start transaction could be better here but simple sequence for now
   const [newGoal] = await db
     .insert(userGoal)
     .values({
       userId,
       name: goalData.name,
       description: goalData.description,
-      components: serializeComponents(goalData.components),
+      // components JSONB is deprecated/ignored
       duration: goalData.duration,
       startDate: goalData.startDate ? goalData.startDate : null,
       endDate: goalData.endDate ? goalData.endDate : null,
@@ -284,9 +275,40 @@ export async function createUserGoal(
     } as any)
     .returning();
 
+  // Insert components and criteria if provided
+  if (goalData.components && goalData.components.length > 0) {
+    for (const comp of goalData.components) {
+      const [newComp] = await db.insert(userGoalComponent).values({
+        goalId: newGoal.id,
+        name: comp.name,
+        description: comp.description,
+        type: comp.type,
+        priority: comp.priority,
+        complete: comp.complete,
+        exerciseId: comp.exerciseId,
+        notes: comp.notes,
+      } as any).returning();
+
+      if (comp.criteria && comp.criteria.length > 0) {
+        for (const crit of comp.criteria) {
+          await db.insert(userGoalCriteria).values({
+            componentId: newComp.id,
+            type: crit.type,
+            conditional: crit.conditional,
+            value: crit.value,
+            initialValue: crit.initialValue,
+            measurementSite: crit.measurementSite,
+          } as any);
+        }
+      }
+    }
+  }
+
+  const savedComponents = await fetchGoalComponents(newGoal.id);
+
   return {
     ...nullToUndefined(newGoal),
-    components: deserializeComponents(newGoal.components),
+    components: savedComponents,
     startDate: newGoal.startDate ? new Date(newGoal.startDate) : undefined,
     endDate: newGoal.endDate ? new Date(newGoal.endDate) : undefined,
   } as UserGoal;
@@ -299,12 +321,19 @@ export async function getUserGoals(userId: string): Promise<UserGoal[]> {
     .where(eq(userGoal.userId, userId))
     .orderBy(desc(userGoal.createdAt));
   
-  return results.map((r) => ({
-    ...nullToUndefined(r),
-    components: deserializeComponents(r.components),
-    startDate: r.startDate ? new Date(r.startDate) : undefined,
-    endDate: r.endDate ? new Date(r.endDate) : undefined,
-  })) as UserGoal[];
+  const goalsWithComponents = await Promise.all(
+    results.map(async (r) => {
+      const components = await fetchGoalComponents(r.id);
+      return {
+        ...nullToUndefined(r),
+        components,
+        startDate: r.startDate ? new Date(r.startDate) : undefined,
+        endDate: r.endDate ? new Date(r.endDate) : undefined,
+      };
+    })
+  );
+
+  return goalsWithComponents as UserGoal[];
 }
 
 export async function getUserGoalById(goalId: string, userId: string): Promise<UserGoal | null> {
@@ -316,9 +345,11 @@ export async function getUserGoalById(goalId: string, userId: string): Promise<U
 
   if (!goal) return null;
 
+  const components = await fetchGoalComponents(goal.id);
+
   return {
     ...nullToUndefined(goal),
-    components: deserializeComponents(goal.components),
+    components,
     startDate: goal.startDate ? new Date(goal.startDate) : undefined,
     endDate: goal.endDate ? new Date(goal.endDate) : undefined,
   } as UserGoal;
@@ -329,11 +360,11 @@ export async function updateUserGoal(
   userId: string,
   updates: Partial<Omit<UserGoal, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
 ): Promise<UserGoal | null> {
-  // Convert Date objects to strings for database and serialize components
+  // Convert Date objects to strings for database
   const dbUpdates: any = { ...updates };
-  if (updates.components !== undefined) {
-    dbUpdates.components = serializeComponents(updates.components);
-  }
+  // Remove components from direct update to userGoal table
+  delete dbUpdates.components;
+  
   if (updates.startDate !== undefined) {
     dbUpdates.startDate = updates.startDate ? updates.startDate : null;
   }
@@ -349,15 +380,59 @@ export async function updateUserGoal(
 
   if (!updatedGoal) return null;
 
+  // Handle Components Update (Full Replacement Strategy for simplicity)
+  // In a more complex app, we might diff/patch, but for now we wipe and rewrite components if provided
+  if (updates.components !== undefined) {
+    // Delete existing components (cascade deletes criteria)
+    await db.delete(userGoalComponent).where(eq(userGoalComponent.goalId, goalId));
+
+    // Re-insert components
+    if (updates.components.length > 0) {
+        for (const comp of updates.components) {
+            const [newComp] = await db.insert(userGoalComponent).values({
+              goalId: updatedGoal.id,
+              name: comp.name,
+              description: comp.description,
+              type: comp.type,
+              priority: comp.priority,
+              complete: comp.complete,
+              exerciseId: comp.exerciseId,
+              notes: comp.notes,
+              // Maintain original creation date if possible, or let default
+              // For full fidelity, we might want to pass existing IDs if we want to update instead of replace
+            } as any).returning();
+      
+            if (comp.criteria && comp.criteria.length > 0) {
+              for (const crit of comp.criteria) {
+                await db.insert(userGoalCriteria).values({
+                  componentId: newComp.id,
+                  type: crit.type,
+                  conditional: crit.conditional,
+                  value: crit.value,
+                  initialValue: crit.initialValue,
+                  measurementSite: crit.measurementSite,
+                } as any);
+              }
+            }
+          }
+    }
+  }
+
+  const components = await fetchGoalComponents(updatedGoal.id);
+
   return {
     ...nullToUndefined(updatedGoal),
-    components: deserializeComponents(updatedGoal.components),
+    components,
     startDate: updatedGoal.startDate ? new Date(updatedGoal.startDate) : undefined,
     endDate: updatedGoal.endDate ? new Date(updatedGoal.endDate) : undefined,
   } as UserGoal;
 }
 
 export async function deleteUserGoal(goalId: string, userId: string): Promise<boolean> {
+  // Cascade delete should handle components/criteria if set up in DB foreign keys
+  // If not, we should delete components manually first
+  await db.delete(userGoalComponent).where(eq(userGoalComponent.goalId, goalId));
+
   const result = await db
     .delete(userGoal)
     .where(and(eq(userGoal.id, goalId), eq(userGoal.userId, userId)));
@@ -606,4 +681,3 @@ export async function deleteUserImage(imageId: string, userId: string): Promise<
 
   return true;
 }
-

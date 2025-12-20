@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, date, jsonb, timestamp, unique } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, date, jsonb, timestamp, unique, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { exercise } from './train';
 
@@ -34,7 +34,8 @@ export const userGoal = pgTable('user_goal', {
   userId: uuid('user_id').notNull().references(() => user.id),
   name: text('name'),
   description: text('description'),
-  components: jsonb('components'),
+  // Deprecated: components are now in user_goal_component table
+  components: jsonb('components'), 
   duration: jsonb('duration'),
   startDate: date('start_date'),
   endDate: date('end_date'),
@@ -42,6 +43,36 @@ export const userGoal = pgTable('user_goal', {
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const userGoalComponent = pgTable('user_goal_component', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  goalId: uuid('goal_id').notNull().references(() => userGoal.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  type: text('type', { 
+    enum: ['bodyweight', 'bodycomposition', 'tape', 'strength', 'time', 'repetitions', 'skill', 'other'] 
+  }),
+  priority: integer('priority').notNull().default(1),
+  complete: boolean('complete').notNull().default(false),
+  exerciseId: uuid('exercise_id').references(() => exercise.id), // For strength, time, repetitions
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const userGoalCriteria = pgTable('user_goal_criteria', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  componentId: uuid('component_id').notNull().references(() => userGoalComponent.id, { onDelete: 'cascade' }),
+  type: text('type', { 
+    enum: ['bodyweight', 'bodycomposition', 'tape', 'strength', 'time', 'repetitions', 'skill', 'other'] 
+  }),
+  conditional: text('conditional', { 
+    enum: ['equals', 'greater than', 'less than', 'greater than or equal to', 'less than or equal to', 'not equal to'] 
+  }).notNull(),
+  value: jsonb('value').notNull(), // Stores value + unit
+  initialValue: jsonb('initial_value'), // Stores value + unit
+  measurementSite: text('measurement_site'), // For tape measurements
 });
 
 export const userStatsLog = pgTable('user_stats_log', {
@@ -115,10 +146,30 @@ export const userProfileRelations = relations(userProfile, ({ one, many }) => ({
   keyExercises: many(userProfileKeyExercise),
 }));
 
-export const userGoalRelations = relations(userGoal, ({ one }) => ({
+export const userGoalRelations = relations(userGoal, ({ one, many }) => ({
   user: one(user, {
     fields: [userGoal.userId],
     references: [user.id],
+  }),
+  components: many(userGoalComponent),
+}));
+
+export const userGoalComponentRelations = relations(userGoalComponent, ({ one, many }) => ({
+  goal: one(userGoal, {
+    fields: [userGoalComponent.goalId],
+    references: [userGoal.id],
+  }),
+  exercise: one(exercise, {
+    fields: [userGoalComponent.exerciseId],
+    references: [exercise.id],
+  }),
+  criteria: many(userGoalCriteria),
+}));
+
+export const userGoalCriteriaRelations = relations(userGoalCriteria, ({ one }) => ({
+  component: one(userGoalComponent, {
+    fields: [userGoalCriteria.componentId],
+    references: [userGoalComponent.id],
   }),
 }));
 
@@ -159,4 +210,3 @@ export const userImageRelations = relations(userImage, ({ one }) => ({
     references: [userImageLog.id],
   }),
 }));
-

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export function FormWrapper({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("space-y-6 max-w-2xl mx-auto pb-20", className)} {...props}>
+    <div className={cn("space-y-6 max-w-2xl mx-auto pb-12", className)} {...props}>
       {children}
     </div>
   );

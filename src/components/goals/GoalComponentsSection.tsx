@@ -1,17 +1,35 @@
 import React, { useState } from 'react';
-import { UserGoalComponent, GoalComponentType, GoalComponentConditional, GoalComponentValue } from '@/types/user';
+import { UserGoalComponent, GoalComponentType, GoalComponentConditional, GoalComponentValue, TapeMeasurement, UserGoalCriteria } from '@/types/user';
 import { FormGroup, FormLabel, FormInput, FormTextarea, FormSelect } from '@/components/ui/Form';
 import Button from '@/components/ui/Button';
 import { TogglePill } from '@/components/ui/TogglePill';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X, GripVertical, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WeightMeasurement, HeightMeasurement, PercentageMeasurement, DistanceMeasurement, TimeMeasurement, RepetitionsMeasurement } from '@/types/measures';
+import { ExerciseAutocomplete } from '@/components/train/build/exercises/ExerciseAutocomplete';
+import { Exercise } from '@/types/train';
 
 interface GoalComponentsSectionProps {
     components: UserGoalComponent[];
     onChange: (components: UserGoalComponent[]) => void;
 }
+
+const TAPE_SITES: Array<{ label: string; value: keyof Omit<TapeMeasurement, 'id'> }> = [
+    { label: 'Neck', value: 'neck' },
+    { label: 'Shoulders', value: 'shoulders' },
+    { label: 'Chest', value: 'chest' },
+    { label: 'Waist', value: 'waist' },
+    { label: 'Hips', value: 'hips' },
+    { label: 'Left Arm', value: 'leftArm' },
+    { label: 'Right Arm', value: 'rightArm' },
+    { label: 'Left Forearm', value: 'leftForearm' },
+    { label: 'Right Forearm', value: 'rightForearm' },
+    { label: 'Left Leg', value: 'leftLeg' },
+    { label: 'Right Leg', value: 'rightLeg' },
+    { label: 'Left Calf', value: 'leftCalf' },
+    { label: 'Right Calf', value: 'rightCalf' },
+];
 
 export function GoalComponentsSection({ components, onChange }: GoalComponentsSectionProps) {
     const [expandedComponents, setExpandedComponents] = useState<Set<string>>(
@@ -28,6 +46,7 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
             notes: '',
             createdAt: new Date(),
             updatedAt: new Date(),
+            criteria: [], // Initialize with empty criteria
         };
         onChange([...components, newComponent]);
         setExpandedComponents(prev => new Set([...prev, newComponent.id]));
@@ -50,6 +69,43 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                     : c
             )
         );
+    };
+
+    const addCriteria = (componentId: string) => {
+        const component = components.find(c => c.id === componentId);
+        if (!component) return;
+
+        const newCriteria: UserGoalCriteria = {
+            id: `crit-${Date.now()}-${Math.random()}`,
+            conditional: 'greater than',
+            value: '',
+            type: component.type, // Default to component type, but can be changed
+        };
+        // Auto-set initial site if available in parent type for new criteria
+        if (component.type === 'tape' && newCriteria.type === 'tape') {
+             // We don't have a default site logic here yet, user must select
+        }
+
+        const updatedCriteria = [...(component.criteria || []), newCriteria];
+        updateComponent(componentId, { criteria: updatedCriteria });
+    };
+
+    const updateCriteria = (componentId: string, criteriaId: string, updates: Partial<UserGoalCriteria>) => {
+        const component = components.find(c => c.id === componentId);
+        if (!component) return;
+
+        const updatedCriteria = (component.criteria || []).map(c =>
+            c.id === criteriaId ? { ...c, ...updates } : c
+        );
+        updateComponent(componentId, { criteria: updatedCriteria });
+    };
+
+    const removeCriteria = (componentId: string, criteriaId: string) => {
+        const component = components.find(c => c.id === componentId);
+        if (!component) return;
+
+        const updatedCriteria = (component.criteria || []).filter(c => c.id !== criteriaId);
+        updateComponent(componentId, { criteria: updatedCriteria });
     };
 
     const toggleExpanded = (id: string) => {
@@ -185,7 +241,7 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
 
                                         <FormGroup>
                                             <FormLabel htmlFor={`component-type-${component.id}`}>
-                                                Type
+                                                Main Type
                                             </FormLabel>
                                             <FormSelect
                                                 id={`component-type-${component.id}`}
@@ -195,7 +251,9 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                                     updateComponent(component.id, { 
                                                         type: newType || undefined,
                                                         // Clear value when type changes to avoid type mismatches
-                                                        value: undefined
+                                                        exerciseId: undefined,
+                                                        // Ensure legacy fields are cleared or ignored
+                                                        criteria: [] // Reset criteria on type change? Maybe safer.
                                                     });
                                                 }}
                                             >
@@ -211,46 +269,122 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                             </FormSelect>
                                         </FormGroup>
 
-                                        {component.type && (
-                                            <>
-                                                <FormGroup>
-                                                    <FormLabel htmlFor={`component-conditional-${component.id}`}>
-                                                        Condition
-                                                    </FormLabel>
-                                                    <FormSelect
-                                                        id={`component-conditional-${component.id}`}
-                                                        value={component.conditional || ''}
-                                                        onChange={(e) => {
-                                                            const newConditional = e.target.value as GoalComponentConditional | '';
-                                                            updateComponent(component.id, { 
-                                                                conditional: newConditional || undefined
-                                                            });
-                                                        }}
-                                                    >
-                                                        <option value="">Select condition...</option>
-                                                        <option value="equals">Equals</option>
-                                                        <option value="greater than">Greater Than</option>
-                                                        <option value="less than">Less Than</option>
-                                                        <option value="greater than or equal to">Greater Than or Equal To</option>
-                                                        <option value="less than or equal to">Less Than or Equal To</option>
-                                                        <option value="not equal to">Not Equal To</option>
-                                                    </FormSelect>
-                                                </FormGroup>
-
-                                                {component.conditional && component.type !== 'skill' && component.type !== 'other' && (
-                                                    <FormGroup>
-                                                        <FormLabel htmlFor={`component-value-${component.id}`}>
-                                                            Target Value
-                                                        </FormLabel>
-                                                        {renderValueInput(component, (value) => 
-                                                            updateComponent(component.id, { value })
-                                                        )}
-                                                    </FormGroup>
-                                                )}
-                                            </>
+                                        {(component.type === 'strength' || component.type === 'time' || component.type === 'repetitions') && (
+                                            <FormGroup>
+                                                <FormLabel>Exercise</FormLabel>
+                                                <ExerciseAutocomplete
+                                                    initialExerciseId={component.exerciseId}
+                                                    onChange={(exercise) => updateComponent(component.id, { exerciseId: exercise?.id })}
+                                                />
+                                            </FormGroup>
                                         )}
 
-                                        <div className="flex flex-col gap-4">
+                                        {/* Criteria Section - Now the only place for conditions */}
+                                        {component.type && component.type !== 'skill' && component.type !== 'other' && (
+                                            <div className="space-y-4 border-t border-border pt-4 mt-2">
+                                                <div className="flex justify-between items-center">
+                                                    <FormLabel className="mb-0">Success Criteria</FormLabel>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => addCriteria(component.id)}
+                                                        className="h-8 text-xs"
+                                                    >
+                                                        <Plus className="mr-1 w-3 h-3" />
+                                                        Add Condition
+                                                    </Button>
+                                                </div>
+
+                                                {(component.criteria?.length === 0) && (
+                                                    <p className="text-muted-foreground text-sm italic">
+                                                        Add at least one condition for success (e.g. Weight {'>'} 80kg)
+                                                    </p>
+                                                )}
+
+                                                {/* Multiple Criteria List */}
+                                                {component.criteria?.map((criteria, idx) => (
+                                                    <div key={criteria.id} className="p-3 bg-muted/20 rounded-md border border-border/50 relative group">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeCriteria(component.id, criteria.id)}
+                                                            className="absolute top-2 right-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                        
+                                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                                                            <div className="col-span-12 md:col-span-3">
+                                                                 <FormLabel className="text-xs mb-1">Type</FormLabel>
+                                                                 <FormSelect
+                                                                    value={criteria.type || component.type || ''}
+                                                                    onChange={(e) => updateCriteria(component.id, criteria.id, { type: e.target.value as GoalComponentType })}
+                                                                 >
+                                                                    <option value="bodyweight">Body Weight</option>
+                                                                    <option value="bodycomposition">Body Comp</option>
+                                                                    <option value="tape">Tape</option>
+                                                                    <option value="strength">Strength</option>
+                                                                    <option value="time">Time</option>
+                                                                    <option value="repetitions">Repetitions</option>
+                                                                 </FormSelect>
+                                                            </div>
+
+                                                            {/* Tape Site Selector if Type is Tape */}
+                                                            {(criteria.type === 'tape' || (!criteria.type && component.type === 'tape')) && (
+                                                                <div className="col-span-12 md:col-span-3">
+                                                                    <FormLabel className="text-xs mb-1">Site</FormLabel>
+                                                                    <FormSelect
+                                                                        value={criteria.measurementSite || ''}
+                                                                        onChange={(e) => updateCriteria(component.id, criteria.id, { 
+                                                                            measurementSite: e.target.value as keyof Omit<TapeMeasurement, 'id'> 
+                                                                        })}
+                                                                    >
+                                                                        <option value="">Select...</option>
+                                                                        {TAPE_SITES.map(site => (
+                                                                            <option key={site.value} value={site.value}>
+                                                                                {site.label}
+                                                                            </option>
+                                                                        ))}
+                                                                    </FormSelect>
+                                                                </div>
+                                                            )}
+
+                                                            <div className={cn("col-span-12", (criteria.type === 'tape' || (!criteria.type && component.type === 'tape')) ? "md:col-span-3" : "md:col-span-4")}>
+                                                                <FormLabel className="text-xs mb-1">Condition</FormLabel>
+                                                                <FormSelect
+                                                                    value={criteria.conditional}
+                                                                    onChange={(e) => updateCriteria(component.id, criteria.id, { conditional: e.target.value as GoalComponentConditional })}
+                                                                >
+                                                                    <option value="equals">Equals</option>
+                                                                    <option value="greater than">{'>'}</option>
+                                                                    <option value="less than">{'<'}</option>
+                                                                    <option value="greater than or equal to">{'>='}</option>
+                                                                    <option value="less than or equal to">{'<='}</option>
+                                                                </FormSelect>
+                                                            </div>
+                                                            <div className={cn("col-span-12", (criteria.type === 'tape' || (!criteria.type && component.type === 'tape')) ? "md:col-span-3" : "md:col-span-5")}>
+                                                                <div className="flex flex-col gap-2">
+                                                                    <div>
+                                                                        <FormLabel className="text-xs mb-1">Target</FormLabel>
+                                                                        {renderValueInput(criteria.type || component.type || 'other', criteria.value, (value) => 
+                                                                            updateCriteria(component.id, criteria.id, { value })
+                                                                        )}
+                                                                    </div>
+                                                                    <div>
+                                                                        <FormLabel className="text-xs mb-1 text-muted-foreground">Start (Optional)</FormLabel>
+                                                                        {renderValueInput(criteria.type || component.type || 'other', criteria.initialValue, (value) => 
+                                                                            updateCriteria(component.id, criteria.id, { initialValue: value })
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-border">
                                             <FormGroup className="flex flex-row justify-end items-center gap-4 w-full">
                                                 <FormLabel htmlFor={`component-priority-${component.id}`}>
                                                     Priority
@@ -325,12 +459,10 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
 }
 
 function renderValueInput(
-    component: UserGoalComponent,
+    type: GoalComponentType | undefined,
+    currentValue: GoalComponentValue | undefined,
     onChange: (value: GoalComponentValue) => void
 ) {
-    const type = component.type;
-    const currentValue = component.value;
-
     if (!type || type === 'skill' || type === 'other') {
         return (
             <FormInput
@@ -436,6 +568,28 @@ function renderValueInput(
         );
     }
 
+    if (type === 'strength') {
+         const weight = currentValue as WeightMeasurement | undefined;
+        return (
+            <div className="flex gap-2">
+                <NumberInput
+                    value={weight?.value}
+                    onValueChange={(value) => onChange({ value: value ?? 0, unit: weight?.unit || 'kg' } as WeightMeasurement)}
+                    className="flex-1"
+                    placeholder="Weight"
+                />
+                <FormSelect
+                    value={weight?.unit || 'kg'}
+                    onChange={(e) => onChange({ value: weight?.value ?? 0, unit: e.target.value as 'kg' | 'lbs' } as WeightMeasurement)}
+                    className="w-24"
+                >
+                    <option value="kg">kg</option>
+                    <option value="lbs">lbs</option>
+                </FormSelect>
+            </div>
+        );
+    }
+
     // Default fallback
     return (
         <FormInput
@@ -446,4 +600,3 @@ function renderValueInput(
         />
     );
 }
-
