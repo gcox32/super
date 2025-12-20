@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ExerciseFormData } from './types';
@@ -18,6 +19,12 @@ interface CreateExerciseOverlayProps {
 export function CreateExerciseOverlay({ isOpen, onClose, onSuccess }: CreateExerciseOverlayProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const [formData, setFormData] = useState<ExerciseFormData>({
     name: '',
@@ -56,10 +63,11 @@ export function CreateExerciseOverlay({ isOpen, onClose, onSuccess }: CreateExer
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Stop event bubbling to parent forms (WorkoutForm)
     setLoading(true);
     setError(null);
 
@@ -90,7 +98,7 @@ export function CreateExerciseOverlay({ isOpen, onClose, onSuccess }: CreateExer
     }
   };
 
-  return (
+  const content = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={onClose}
@@ -104,6 +112,7 @@ export function CreateExerciseOverlay({ isOpen, onClose, onSuccess }: CreateExer
           <button
             onClick={onClose}
             className="p-1 hover:bg-hover rounded-lg transition-colors"
+            type="button"
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -143,4 +152,6 @@ export function CreateExerciseOverlay({ isOpen, onClose, onSuccess }: CreateExer
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }

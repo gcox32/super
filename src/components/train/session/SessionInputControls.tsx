@@ -47,6 +47,12 @@ export function SessionInputControls({
   const hasLoad = step.exercise.measures.externalLoad !== undefined;
   const hasReps = step.exercise.measures.reps !== undefined;
 
+  const scoringType = step.exercise.scoringType;
+  const isTimeScore = scoringType === 'time';
+  const isDistScore = scoringType === 'dist';
+  const isCalsScore = scoringType === 'cals';
+  const isCardioOrDuration = isTimeScore || isDistScore || isCalsScore;
+
   // Show complementary measures:
   // - If distance is defined, show time (to record how long it took)
   // - If time is defined, show distance (to record how far they went)
@@ -54,11 +60,13 @@ export function SessionInputControls({
   // - If load is defined, show reps (existing behavior)
   // - If reps is defined, show load (existing behavior)
 
-  const showTimeInput = hasDistance || hasCalories;
-  const showDistanceInput = hasTime;
-  const showCaloriesInput = hasCalories; // Calories replaces reps when defined
-  const showRepsInput = (hasLoad || hasReps) && !hasCalories; // Don't show reps if calories is defined
-  const showLoadInput = (hasReps || hasLoad) && !hasCalories; // Don't show load if calories is defined
+  const showTimeInput     = isTimeScore || hasDistance || hasCalories;
+  const showDistanceInput = isDistScore || hasTime || isTimeScore;
+  const showCaloriesInput = isCalsScore || hasCalories; // Calories replaces reps when defined
+  
+  // Don't show reps/load if we are primarily scoring by time/dist/cals
+  const showRepsInput = (hasLoad || hasReps) && !showCaloriesInput && !isCardioOrDuration; 
+  const showLoadInput = (hasReps || hasLoad) && !showCaloriesInput && !isCardioOrDuration;
 
   return (
     <div className="gap-4 grid grid-cols-2 mb-8">
@@ -158,6 +166,62 @@ export function SessionInputControls({
         </div>
       )}
 
+            {/* Distance - show if time is defined */}
+            {showDistanceInput && onDistanceChange && (
+        <div className="flex flex-col gap-2">
+          <label className="pl-1 font-medium text-zinc-400 text-xs uppercase tracking-wider">
+            Distance
+          </label>
+          <div className="group relative flex flex-col items-end gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              value={distance || ''}
+              onChange={(e) => onDistanceChange(e.target.value)}
+              className="bg-zinc-900/80 px-4 py-5 border border-zinc-700/50 focus:border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-primary w-full font-bold placeholder:text-zinc-700 text-4xl text-center transition-all"
+              placeholder="0"
+            />
+            {onDistanceUnitChange && (
+              <div className="float-right flex items-center gap-1 font-medium text-xs">
+                <button
+                  type="button"
+                  onClick={() => onDistanceUnitChange('m')}
+                  className={`px-2 py-0.5 rounded-full border ${
+                    distanceUnit === 'm'
+                      ? 'bg-brand-primary text-black border-brand-primary'
+                      : 'bg-zinc-900/80 text-zinc-400 border-zinc-700'
+                  }`}
+                >
+                  m
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDistanceUnitChange('km')}
+                  className={`px-2 py-0.5 rounded-full border ${
+                    distanceUnit === 'km'
+                      ? 'bg-brand-primary text-black border-brand-primary'
+                      : 'bg-zinc-900/80 text-zinc-400 border-zinc-700'
+                  }`}
+                >
+                  km
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDistanceUnitChange('mi')}
+                  className={`px-2 py-0.5 rounded-full border ${
+                    distanceUnit === 'mi'
+                      ? 'bg-brand-primary text-black border-brand-primary'
+                      : 'bg-zinc-900/80 text-zinc-400 border-zinc-700'
+                  }`}
+                >
+                  mi
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Time - show if distance or calories is defined */}
       {showTimeInput && onTimeChange && (
         <div className="flex flex-col gap-2">
@@ -214,61 +278,7 @@ export function SessionInputControls({
         </div>
       )}
 
-      {/* Distance - show if time is defined */}
-      {showDistanceInput && onDistanceChange && (
-        <div className="flex flex-col gap-2">
-          <label className="pl-1 font-medium text-zinc-400 text-xs uppercase tracking-wider">
-            Distance
-          </label>
-          <div className="group relative flex flex-col items-end gap-2">
-            <input
-              type="number"
-              inputMode="numeric"
-              value={distance || ''}
-              onChange={(e) => onDistanceChange(e.target.value)}
-              className="bg-zinc-900/80 px-4 py-5 border border-zinc-700/50 focus:border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-primary w-full font-bold placeholder:text-zinc-700 text-4xl text-center transition-all"
-              placeholder="0"
-            />
-            {onDistanceUnitChange && (
-              <div className="float-right flex items-center gap-1 font-medium text-xs">
-                <button
-                  type="button"
-                  onClick={() => onDistanceUnitChange('m')}
-                  className={`px-2 py-0.5 rounded-full border ${
-                    distanceUnit === 'm'
-                      ? 'bg-brand-primary text-black border-brand-primary'
-                      : 'bg-zinc-900/80 text-zinc-400 border-zinc-700'
-                  }`}
-                >
-                  m
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDistanceUnitChange('km')}
-                  className={`px-2 py-0.5 rounded-full border ${
-                    distanceUnit === 'km'
-                      ? 'bg-brand-primary text-black border-brand-primary'
-                      : 'bg-zinc-900/80 text-zinc-400 border-zinc-700'
-                  }`}
-                >
-                  km
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDistanceUnitChange('mi')}
-                  className={`px-2 py-0.5 rounded-full border ${
-                    distanceUnit === 'mi'
-                      ? 'bg-brand-primary text-black border-brand-primary'
-                      : 'bg-zinc-900/80 text-zinc-400 border-zinc-700'
-                  }`}
-                >
-                  mi
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

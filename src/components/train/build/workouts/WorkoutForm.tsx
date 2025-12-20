@@ -348,10 +348,7 @@ export default function WorkoutForm({ workoutId, isEditing = false }: WorkoutFor
           ...e,
           order: j + 1,
           sets: e.sets || 0,
-          measures: {
-            ...e.measures,
-            reps: e.measures.reps || 0,
-          },
+          measures: e.measures,
           scoringType: e.scoringType || 'reps',
         }))
       }))

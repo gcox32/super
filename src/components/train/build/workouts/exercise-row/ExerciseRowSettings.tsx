@@ -30,8 +30,8 @@ export function ExerciseRowSettings({
             onChange={(e) => handleScoringTypeChange(blockIndex, exerciseIndex, e.target.value as ScoringType)}
             className="text-xs h-9 py-1 w-full"
           >
-            <option value="reps">Reps</option>
             <option value="load">Load</option>
+            <option value="reps">Reps</option>
             <option value="time">Time</option>
             <option value="dist">Distance</option>
             <option value="cals">Calories</option>

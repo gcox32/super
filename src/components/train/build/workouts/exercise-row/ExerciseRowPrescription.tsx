@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
 import { FormLabel, FormInput, FormSelect } from '@/components/ui/Form';
 import { CreateWorkoutBlockExerciseInput } from '@/lib/db/crud/train';
 import { ExerciseFormData } from '../types';
+import { NumberInput } from '@/components/ui/NumberInput';
 
 interface ExerciseRowPrescriptionProps {
   exercise: ExerciseFormData;

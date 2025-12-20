@@ -1,4 +1,4 @@
-import { eq, and, desc, inArray, sql, ilike } from 'drizzle-orm';
+import { eq, and, desc, inArray, sql, ilike, notInArray } from 'drizzle-orm';
 import { db } from '../index';
 import { calculateOutput } from '@/lib/stats/performance/work-power';
 import { getLatestUserStats } from './user';
@@ -257,6 +257,15 @@ export type CreateWorkoutInput = Omit<Workout, 'id' | 'userId' | 'createdAt' | '
   blocks: CreateWorkoutBlockInput[];
 };
 
+export type UpdateWorkoutBlockExerciseInput = CreateWorkoutBlockExerciseInput & { id?: string };
+export type UpdateWorkoutBlockInput = Omit<CreateWorkoutBlockInput, 'exercises'> & { 
+    id?: string;
+    exercises: UpdateWorkoutBlockExerciseInput[];
+};
+export type UpdateWorkoutInput = Omit<CreateWorkoutInput, 'blocks'> & {
+    blocks: UpdateWorkoutBlockInput[];
+};
+
 export async function createFullWorkout(
   userId: string,
   workoutData: CreateWorkoutInput
@@ -364,6 +373,179 @@ export async function createWorkout(
     ...nullToUndefined(newWorkout),
     blocks: [],
   } as Workout;
+}
+
+export async function updateFullWorkout(
+  workoutId: string,
+  userId: string,
+  workoutData: UpdateWorkoutInput
+): Promise<Workout> {
+  return await db.transaction(async (tx) => {
+    // 1. Update Workout
+    const [updatedWorkout] = await tx
+      .update(workout)
+      .set({
+        workoutType: workoutData.workoutType,
+        name: workoutData.name,
+        objectives: workoutData.objectives,
+        description: workoutData.description,
+        imageUrl: workoutData.imageUrl,
+        estimatedDuration: workoutData.estimatedDuration,
+      })
+      .where(and(eq(workout.id, workoutId), eq(workout.userId, userId)))
+      .returning();
+
+    if (!updatedWorkout) {
+        throw new Error('Workout not found');
+    }
+
+    // 2. Manage Blocks
+    
+    // Get existing blocks
+    const existingBlocks = await tx
+        .select()
+        .from(workoutBlock)
+        .where(eq(workoutBlock.workoutId, workoutId));
+        
+    const incomingBlockIds = workoutData.blocks
+        .map(b => b.id)
+        .filter((id): id is string => !!id);
+        
+    // Delete blocks not in incoming list
+    // Note: This will CASCADE delete exercises
+    const blocksToDelete = existingBlocks.filter(b => !incomingBlockIds.includes(b.id));
+    if (blocksToDelete.length > 0) {
+        await tx
+            .delete(workoutBlock)
+            .where(inArray(workoutBlock.id, blocksToDelete.map(b => b.id)));
+    }
+
+    const updatedBlocks: WorkoutBlock[] = [];
+
+    // Create or Update Blocks
+    for (const blockData of workoutData.blocks) {
+        let blockId = blockData.id;
+        let savedBlock;
+
+        if (blockId) {
+            // Update existing block
+            [savedBlock] = await tx
+                .update(workoutBlock)
+                .set({
+                    workoutBlockType: blockData.workoutBlockType,
+                    name: blockData.name,
+                    description: blockData.description,
+                    order: blockData.order,
+                    circuit: blockData.circuit ?? false,
+                    estimatedDuration: blockData.estimatedDuration,
+                })
+                .where(eq(workoutBlock.id, blockId))
+                .returning();
+        } else {
+            // Create new block
+            [savedBlock] = await tx
+                .insert(workoutBlock)
+                .values({
+                    workoutId: workoutId,
+                    workoutBlockType: blockData.workoutBlockType,
+                    name: blockData.name,
+                    description: blockData.description,
+                    order: blockData.order,
+                    circuit: blockData.circuit ?? false,
+                    estimatedDuration: blockData.estimatedDuration,
+                })
+                .returning();
+            blockId = savedBlock.id;
+        }
+
+        if (!savedBlock) throw new Error('Failed to save block');
+
+        // 3. Manage Exercises for this Block
+        
+        // Get existing exercises if it was an existing block (optimization: can assume none if new, but cleaner to query or pass flag)
+        const existingExercises = await tx
+            .select()
+            .from(workoutBlockExercise)
+            .where(eq(workoutBlockExercise.workoutBlockId, blockId));
+            
+        const incomingExerciseIds = blockData.exercises
+            .map(e => e.id)
+            .filter((id): id is string => !!id);
+            
+        // Delete exercises not in incoming list
+        const exercisesToDelete = existingExercises.filter(e => !incomingExerciseIds.includes(e.id));
+        if (exercisesToDelete.length > 0) {
+            await tx
+                .delete(workoutBlockExercise)
+                .where(inArray(workoutBlockExercise.id, exercisesToDelete.map(e => e.id)));
+        }
+
+        const savedExercises: WorkoutBlockExercise[] = [];
+
+        for (const exerciseData of blockData.exercises) {
+            let savedExercise;
+            if (exerciseData.id) {
+                // Update
+                [savedExercise] = await tx
+                    .update(workoutBlockExercise)
+                    .set({
+                        exerciseId: exerciseData.exerciseId,
+                        order: exerciseData.order,
+                        sets: exerciseData.sets,
+                        measures: exerciseData.measures,
+                        scoringType: exerciseData.scoringType,
+                        tempo: exerciseData.tempo,
+                        restTime: exerciseData.restTime,
+                        rpe: exerciseData.rpe,
+                        notes: exerciseData.notes,
+                    })
+                    .where(eq(workoutBlockExercise.id, exerciseData.id))
+                    .returning();
+            } else {
+                // Create
+                [savedExercise] = await tx
+                    .insert(workoutBlockExercise)
+                    .values({
+                        workoutBlockId: blockId,
+                        exerciseId: exerciseData.exerciseId,
+                        order: exerciseData.order,
+                        sets: exerciseData.sets,
+                        measures: exerciseData.measures,
+                        scoringType: exerciseData.scoringType,
+                        tempo: exerciseData.tempo,
+                        restTime: exerciseData.restTime,
+                        rpe: exerciseData.rpe,
+                        notes: exerciseData.notes,
+                    })
+                    .returning();
+            }
+
+            // Fetch full exercise definition
+            const [fullExerciseDef] = await tx
+                .select()
+                .from(exercise)
+                .where(eq(exercise.id, exerciseData.exerciseId))
+                .limit(1);
+
+            if (!fullExerciseDef) throw new Error('Exercise definition not found');
+
+            savedExercises.push({
+                ...(savedExercise as any),
+                exercise: fullExerciseDef as Exercise,
+            } as WorkoutBlockExercise);
+        }
+
+        updatedBlocks.push({
+            ...nullToUndefined(savedBlock),
+            exercises: savedExercises,
+        } as WorkoutBlock);
+    }
+
+    return {
+      ...nullToUndefined(updatedWorkout),
+      blocks: updatedBlocks,
+    } as Workout;
+  });
 }
 
 export async function getUserWorkouts(userId: string): Promise<Workout[]> {

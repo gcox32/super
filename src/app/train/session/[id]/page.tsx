@@ -29,7 +29,7 @@ import { WorkoutSummaryOverlay } from '@/components/train/session/overlays/Worko
 import { NoteInputOverlay } from '@/components/train/session/overlays/NoteInputOverlay';
 import { ExerciseDetailsOverlay } from '@/components/train/session/overlays/ExerciseDetailsOverlay';
 import { SwapExerciseOverlay } from '@/components/train/session/overlays/SwapExerciseOverlay';
-
+import { fetchJson } from '@/lib/train/helpers';
 
 type WorkoutInstanceResponse = { workoutInstance: WorkoutInstance };
 type BlockInstancesResponse = { instances: WorkoutBlockInstance[] };
@@ -38,17 +38,6 @@ type BlockExercisesResponse = { exercises: WorkoutBlockExercise[] };
 type BlockExerciseInstancesResponse = {
   instances: WorkoutBlockExerciseInstance[];
 };
-
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status}`);
-  }
-  return res.json();
-}
 
 export default function ActiveSessionPage({
   params,
@@ -375,9 +364,9 @@ export default function ActiveSessionPage({
     let defaultReps = currentStep.exercise.measures.reps?.toString() || '';
     let defaultWeight = currentStep.exercise.measures.externalLoad?.value?.toString() || '';
     let defaultUnit = currentStep.exercise.measures.externalLoad?.unit || 'lbs';
-    let defaultDistance = '';
+    let defaultDistance = currentStep.exercise.measures.distance?.value?.toString() || '';
     let defaultDistanceUnit: 'cm' | 'm' | 'in' | 'ft' | 'yd' | 'mi' | 'km' = 'm';
-    let defaultTime = '';
+    let defaultTime = currentStep.exercise.measures.time?.value?.toString() || '';
     let defaultTimeUnit: 's' | 'min' | 'hr' = 's';
     let defaultCalories = hasCalories ? (currentStep.exercise.measures.calories?.value?.toString() || '') : '';
 
@@ -483,34 +472,28 @@ export default function ActiveSessionPage({
     const hasDistance = currentStep.exercise.measures.distance !== undefined;
     const hasTime = currentStep.exercise.measures.time !== undefined;
     const hasCalories = currentStep.exercise.measures.calories !== undefined;
+    const scoringType = currentStep.exercise.scoringType;
 
-    // If calories is defined, calories replace reps as the primary measure
-    if (hasCalories) {
-      if (calories) {
-        measures.calories = { value: Number(calories), unit: 'cal' };
-      }
-      // If calories is defined, also record time (duration)
-      if (time) {
-        measures.time = { value: Number(time), unit: timeUnit };
-      }
-    } else {
-      // Otherwise, use reps and load as before
-      if (reps) {
-        measures.reps = Number(reps);
-      }
-      if (weight) {
-        measures.externalLoad = { value: Number(weight), unit: weightUnit };
-      }
+    if (calories) {
+      measures.calories = { value: Number(calories), unit: 'cal' };
     }
-
-    // Add complementary measures based on what's defined in the exercise
-    // If distance is defined, record time (how long it took)
-    if (hasDistance && time) {
+    
+    if (time) {
       measures.time = { value: Number(time), unit: timeUnit };
     }
-    // If time is defined, record distance (how far they went)
-    if (hasTime && distance) {
+    
+    if (distance) {
       measures.distance = { value: Number(distance), unit: distanceUnit };
+    }
+
+    const isCardio = scoringType === 'cals' || scoringType === 'dist' || scoringType === 'time' || hasCalories;
+
+    if (!isCardio || scoringType === 'reps' || scoringType === 'load') {
+       if (reps) measures.reps = Number(reps);
+    }
+    
+    if (weight) {
+       measures.externalLoad = { value: Number(weight), unit: weightUnit };
     }
 
     const payload = {
