@@ -12,6 +12,7 @@ import WorkoutInstanceHeader from '@/components/log/workouts/instance/Header';
 import WorkoutInstanceBlock from '@/components/log/workouts/instance/Block';
 import { fetchJson } from '@/lib/train/helpers';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import PageLayout from '@/components/layout/PageLayout';
 
 export default function WorkoutInstanceDetailPage() {
     const { instanceId } = useParams();
@@ -251,14 +252,14 @@ export default function WorkoutInstanceDetailPage() {
     if (!instance) return <div className="p-8">Workout not found</div>;
 
     return (
-        <div className="mx-auto mb-16 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
-            <div className="flex justify-between items-center">
-                <BackToLink href="/log/workouts" pageName="Workout History" />
-            </div>
+        <PageLayout
+            breadcrumbHref="/log/workouts"
+            breadcrumbText="Workout History"
+            title={instance.workout?.name || 'Untitled Workout'}
+        >
 
             {/* Header */}
             <div className="mb-6">
-                <h1 className="my-2 font-bold text-gray-100 text-3xl">{instance.workout?.name || 'Untitled Workout'}</h1>
                 <Button onClick={handleSave} disabled={saving} className="my-2 w-full sm:w-auto">
                     {saving ? <Loader2 className="animate-spin" /> : 'Update'}
                 </Button>
@@ -295,6 +296,6 @@ export default function WorkoutInstanceDetailPage() {
                 title="Delete Workout Instance"
                 message={`Are you sure you want to delete this workout instance? This action cannot be undone.`}
             />
-        </div>
+        </PageLayout>
     );
 }

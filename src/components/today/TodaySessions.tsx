@@ -188,7 +188,7 @@ export default function TodaySessions() {
             fullWidth
             onClick={() => setShowPrompt(true)}
           >
-            Run it Back
+            Start New
           </Button>
         </div>
       </div>
