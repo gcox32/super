@@ -6,6 +6,7 @@ interface PageLayoutProps {
   breadcrumbText?: string;
   title?: string;
   subtitle?: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -14,6 +15,7 @@ export default function PageLayout({
   breadcrumbText, 
   title, 
   subtitle,
+  action,
   children,
 }: PageLayoutProps) {
   return (
@@ -22,9 +24,17 @@ export default function PageLayout({
         <BackToLink href={breadcrumbHref} pageName={breadcrumbText} />
       )}
       
-      {title && <h2 className="font-bold text-2xl my-2">{title}</h2>}
-
-      {subtitle && <p className="text-muted-foreground text-sm mb-4">{subtitle}</p>}
+      <div className="flex justify-between items-start my-2">
+        <div className="flex-1">
+          {title && <h2 className="font-bold text-2xl">{title}</h2>}
+          {subtitle && <p className="text-muted-foreground text-sm mt-1 mb-4">{subtitle}</p>}
+        </div>
+        {action && (
+          <div className="ml-4">
+            {action}
+          </div>
+        )}
+      </div>
 
       {children}
     </div>
