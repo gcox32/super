@@ -94,7 +94,6 @@ export default function TodaySessions() {
           }),
         }
       );
-      console.log('res', res);
       if (!res.workoutInstance?.id) {
         throw new Error('Failed to create workout instance - no ID returned');
       }

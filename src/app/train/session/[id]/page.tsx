@@ -1,19 +1,9 @@
 'use client';
 
-import { useEffect, useState, use, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, use, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
-import type {
-  WorkoutInstance,
-  WorkoutBlockInstance,
-  WorkoutBlock,
-  WorkoutBlockExercise,
-  WorkoutBlockExerciseInstance,
-  SessionStep,
-  Exercise,
-} from '@/types/train';
 import { formatClock } from '@/lib/train/helpers';
 
 import { RestTimerDisplay } from '@/components/train/session/RestTimerDisplay';
@@ -29,18 +19,13 @@ import { WorkoutSummaryOverlay } from '@/components/train/session/overlays/Worko
 import { NoteInputOverlay } from '@/components/train/session/overlays/NoteInputOverlay';
 import { ExerciseDetailsOverlay } from '@/components/train/session/overlays/ExerciseDetailsOverlay';
 import { SwapExerciseOverlay } from '@/components/train/session/overlays/SwapExerciseOverlay';
-import { fetchJson } from '@/lib/train/helpers';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-
 import { WorkoutCompleteView } from '@/components/train/session/WorkoutCompleteView';
 
-type WorkoutInstanceResponse = { workoutInstance: WorkoutInstance };
-type BlockInstancesResponse = { instances: WorkoutBlockInstance[] };
-type BlocksResponse = { blocks: WorkoutBlock[] };
-type BlockExercisesResponse = { exercises: WorkoutBlockExercise[] };
-type BlockExerciseInstancesResponse = {
-  instances: WorkoutBlockExerciseInstance[];
-};
+import { useSessionData } from '@/hooks/train/session/useSessionData';
+import { useSessionTimers } from '@/hooks/train/session/useSessionTimers';
+import { useSessionInput } from '@/hooks/train/session/useSessionInput';
+import { useSessionActions } from '@/hooks/train/session/useSessionActions';
 
 export default function ActiveSessionPage({
   params,
@@ -48,21 +33,62 @@ export default function ActiveSessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
   
-  // Data State
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [workoutInstance, setWorkoutInstance] = useState<WorkoutInstance | null>(null);
-  const [blocks, setBlocks] = useState<WorkoutBlock[]>([]);
-  const [exercisesMap, setExercisesMap] = useState<Record<string, WorkoutBlockExercise[]>>({});
-  const [exerciseInstances, setExerciseInstances] = useState<Record<string, WorkoutBlockExerciseInstance[]>>({});
+  // Custom Hooks
+  const sessionData = useSessionData(id);
+  const {
+    loading,
+    error,
+    workoutInstance,
+    blocks,
+    exercisesMap,
+    exerciseInstances,
+    steps,
+    currentStepIndex,
+  } = sessionData;
 
-  // Execution State
-  const [steps, setSteps] = useState<SessionStep[]>([]);
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const sessionTimers = useSessionTimers();
+  const {
+    elapsedSeconds,
+    isPaused,
+    setIsPaused,
+    isResting,
+    restSecondsRemaining,
+    timerSoundsEnabled,
+    setTimerSoundsEnabled,
+    countdownAudioRef,
+    completeAudioRef,
+  } = sessionTimers;
+
+  const currentStep = steps[currentStepIndex];
+  const nextStep = steps[currentStepIndex + 1];
+
+  const sessionInput = useSessionInput({
+    currentStep,
+    currentStepIndex,
+    steps,
+    exerciseInstances,
+  });
+
+  const {
+    isComplete,
+    handleEndSession,
+    finishWorkout,
+    saveCurrentStep,
+    endRestAndAdvance,
+    handleNext,
+    handlePrevious,
+    handleSaveNote,
+    getCurrentNote,
+    handleSwapExercise,
+  } = useSessionActions({
+    data: sessionData,
+    timers: sessionTimers,
+    input: sessionInput,
+    sessionId: id,
+  });
+
+  // UI State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -71,34 +97,8 @@ export default function ActiveSessionPage({
   const [isSwapExerciseOpen, setIsSwapExerciseOpen] = useState(false);
   const [isSubmitEarlyModalOpen, setIsSubmitEarlyModalOpen] = useState(false);
   const [isEndSessionModalOpen, setIsEndSessionModalOpen] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-  const [isResting, setIsResting] = useState(false);
-  const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
-  const [timerSoundsEnabled, setTimerSoundsEnabled] = useState(true);
-  
-  // Input State for Current Step
-  const [reps, setReps] = useState<string>('');
-  const [weight, setWeight] = useState<string>('');
-  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('lbs');
-  const [distance, setDistance] = useState<string>('');
-  const [distanceUnit, setDistanceUnit] = useState<'cm' | 'm' | 'in' | 'ft' | 'yd' | 'mi' | 'km'>('m');
-  const [time, setTime] = useState<string>('');
-  const [timeUnit, setTimeUnit] = useState<'s' | 'min' | 'hr'>('s');
-  const [calories, setCalories] = useState<string>('');
-  const [height, setHeight] = useState<string>('');
-  const [heightUnit, setHeightUnit] = useState<'cm' | 'm' | 'in' | 'ft'>('in');
-  const [pace, setPace] = useState<string>('');
-  const [paceUnit, setPaceUnit] = useState<'mph' | 'kph' | 'min/km' | 'min/mile'>('min/mile');
 
-  // Audio refs
-  const countdownAudioRef = useRef<HTMLAudioElement | null>(null);
-  const completeAudioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUnlockedRef = useRef<boolean>(false);
-
-  // Derived
-  const currentStep = steps[currentStepIndex];
-  const nextStep = steps[currentStepIndex + 1];
-
+  // Derived Metrics
   const totalVolume = useMemo(() => {
     let total = 0;
     Object.values(exerciseInstances).forEach((instances) => {
@@ -123,807 +123,6 @@ export default function ActiveSessionPage({
     return count;
   }, [exerciseInstances]);
 
-  // Load timer-sound preference
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const stored = window.localStorage.getItem('super.timerSoundsEnabled');
-      if (stored !== null) {
-        setTimerSoundsEnabled(stored === 'true');
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // Initialize audio elements and unlock autoplay (browser policy workaround)
-  useEffect(() => {
-    // Preload and prepare audio elements
-    if (countdownAudioRef.current) {
-      countdownAudioRef.current.load();
-    }
-    if (completeAudioRef.current) {
-      completeAudioRef.current.load();
-    }
-
-    // Unlock audio on first user interaction (required by browser autoplay policies)
-    const unlockAudio = async () => {
-      if (audioUnlockedRef.current) return;
-      
-      try {
-        // Try to play and immediately pause to unlock audio
-        if (countdownAudioRef.current) {
-          await countdownAudioRef.current.play();
-          countdownAudioRef.current.pause();
-          countdownAudioRef.current.currentTime = 0;
-        }
-        audioUnlockedRef.current = true;
-      } catch {
-        // Audio will be unlocked on next user interaction
-      }
-    };
-
-    // Unlock on any user interaction
-    const events = ['click', 'touchstart', 'keydown'];
-    events.forEach(event => {
-      document.addEventListener(event, unlockAudio, { once: true });
-    });
-
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, unlockAudio);
-      });
-    };
-  }, []);
-
-  // Load Data
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        setLoading(true);
-        // 1. Get Instance using direct lookup route
-        const wi = await fetchJson<WorkoutInstanceResponse>(`/api/train/workouts/instances/${id}`);
-        if (cancelled) return;
-        if (!wi.workoutInstance?.workoutId) {
-          throw new Error('Workout instance missing workoutId');
-        }
-        setWorkoutInstance(wi.workoutInstance);
-
-        // 2. Get Blocks & Block Instances
-        const blocksRes = await fetchJson<BlocksResponse>(
-          `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks`
-        );
-        
-        // Get block instances for each block
-        const blockInstancesPromises = blocksRes.blocks.map(block =>
-          fetchJson<BlockInstancesResponse>(
-            `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks/${block.id}/instances?workoutInstanceId=${id}`
-          ).then(res => ({ blockId: block.id, instances: res.instances }))
-        );
-        const blockInstancesResults = await Promise.all(blockInstancesPromises);
-        const biRes = { instances: blockInstancesResults.flatMap(r => r.instances) };
-
-        if (cancelled) return;
-        setBlocks(blocksRes.blocks || []);
-
-        // 3. Get Exercises & Existing Logs
-        const exercisesMapData: Record<string, WorkoutBlockExercise[]> = {};
-        const instancesMap: Record<string, WorkoutBlockExerciseInstance[]> = {};
-
-        for (const block of blocksRes.blocks || []) {
-          const exRes = await fetchJson<BlockExercisesResponse>(
-            `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks/${block.id}/exercises`
-          );
-          exercisesMapData[block.id] = exRes.exercises || [];
-
-          const blockInstance = biRes.instances.find(bi => bi.workoutBlockId === block.id);
-          if (blockInstance) {
-            // Get exercise instances for each exercise in the block
-            const exerciseInstancesPromises = exRes.exercises.map(exercise =>
-              fetchJson<BlockExerciseInstancesResponse>(
-                `/api/train/workouts/${wi.workoutInstance.workoutId}/blocks/${block.id}/exercises/${exercise.id}/instances?workoutBlockInstanceId=${blockInstance.id}`
-              ).then(res => res.instances || [])
-            );
-            const allExerciseInstances = (await Promise.all(exerciseInstancesPromises)).flat();
-            instancesMap[block.id] = allExerciseInstances;
-          } else {
-            instancesMap[block.id] = [];
-          }
-        }
-
-        if (cancelled) return;
-        setExercisesMap(exercisesMapData);
-        setExerciseInstances(instancesMap);
-        
-        // 4. Build Steps (Flattened Workout)
-        const builtSteps: SessionStep[] = [];
-        (blocksRes.blocks || []).forEach(block => {
-          const exercises = exercisesMapData[block.id] || [];
-          
-          if (block.circuit) {
-            // Circuit mode: cycle through exercises (set 1 of all exercises, then set 2 of all exercises, etc.)
-            const maxSets = Math.max(...exercises.map(ex => ex.sets || 1), 1);
-            for (let setIndex = 0; setIndex < maxSets; setIndex++) {
-              exercises.forEach(ex => {
-                const totalSets = ex.sets || 1;
-                // Only add step if this exercise has a set at this index
-                if (setIndex < totalSets) {
-                  builtSteps.push({
-                    uniqueId: `${block.id}-${ex.id}-${setIndex}`,
-                    block,
-                    exercise: ex,
-                    setIndex,
-                    totalSets,
-                  });
-                }
-              });
-            }
-          } else {
-            // Straight sets mode: all sets of exercise 1, then all sets of exercise 2, etc.
-            exercises.forEach(ex => {
-              const setCheck = ex.sets || 1;
-              for (let i = 0; i < setCheck; i++) {
-                builtSteps.push({
-                  uniqueId: `${block.id}-${ex.id}-${i}`,
-                  block,
-                  exercise: ex,
-                  setIndex: i,
-                  totalSets: setCheck,
-                });
-              }
-            });
-          }
-        });
-        setSteps(builtSteps);
-
-        // 5. Determine Current Step (Resume)
-        let firstIncomplete = 0;
-        for (let i = 0; i < builtSteps.length; i++) {
-          const s = builtSteps[i];
-          const blockInsts = instancesMap[s.block.id] || [];
-          const match = blockInsts.find(inst => 
-            inst.workoutBlockExerciseId === s.exercise.id && 
-            inst.notes?.startsWith(`set:${s.setIndex}:`)
-          );
-          if (!match || !match.complete) {
-            firstIncomplete = i;
-            break;
-          }
-        }
-        setCurrentStepIndex(firstIncomplete);
-        
-      } catch (err: any) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [id]);
-
-  // Timer
-  useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
-      setElapsedSeconds(s => s + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isPaused]);
-
-  // Rest Timer
-  useEffect(() => {
-    if (!isResting || isPaused) return;
-    if (restSecondsRemaining <= 0) return;
-
-    const interval = setInterval(() => {
-      setRestSecondsRemaining((s) => {
-        const nextValue = s - 1;
-        
-        // Play countdown sound when reaching 3 seconds
-        if (nextValue === 3 && timerSoundsEnabled && countdownAudioRef.current) {
-          try {
-            const audio = countdownAudioRef.current;
-            // Check if audio is ready to play
-            if (audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-              audio.currentTime = 0;
-              const playPromise = audio.play();
-              if (playPromise !== undefined) {
-                playPromise.catch((err) => {
-                  // If autoplay fails, try to unlock on next interaction
-                  if (err.name === 'NotAllowedError' || err.name === 'NotSupportedError') {
-                    audioUnlockedRef.current = false;
-                  }
-                  // Silently handle other playback errors
-                  console.debug('Countdown audio playback failed:', err);
-                });
-              }
-            }
-          } catch (err) {
-            // Silently handle any errors
-            console.debug('Countdown audio error:', err);
-          }
-        }
-        
-        if (nextValue <= 0) {
-          clearInterval(interval);
-          // Automatically advance when rest completes
-          if (currentStepIndex < steps.length - 1) {
-            setCurrentStepIndex((i) => i + 1);
-          } else {
-            finishWorkout();
-          }
-          setIsResting(false);
-          return 0;
-        }
-        return nextValue;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isResting, isPaused, restSecondsRemaining, currentStepIndex, steps.length, workoutInstance, timerSoundsEnabled]);
-
-  // Sync Input with Current Step's Data (if exists)
-  useEffect(() => {
-    if (!currentStep) return;
-    
-    // 1. Determine defaults from Target or Previous Set
-    const hasCalories = currentStep.exercise.measures.calories !== undefined;
-    
-    let defaultReps = currentStep.exercise.measures.reps?.toString() || '';
-    let defaultWeight = currentStep.exercise.measures.externalLoad?.value?.toString() || '';
-    let defaultUnit = currentStep.exercise.measures.externalLoad?.unit || 'lbs';
-    let defaultDistance = currentStep.exercise.measures.distance?.value?.toString() || '';
-    let defaultDistanceUnit: 'cm' | 'm' | 'in' | 'ft' | 'yd' | 'mi' | 'km' = 'm';
-    let defaultTime = currentStep.exercise.measures.time?.value?.toString() || '';
-    let defaultTimeUnit: 's' | 'min' | 'hr' = 's';
-    let defaultCalories = hasCalories ? (currentStep.exercise.measures.calories?.value?.toString() || '') : '';
-    let defaultHeight = currentStep.exercise.measures.height?.value?.toString() || '';
-    let defaultHeightUnit: 'cm' | 'm' | 'in' | 'ft' = currentStep.exercise.measures.height?.unit || 'in';
-    let defaultPace = currentStep.exercise.measures.pace?.value?.toString() || '';
-    let defaultPaceUnit: 'mph' | 'kph' | 'min/km' | 'min/mile' = currentStep.exercise.measures.pace?.unit || 'min/mile';
-
-    // Check previous step for "carry forward" logic
-    if (currentStepIndex > 0) {
-      const prevStep = steps[currentStepIndex - 1];
-      if (
-        prevStep &&
-        prevStep.block.id === currentStep.block.id &&
-        prevStep.exercise.id === currentStep.exercise.id
-      ) {
-        // Previous step was same exercise. Check if we have data for it.
-        const prevBlockInsts = exerciseInstances[prevStep.block.id] || [];
-        const prevMatch = prevBlockInsts.find(inst => 
-          inst.workoutBlockExerciseId === prevStep.exercise.id && 
-          inst.notes?.startsWith(`set:${prevStep.setIndex}:`)
-        );
-
-        if (prevMatch?.measures.externalLoad?.value) {
-          defaultWeight = prevMatch.measures.externalLoad.value.toString();
-          if (prevMatch.measures.externalLoad.unit) {
-            defaultUnit = prevMatch.measures.externalLoad.unit;
-          }
-        }
-        if (prevMatch?.measures.distance?.value) {
-          defaultDistance = prevMatch.measures.distance.value.toString();
-          if (prevMatch.measures.distance.unit) {
-            defaultDistanceUnit = prevMatch.measures.distance.unit;
-          }
-        }
-        if (prevMatch?.measures.time?.value) {
-          defaultTime = prevMatch.measures.time.value.toString();
-          if (prevMatch.measures.time.unit) {
-            defaultTimeUnit = prevMatch.measures.time.unit;
-          }
-        }
-        if (prevMatch?.measures.calories?.value) {
-          defaultCalories = prevMatch.measures.calories.value.toString();
-        }
-        if (prevMatch?.measures.height?.value) {
-          defaultHeight = prevMatch.measures.height.value.toString();
-          if (prevMatch.measures.height.unit) defaultHeightUnit = prevMatch.measures.height.unit;
-        }
-        if (prevMatch?.measures.pace?.value) {
-          defaultPace = prevMatch.measures.pace.value.toString();
-          if (prevMatch.measures.pace.unit) defaultPaceUnit = prevMatch.measures.pace.unit;
-        }
-      }
-    }
-
-    setReps(defaultReps);
-    setWeight(defaultWeight);
-    setWeightUnit(defaultUnit);
-    setDistance(defaultDistance);
-    setDistanceUnit(defaultDistanceUnit);
-    setTime(defaultTime);
-    setTimeUnit(defaultTimeUnit);
-    setCalories(defaultCalories);
-    setHeight(defaultHeight);
-    setHeightUnit(defaultHeightUnit);
-    setPace(defaultPace);
-    setPaceUnit(defaultPaceUnit);
-    
-    // 2. Override with existing saved data for THIS step
-    const blockInsts = exerciseInstances[currentStep.block.id] || [];
-    const match = blockInsts.find(inst => 
-      inst.workoutBlockExerciseId === currentStep.exercise.id && 
-      inst.notes?.startsWith(`set:${currentStep.setIndex}:`)
-    );
-    
-    if (match) {
-      // If calories is defined, prioritize calories over reps
-      const hasCaloriesDefined = currentStep.exercise.measures.calories !== undefined;
-      if (hasCaloriesDefined && match.measures.calories?.value) {
-        setCalories(match.measures.calories.value.toString());
-      } else if (match.measures.reps) {
-        setReps(match.measures.reps.toString());
-      }
-      
-      if (match.measures.externalLoad?.value) {
-        setWeight(match.measures.externalLoad.value.toString());
-      }
-      if (match.measures.externalLoad?.unit) {
-        setWeightUnit(match.measures.externalLoad.unit);
-      }
-      if (match.measures.distance?.value) {
-        setDistance(match.measures.distance.value.toString());
-      }
-      if (match.measures.distance?.unit) {
-        setDistanceUnit(match.measures.distance.unit);
-      }
-      if (match.measures.time?.value) {
-        setTime(match.measures.time.value.toString());
-      }
-      if (match.measures.time?.unit) {
-        setTimeUnit(match.measures.time.unit);
-      }
-      if (match.measures.height?.value) {
-        setHeight(match.measures.height.value.toString());
-      }
-      if (match.measures.height?.unit) {
-        setHeightUnit(match.measures.height.unit);
-      }
-      if (match.measures.pace?.value) {
-        setPace(match.measures.pace.value.toString());
-      }
-      if (match.measures.pace?.unit) {
-        setPaceUnit(match.measures.pace.unit);
-      }
-    }
-    
-  }, [currentStepIndex, exerciseInstances, currentStep, steps]);
-
-  // Actions
-  async function saveCurrentStep() {
-    if (!currentStep || !workoutInstance) return;
-
-    const blockInstanceId = await ensureBlockInstance(currentStep.block.id);
-    if (!blockInstanceId) return;
-
-    // Build measures object with complementary measures
-    const measures: any = {
-      ...currentStep.exercise.measures,
-    };
-
-    // Determine what's defined in the exercise
-    const hasDistance = currentStep.exercise.measures.distance !== undefined;
-    const hasTime = currentStep.exercise.measures.time !== undefined;
-    const hasCalories = currentStep.exercise.measures.calories !== undefined;
-    const scoringType = currentStep.exercise.scoringType;
-
-    if (calories) {
-      measures.calories = { value: Number(calories), unit: 'cal' };
-    }
-    
-    if (time) {
-      measures.time = { value: Number(time), unit: timeUnit };
-    }
-    
-    if (distance) {
-      measures.distance = { value: Number(distance), unit: distanceUnit };
-    }
-    if (height) {
-      measures.height = { value: Number(height), unit: heightUnit };
-    }
-    if (pace) {
-      measures.pace = { value: Number(pace), unit: paceUnit };
-    }
-
-    const isCardio = scoringType === 'cals' || scoringType === 'dist' || scoringType === 'time' || hasCalories;
-
-    if (!isCardio || scoringType === 'reps' || scoringType === 'load') {
-       if (reps) measures.reps = Number(reps);
-    }
-    
-    if (weight) {
-       measures.externalLoad = { value: Number(weight), unit: weightUnit };
-    }
-
-    const payload = {
-      workoutBlockInstanceId: blockInstanceId,
-      workoutBlockExerciseId: currentStep.exercise.id,
-      complete: true,
-      measures,
-      notes: `set:${currentStep.setIndex}:`,
-    };
-
-    // Check if update or create
-    const blockInsts = exerciseInstances[currentStep.block.id] || [];
-    const existing = blockInsts.find(inst => 
-      inst.workoutBlockExerciseId === currentStep.exercise.id && 
-      inst.notes?.startsWith(`set:${currentStep.setIndex}:`)
-    );
-
-    if (!workoutInstance?.workoutId) return;
-
-    try {
-      let saved: WorkoutBlockExerciseInstance;
-      if (existing) {
-        const res = await fetchJson<{ instance: WorkoutBlockExerciseInstance }>(
-          `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises/${currentStep.exercise.id}/instances/${existing.id}`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          }
-        );
-        saved = res.instance;
-      } else {
-        const res = await fetchJson<{ instance: WorkoutBlockExerciseInstance }>(
-          `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises/${currentStep.exercise.id}/instances`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          }
-        );
-        saved = res.instance;
-      }
-
-      // Update local state
-      setExerciseInstances(prev => {
-        const list = prev[currentStep.block.id] || [];
-        const idx = list.findIndex(i => i.id === saved.id);
-        const nextList = idx === -1 ? [...list, saved] : list.map((item, i) => i === idx ? saved : item);
-        return { ...prev, [currentStep.block.id]: nextList };
-      });
-      
-    } catch (e) {
-      console.error('Failed to save set', e);
-    }
-  }
-
-  async function ensureBlockInstance(blockId: string): Promise<string | null> {
-    if (!workoutInstance?.workoutId) return null;
-    
-    try {
-      // Get block to find its workoutId
-      const block = blocks.find(b => b.id === blockId);
-      if (!block) return null;
-
-      const res = await fetchJson<BlockInstancesResponse>(
-        `/api/train/workouts/${workoutInstance.workoutId}/blocks/${blockId}/instances?workoutInstanceId=${id}`
-      );
-      const existing = res.instances.find(bi => bi.workoutBlockId === blockId);
-      if (existing) return existing.id;
-
-      // Create
-      const createRes = await fetchJson<{ instance: WorkoutBlockInstance }>(
-        `/api/train/workouts/${workoutInstance.workoutId}/blocks/${blockId}/instances`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workoutInstanceId: id,
-            workoutBlockId: blockId,
-            date: new Date().toISOString(),
-          })
-        }
-      );
-      return createRes.instance.id;
-    } catch (e) {
-      console.error('Failed to ensure block instance', e);
-      return null;
-    }
-  }
-
-  const maybeStartRest = () => {
-    if (!currentStep) return false;
-    // If this is the final set of the final exercise, do not start a rest timer
-    if (currentStepIndex >= steps.length - 1) return false;
-
-    const rest = currentStep.exercise.restTime;
-    if (!rest || rest <= 0) return false;
-    setIsResting(true);
-    setRestSecondsRemaining(rest);
-    return true;
-  };
-
-  const endRestAndAdvance = () => {
-    setIsResting(false);
-    setRestSecondsRemaining(0);
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex((i) => i + 1);
-    } else {
-      finishWorkout();
-    }
-  };
-
-  const handleNext = async () => {
-    await saveCurrentStep();
-    // If this step has a rest interval, start rest instead of immediately advancing
-    if (maybeStartRest()) return;
-
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex(i => i + 1);
-    } else {
-      // Finish Workout
-      await finishWorkout();
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex(i => i - 1);
-    }
-  };
-
-  const handleEndSession = () => {
-    router.push('/train');
-  };
-
-  const finishWorkout = async (additionalNotes?: string) => {
-    if (!workoutInstance) return;
-    try {
-      // Play completion sound before marking complete / navigating
-      if (timerSoundsEnabled && completeAudioRef.current) {
-        try {
-          completeAudioRef.current.currentTime = 0;
-          void completeAudioRef.current.play();
-        } catch {
-          // ignore
-        }
-      }
-
-      const payload: any = {
-        complete: true,
-        duration: { value: Math.ceil(elapsedSeconds / 60), unit: 'min' },
-      };
-
-      if (additionalNotes) {
-        const currentNotes = workoutInstance.notes || '';
-        payload.notes = currentNotes ? `${currentNotes}\n${additionalNotes}` : additionalNotes;
-      }
-
-       await fetchJson(
-        `/api/train/workouts/${workoutInstance.workoutId}/instances/${workoutInstance.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
-      setIsComplete(true);
-    } catch (e) {
-      console.error('Failed to finish', e);
-    }
-  };
-
-  const handleSaveNote = async (noteText: string) => {
-    if (!currentStep || !workoutInstance) return;
-
-    const blockInstanceId = await ensureBlockInstance(currentStep.block.id);
-    if (!blockInstanceId) return;
-
-    // Find existing instance for this set
-    const blockInsts = exerciseInstances[currentStep.block.id] || [];
-    const existing = blockInsts.find(inst => 
-      inst.workoutBlockExerciseId === currentStep.exercise.id && 
-      inst.notes?.startsWith(`set:${currentStep.setIndex}:`)
-    );
-
-    // Build notes string: set prefix + note text
-    const notesPrefix = `set:${currentStep.setIndex}:`;
-    const fullNotes = noteText.trim() 
-      ? `${notesPrefix}${noteText.trim()}`
-      : notesPrefix;
-
-    if (!workoutInstance?.workoutId) return;
-
-    try {
-      let saved: WorkoutBlockExerciseInstance;
-      if (existing) {
-        // Update existing instance with note
-        const res = await fetchJson<{ instance: WorkoutBlockExerciseInstance }>(
-          `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises/${currentStep.exercise.id}/instances/${existing.id}`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              notes: fullNotes,
-            }),
-          }
-        );
-        saved = res.instance;
-      } else {
-        // Create new instance with note (but not marked complete)
-        const res = await fetchJson<{ instance: WorkoutBlockExerciseInstance }>(
-          `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises/${currentStep.exercise.id}/instances`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              workoutBlockInstanceId: blockInstanceId,
-              workoutBlockExerciseId: currentStep.exercise.id,
-              complete: false,
-              notes: fullNotes,
-            }),
-          }
-        );
-        saved = res.instance;
-      }
-
-      // Update local state
-      setExerciseInstances(prev => {
-        const list = prev[currentStep.block.id] || [];
-        const idx = list.findIndex(i => i.id === saved.id);
-        const nextList = idx === -1 ? [...list, saved] : list.map((item, i) => i === idx ? saved : item);
-        return { ...prev, [currentStep.block.id]: nextList };
-      });
-    } catch (e) {
-      console.error('Failed to save note', e);
-      throw e;
-    }
-  };
-
-  // Get current note text (strip the set prefix)
-  const getCurrentNote = (): string => {
-    if (!currentStep) return '';
-    const blockInsts = exerciseInstances[currentStep.block.id] || [];
-    const existing = blockInsts.find(inst => 
-      inst.workoutBlockExerciseId === currentStep.exercise.id && 
-      inst.notes?.startsWith(`set:${currentStep.setIndex}:`)
-    );
-    if (!existing?.notes) return '';
-    const prefix = `set:${currentStep.setIndex}:`;
-    return existing.notes.startsWith(prefix) 
-      ? existing.notes.slice(prefix.length).trim()
-      : existing.notes.trim();
-  };
-
-  // Handle exercise swap
-  const handleSwapExercise = async (newExercise: Exercise) => {
-    if (!currentStep || !workoutInstance?.workoutId) return;
-
-    try {
-      // Update the workout block exercise definition
-      await fetchJson(
-        `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises/${currentStep.exercise.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            exerciseId: newExercise.id,
-          }),
-        }
-      );
-
-      // Reload exercises for this block
-      const exRes = await fetchJson<BlockExercisesResponse>(
-        `/api/train/workouts/${workoutInstance.workoutId}/blocks/${currentStep.block.id}/exercises`
-      );
-      
-      // Update exercises map
-      setExercisesMap(prev => ({
-        ...prev,
-        [currentStep.block.id]: exRes.exercises || [],
-      }));
-
-      // Rebuild steps for this block
-      const updatedExercises = exRes.exercises || [];
-      const currentBlock = blocks.find(b => b.id === currentStep.block.id);
-      if (!currentBlock) return;
-
-      // Find all steps for this block and rebuild them
-      const otherBlockSteps = steps.filter(s => s.block.id !== currentStep.block.id);
-      const newBlockSteps: SessionStep[] = [];
-
-      if (currentBlock.circuit) {
-        const maxSets = Math.max(...updatedExercises.map(ex => ex.sets || 1), 1);
-        for (let setIndex = 0; setIndex < maxSets; setIndex++) {
-          updatedExercises.forEach(ex => {
-            const totalSets = ex.sets || 1;
-            if (setIndex < totalSets) {
-              newBlockSteps.push({
-                uniqueId: `${currentBlock.id}-${ex.id}-${setIndex}`,
-                block: currentBlock,
-                exercise: ex,
-                setIndex,
-                totalSets,
-              });
-            }
-          });
-        }
-      } else {
-        updatedExercises.forEach(ex => {
-          const setCheck = ex.sets || 1;
-          for (let i = 0; i < setCheck; i++) {
-            newBlockSteps.push({
-              uniqueId: `${currentBlock.id}-${ex.id}-${i}`,
-              block: currentBlock,
-              exercise: ex,
-              setIndex: i,
-              totalSets: setCheck,
-            });
-          }
-        });
-      }
-
-      // Combine steps and find the new current step index
-      const allSteps = [...otherBlockSteps, ...newBlockSteps].sort((a, b) => {
-        // Sort by block order, then by exercise order, then by set index
-        const blockOrderA = blocks.findIndex(bl => bl.id === a.block.id);
-        const blockOrderB = blocks.findIndex(bl => bl.id === b.block.id);
-        if (blockOrderA !== blockOrderB) return blockOrderA - blockOrderB;
-        
-        const exOrderA = updatedExercises.findIndex(ex => ex.id === a.exercise.id);
-        const exOrderB = updatedExercises.findIndex(ex => ex.id === b.exercise.id);
-        if (exOrderA !== exOrderB) return exOrderA - exOrderB;
-        
-        return a.setIndex - b.setIndex;
-      });
-
-      setSteps(allSteps);
-
-      // Find the step that matches our current position (same block, same set index, same exercise order if possible)
-      // Or find the first incomplete step in the new exercise
-      const oldExerciseOrder = exercisesMap[currentStep.block.id]?.findIndex(ex => ex.id === currentStep.exercise.id) ?? -1;
-      const newExerciseAtSameOrder = updatedExercises[oldExerciseOrder];
-      
-      let newStepIndex = 0;
-      if (newExerciseAtSameOrder) {
-        // Try to find a step with the same exercise order and set index
-        const matchingStep = allSteps.findIndex(s => 
-          s.block.id === currentStep.block.id &&
-          s.exercise.id === newExerciseAtSameOrder.id &&
-          s.setIndex === currentStep.setIndex
-        );
-        if (matchingStep !== -1) {
-          newStepIndex = matchingStep;
-        } else {
-          // Find first step of the new exercise
-          const firstStepOfNewExercise = allSteps.findIndex(s => 
-            s.block.id === currentStep.block.id &&
-            s.exercise.id === newExerciseAtSameOrder.id
-          );
-          if (firstStepOfNewExercise !== -1) {
-            newStepIndex = firstStepOfNewExercise;
-          }
-        }
-      } else {
-        // Find first incomplete step
-        for (let i = 0; i < allSteps.length; i++) {
-          const s = allSteps[i];
-          const blockInsts = exerciseInstances[s.block.id] || [];
-          const match = blockInsts.find(inst => 
-            inst.workoutBlockExerciseId === s.exercise.id && 
-            inst.notes?.startsWith(`set:${s.setIndex}:`)
-          );
-          if (!match || !match.complete) {
-            newStepIndex = i;
-            break;
-          }
-        }
-      }
-
-      setCurrentStepIndex(newStepIndex);
-    } catch (e) {
-      console.error('Failed to swap exercise', e);
-      throw e;
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center bg-black w-full h-screen text-white">
@@ -936,13 +135,13 @@ export default function ActiveSessionPage({
     return (
       <div className="flex flex-col justify-center items-center gap-4 bg-black p-6 w-full h-screen text-white">
         <p className="text-red-500">{error || "Workout completed or invalid."}</p>
-        <Button onClick={() => router.push('/train')}>Back to Train</Button>
+        <Button onClick={() => handleEndSession()}>Back to Train</Button>
       </div>
     );
   }
 
   if (isComplete) {
-    return <WorkoutCompleteView onContinue={() => router.push('/train')} />;
+    return <WorkoutCompleteView onContinue={handleEndSession} />;
   }
 
   return (
@@ -968,7 +167,7 @@ export default function ActiveSessionPage({
           </div>
         )}
         <div className="absolute inset-0 bg-linear-to-b from-black/80 via-transparent to-black/90" />
-                </div>
+      </div>
 
       {/* Main Content Layer */}
       <div className="z-10 relative safe-area-inset-top flex flex-col px-5 py-4 h-full">
@@ -1000,30 +199,30 @@ export default function ActiveSessionPage({
           <>
             <SessionInputControls 
               step={currentStep}
-              reps={reps}
-              onRepsChange={(val) => { setReps(val); }}
-              weight={weight}
-              onWeightChange={(val) => { setWeight(val); }}
-              weightUnit={weightUnit}
-              onWeightUnitChange={(unit) => { setWeightUnit(unit); }}
-              distance={distance}
-              onDistanceChange={(val) => { setDistance(val); }}
-              distanceUnit={distanceUnit}
-              onDistanceUnitChange={(unit) => { setDistanceUnit(unit); }}
-              time={time}
-              onTimeChange={(val) => { setTime(val); }}
-              timeUnit={timeUnit}
-              onTimeUnitChange={(unit) => { setTimeUnit(unit); }}
-              calories={calories}
-              onCaloriesChange={(val) => { setCalories(val); }}
-              height={height}
-              onHeightChange={(val) => setHeight(val)}
-              heightUnit={heightUnit}
-              onHeightUnitChange={(val) => setHeightUnit(val)}
-              pace={pace}
-              onPaceChange={(val) => setPace(val)}
-              paceUnit={paceUnit}
-              onPaceUnitChange={(val) => setPaceUnit(val)}
+              reps={sessionInput.reps}
+              onRepsChange={sessionInput.setReps}
+              weight={sessionInput.weight}
+              onWeightChange={sessionInput.setWeight}
+              weightUnit={sessionInput.weightUnit}
+              onWeightUnitChange={sessionInput.setWeightUnit}
+              distance={sessionInput.distance}
+              onDistanceChange={sessionInput.setDistance}
+              distanceUnit={sessionInput.distanceUnit}
+              onDistanceUnitChange={sessionInput.setDistanceUnit}
+              time={sessionInput.time}
+              onTimeChange={sessionInput.setTime}
+              timeUnit={sessionInput.timeUnit}
+              onTimeUnitChange={sessionInput.setTimeUnit}
+              calories={sessionInput.calories}
+              onCaloriesChange={sessionInput.setCalories}
+              height={sessionInput.height}
+              onHeightChange={sessionInput.setHeight}
+              heightUnit={sessionInput.heightUnit}
+              onHeightUnitChange={sessionInput.setHeightUnit}
+              pace={sessionInput.pace}
+              onPaceChange={sessionInput.setPace}
+              paceUnit={sessionInput.paceUnit}
+              onPaceUnitChange={sessionInput.setPaceUnit}
             />
 
             <SessionFooter 
