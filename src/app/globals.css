@@ -74,9 +74,17 @@
 }
 
 body {
-  background: var(--background);
+  /* Radial gradient background */
+  background: radial-gradient(
+    ellipse at left,
+    rgba(59, 130, 246, 0.25) 0%,
+    var(--background) 60%
+  );
+  background-attachment: fixed;
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
 }
 
 @keyframes fadeInUp {
