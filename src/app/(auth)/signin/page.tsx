@@ -31,7 +31,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-300px)] bg-background mx-4">
+    <div className="flex items-center justify-center min-h-[calc(100vh-300px)] mx-4">
       <div className="w-full max-w-md p-8 bg-card rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
