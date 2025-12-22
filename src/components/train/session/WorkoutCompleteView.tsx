@@ -13,18 +13,7 @@ interface WorkoutCompleteViewProps {
 }
 
 export function WorkoutCompleteView({ onContinue, workoutInstance, exercisesMap, completedExerciseInstances }: WorkoutCompleteViewProps) {
-  const muscleWork = useMemo(() => {
-    if (!workoutInstance) return {} as Record<string, number>;
-    return calculateMuscleWorkDistribution(
-      workoutInstance,
-      completedExerciseInstances && completedExerciseInstances.length > 0
-        ? completedExerciseInstances
-        : undefined, // fallback to all from workoutInstance if no completed instances provided
-      undefined, // muscleGroupMap
-      exercisesMap // exercisesMap for exercise lookup
-    );
-  }, [workoutInstance, exercisesMap, completedExerciseInstances]);
-
+  
   return (
     <div className="flex flex-col justify-center items-center p-6 w-full h-dvh text-white">
       <div className="flex flex-col items-center gap-6 mb-12 animate-in duration-500 fade-in zoom-in">
@@ -37,9 +26,13 @@ export function WorkoutCompleteView({ onContinue, workoutInstance, exercisesMap,
 
       {/* Muscle Heatmap */}
       {workoutInstance && (
-        <div className="bg-zinc-400/40 mb-8 py-6 rounded-lg w-full max-w-md">
+        <div className="mb-8 w-full max-w-md">
           <h2 className="mb-4 font-semibold text-zinc-400 text-sm text-center uppercase tracking-wide">Muscle Work</h2>
-          <MuscleHeatmap muscleWork={muscleWork} />
+          <MuscleHeatmap 
+            workoutInstance={workoutInstance}
+            exercisesMap={exercisesMap}
+            completedExerciseInstances={completedExerciseInstances}
+          />
         </div>
       )}
 

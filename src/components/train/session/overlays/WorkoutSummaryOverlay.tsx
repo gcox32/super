@@ -42,18 +42,6 @@ export function WorkoutSummaryOverlay({
     }
   }, [isOpen]);
 
-  const muscleWork = useMemo(() => {
-    if (!workoutInstance) return {} as Record<string, number>;
-    return calculateMuscleWorkDistribution(
-      workoutInstance,
-      completedExerciseInstances && completedExerciseInstances.length > 0
-        ? completedExerciseInstances
-        : undefined,
-      undefined, // muscleGroupMap
-      exercisesMap // exercisesMap for exercise lookup
-    );
-  }, [workoutInstance, completedExerciseInstances, exercisesMap]);
-
   if (!shouldRender) return null;
 
   const formatDuration = (seconds: number) => {
@@ -105,8 +93,12 @@ export function WorkoutSummaryOverlay({
 
           {/* Muscle Heatmap */}
           {workoutInstance && (
-            <div className="bg-zinc-700 border-zinc-800 border-t">
-              <MuscleHeatmap muscleWork={muscleWork} />
+            <div className="p-4 border-zinc-800 border-t">
+              <MuscleHeatmap 
+                workoutInstance={workoutInstance}
+                exercisesMap={exercisesMap}
+                completedExerciseInstances={completedExerciseInstances}
+              />
             </div>
           )}
 

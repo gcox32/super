@@ -159,7 +159,7 @@ export default function ActiveSessionPage({
 
   return (
     <div 
-      className="relative flex flex-col bg-black w-full h-dvh overflow-hidden overscroll-none font-sans text-white touch-none"
+      className="relative flex flex-col w-full h-dvh overscroll-none font-sans text-white touch-none"
     >
       
       {/* Background Video/Image */}

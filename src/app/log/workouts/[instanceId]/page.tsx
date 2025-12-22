@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { WorkoutInstance, WorkoutBlockExerciseInstance } from '@/types/train';
 import BackToLink from '@/components/layout/navigation/BackToLink';
@@ -13,6 +13,7 @@ import WorkoutInstanceBlock from '@/components/log/workouts/instance/Block';
 import { fetchJson } from '@/lib/train/helpers';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import PageLayout from '@/components/layout/PageLayout';
+import { MuscleHeatmap } from '@/components/anatomy/MuscleHeatmap';
 
 export default function WorkoutInstanceDetailPage() {
     const { instanceId } = useParams();
@@ -267,6 +268,11 @@ export default function WorkoutInstanceDetailPage() {
             </div>
 
             <StatsGrid instance={instance} />
+
+            {/* Muscle Heatmap */}
+            <div className="mx-auto mb-6 w-full max-w-lg">
+                <MuscleHeatmap workoutInstance={instance} />
+            </div>
 
             {/* Blocks */}
             <div className="space-y-6">
