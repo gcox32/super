@@ -186,11 +186,12 @@ export interface Supplement {
 export interface SleepLog {
     id:     string;
     userId: User['id'];
-    sleep:  SleepInstance[];
+    sleep:  SleepInstance[]; // hydrated in UI
 }
 
 export interface SleepInstance {
     id:          string;
+    sleepLogId:  SleepLog['id'];
     userId:      User['id'];
     date:        Date;
     timeAsleep?: TimeMeasurement; // in hours

@@ -1,8 +1,51 @@
+'use client';
+
 import { Bell, Shield, Database, Info } from 'lucide-react';
 import Link from 'next/link';
 import PageLayout from '@/components/layout/PageLayout';
+import { useSettings } from '@/lib/settings';
+import { useToast } from '@/components/ui/Toast';
 
 export default function SettingsPage() {
+  const { showToast } = useToast();
+  const { settings, updateSettings, loading } = useSettings();
+  
+  // Settings like Notifications are operational and should probably take effect immediately (like system settings typically do),
+  // whereas Preferences (units, strategies) often benefit from a "batch save" flow if they change view state significantly.
+  // For now, we will keep the "toggle immediately saves" pattern for Settings, as is common for notification toggles.
+  
+  const handleSleepReminderChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    
+    if (checked) {
+      // Request permission
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          showToast({ title: 'Permission Denied', description: 'Enable notifications in your browser settings to get reminders.', variant: 'error' });
+          return;
+        }
+      } else {
+        showToast({ title: 'Not Supported', description: 'Notifications are not supported in this browser.', variant: 'error' });
+        return;
+      }
+    }
+
+    updateSettings({ sleepReminder: checked });
+    
+    if (checked) {
+       showToast({ title: 'Reminder Set', description: 'You will be reminded to log sleep in the morning.', variant: 'success' });
+    }
+  };
+
+  if (loading) {
+    return (
+        <PageLayout title="Settings" subtitle="Manage your app settings" breadcrumbHref="/me" breadcrumbText="Me">
+             <div className="flex justify-center p-8">Loading...</div>
+        </PageLayout>
+    );
+  }
+
   return (
     <PageLayout
       breadcrumbHref="/me"
@@ -17,40 +60,60 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold">Notifications</h2>
         </div>
         <div className="space-y-2">
+          {/* Sleep Reminder */}
           <div className="bg-card rounded-lg p-4 border border-border flex items-center justify-between">
+            <div>
+              <span className="font-medium block">Morning Sleep Reminder</span>
+              <span className="text-sm text-muted-foreground">
+                Get reminded to log your sleep stats (6 AM - 11 AM)
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={settings.sleepReminder}
+                onChange={handleSleepReminderChange}
+              />
+              <div className="w-11 h-6 bg-input peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+            </label>
+          </div>
+          
+          {/* Other settings placeholders */}
+          <div className="bg-card rounded-lg p-4 border border-border flex items-center justify-between opacity-50 cursor-not-allowed">
             <div>
               <span className="font-medium block">Session Reminders</span>
               <span className="text-sm text-muted-foreground">
                 Get notified before training sessions
               </span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-input peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+            <label className="relative inline-flex items-center cursor-pointer pointer-events-none">
+              <input type="checkbox" className="sr-only peer" checked={settings.sessionReminders} disabled />
+              <div className="w-11 h-6 bg-input rounded-full peer peer-checked:bg-brand-primary"></div>
             </label>
           </div>
-          <div className="bg-card rounded-lg p-4 border border-border flex items-center justify-between">
+          <div className="bg-card rounded-lg p-4 border border-border flex items-center justify-between opacity-50 cursor-not-allowed">
             <div>
               <span className="font-medium block">Meal Reminders</span>
               <span className="text-sm text-muted-foreground">
                 Reminders for meal times
               </span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" />
-              <div className="w-11 h-6 bg-input peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+            <label className="relative inline-flex items-center cursor-pointer pointer-events-none">
+              <input type="checkbox" className="sr-only peer" checked={settings.mealReminders} disabled />
+              <div className="w-11 h-6 bg-input rounded-full peer peer-checked:bg-brand-primary"></div>
             </label>
           </div>
-          <div className="bg-card rounded-lg p-4 border border-border flex items-center justify-between">
-            <div>
+          <div className="bg-card rounded-lg p-4 border border-border flex items-center justify-between opacity-50 cursor-not-allowed">
+             <div>
               <span className="font-medium block">Progress Updates</span>
               <span className="text-sm text-muted-foreground">
                 Weekly progress summaries
               </span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-input peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+            <label className="relative inline-flex items-center cursor-pointer pointer-events-none">
+              <input type="checkbox" className="sr-only peer" checked={settings.progressUpdates} disabled />
+              <div className="w-11 h-6 bg-input rounded-full peer peer-checked:bg-brand-primary"></div>
             </label>
           </div>
         </div>

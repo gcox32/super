@@ -1157,7 +1157,7 @@ export async function createSleepInstance(
     .values({
       sleepLogId,
       userId,
-      date: sleepData.date,
+      date: sleepData.date instanceof Date ? sleepData.date.toISOString().split('T')[0] : sleepData.date,
       timeAsleep: sleepData.timeAsleep ?? null,
       startTime: sleepData.startTime ?? null,
       endTime: sleepData.endTime ?? null,
@@ -1207,13 +1207,37 @@ export async function getUserSleepInstances(
   return converted;
 }
 
+export async function getSleepInstanceById(
+  instanceId: string,
+  userId: string
+): Promise<SleepInstance | null> {
+  const [found] = await db
+    .select()
+    .from(sleepInstance)
+    .where(and(eq(sleepInstance.id, instanceId), eq(sleepInstance.userId, userId)))
+    .limit(1);
+
+  if (!found) return null;
+
+  return {
+    ...found,
+    date: new Date(found.date),
+    sleepScore: found.sleepScore ? Number(found.sleepScore) : undefined,
+  } as unknown as SleepInstance;
+}
+
 export async function updateSleepInstance(
   instanceId: string,
   userId: string,
-  updates: Partial<Omit<SleepInstance, 'id' | 'userId' | 'sleepLogId' | 'date'>>
+  updates: Partial<Omit<SleepInstance, 'id' | 'userId' | 'sleepLogId'>>
 ): Promise<SleepInstance | null> {
   // Convert Date objects to strings and numbers to strings for database
   const dbUpdates: any = { ...updates };
+  if (updates.date) {
+    dbUpdates.date = updates.date instanceof Date 
+      ? updates.date.toISOString().split('T')[0] 
+      : updates.date;
+  }
   if (updates.sleepScore !== undefined) {
     dbUpdates.sleepScore = updates.sleepScore?.toString() ?? null;
   }
@@ -1240,4 +1264,3 @@ export async function deleteSleepInstance(instanceId: string, userId: string): P
 
   return true;
 }
-

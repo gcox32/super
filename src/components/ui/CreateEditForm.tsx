@@ -13,6 +13,7 @@ interface CreateEditFormProps {
   isEditing: boolean;
   loading: boolean;
   entityName: string;
+  submitText?: string;
   onDelete?: () => Promise<void> | void;
   onCancel?: () => void;
 }
@@ -23,6 +24,7 @@ export function CreateEditForm({
   isEditing,
   loading,
   entityName,
+  submitText,
   onDelete,
   onCancel,
 }: CreateEditFormProps) {
@@ -60,7 +62,7 @@ export function CreateEditForm({
                 ? 'Saving...' 
                 : isEditing 
                   ? `Update ${entityName}` 
-                  : `Create ${entityName}`
+                  : submitText || `Create ${entityName}`
               }
             </Button>
             <Button 

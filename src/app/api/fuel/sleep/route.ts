@@ -21,6 +21,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAuth(async (userId) => {
     const sleepData = await parseBody(request);
+    
+    // Convert strings to Date objects
+    if (sleepData.date) sleepData.date = new Date(sleepData.date);
+    if (sleepData.startTime) sleepData.startTime = new Date(sleepData.startTime);
+    if (sleepData.endTime) sleepData.endTime = new Date(sleepData.endTime);
+
     const sleepInstance = await createSleepInstance(userId, sleepData);
     return { sleepInstance };
   });

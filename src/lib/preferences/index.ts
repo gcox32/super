@@ -1,11 +1,13 @@
-import type { CompositeStrategy } from '@/types/stats';
-import type { LengthUnit, WeightUnit } from '@/types/stats';
+'use client';
+
+import { useState, useEffect } from 'react';
+import type { CompositeStrategy, LengthUnit, WeightUnit } from '@/types/stats';
 
 export interface UserPreferences {
   bodyFatStrategy: CompositeStrategy;
   preferredWeightUnit: WeightUnit;
   preferredLengthUnit: LengthUnit;
-  bodyFatMaxDaysOld: number; // Maximum age (in days) of stats values to use for body fat calculation
+  bodyFatMaxDaysOld: number;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -15,53 +17,43 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   bodyFatMaxDaysOld: 30,
 };
 
-const STORAGE_KEY = 'super.userPreferences';
+export function usePreferences() {
+  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [loading, setLoading] = useState(true);
 
-/**
- * Get user preferences from localStorage, with defaults
- */
-export function getUserPreferences(): UserPreferences {
-  if (typeof window === 'undefined') {
-    return DEFAULT_PREFERENCES;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as Partial<UserPreferences>;
-      return {
-        ...DEFAULT_PREFERENCES,
-        ...parsed,
-      };
+  useEffect(() => {
+    async function fetchPreferences() {
+      try {
+        const res = await fetch('/api/me/preferences');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.preferences) {
+            setPreferences({ ...DEFAULT_PREFERENCES, ...data.preferences });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch preferences', error);
+      } finally {
+        setLoading(false);
+      }
     }
-  } catch {
-    // If parsing fails, return defaults
-  }
+    fetchPreferences();
+  }, []);
 
-  return DEFAULT_PREFERENCES;
+  const updatePreferences = async (newPrefs: Partial<UserPreferences>) => {
+    // Optimistic update
+    setPreferences((prev) => ({ ...prev, ...newPrefs }));
+
+    try {
+      await fetch('/api/me/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPrefs),
+      });
+    } catch (error) {
+      console.error('Failed to update preferences', error);
+    }
+  };
+
+  return { preferences, updatePreferences, loading };
 }
-
-/**
- * Save user preferences to localStorage
- */
-export function saveUserPreferences(prefs: Partial<UserPreferences>): void {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const current = getUserPreferences();
-    const updated = { ...current, ...prefs };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  } catch {
-    // Silently fail if localStorage is unavailable
-  }
-}
-
-/**
- * Get a specific preference value
- */
-export function getPreference<K extends keyof UserPreferences>(
-  key: K
-): UserPreferences[K] {
-  return getUserPreferences()[key];
-}
-

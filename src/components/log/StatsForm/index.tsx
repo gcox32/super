@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 import type { TapeMeasurement } from '@/types/user';
 import type { HeightMeasurement, WeightMeasurement, PercentageMeasurement, DistanceMeasurement } from '@/types/measures';
 import { useToast } from '@/components/ui/Toast';
-import { getPreference } from '@/lib/preferences';
+import { usePreferences } from '@/lib/preferences';
 import AnthropometryField from './AnthropometryField';
 import BodyFatField from './BodyFatField';
 import MuscleMassField from './MuscleMassField';
@@ -28,6 +28,7 @@ type StatsFormProps = {
 };
 
 export default function StatsForm({ onSuccess }: StatsFormProps) {
+  const { preferences } = usePreferences();
   const [saving, setSaving] = useState(false);
   const [date, setDate] = useState('');
 
@@ -140,8 +141,8 @@ export default function StatsForm({ onSuccess }: StatsFormProps) {
       }
 
       // Include body fat calculation preferences from localStorage
-      const bodyFatStrategy = getPreference('bodyFatStrategy');
-      const bodyFatMaxDaysOld = getPreference('bodyFatMaxDaysOld');
+      const bodyFatStrategy = preferences.bodyFatStrategy;
+      const bodyFatMaxDaysOld = preferences.bodyFatMaxDaysOld;
 
       const res = await fetch('/api/me/stats', {
         method: 'POST',

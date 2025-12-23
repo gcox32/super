@@ -7,11 +7,12 @@ interface TogglePillProps {
   rightLabel: string;
   value: boolean; // true = left, false = right
   onChange: (value: boolean) => void;
+  disabled?: boolean;
 }
 
-export function TogglePill({ leftLabel, rightLabel, value, onChange }: TogglePillProps) {
+export function TogglePill({ leftLabel, rightLabel, value, onChange, disabled = false }: TogglePillProps) {
   return (
-    <div className="flex flex-col items-center space-y-2 w-full">
+    <div className={`flex flex-col items-center space-y-2 w-full ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="inline-flex relative bg-muted p-1 rounded-full w-full max-w-xs cursor-pointer">
         {/* Sliding pill */}
         <div
@@ -23,7 +24,8 @@ export function TogglePill({ leftLabel, rightLabel, value, onChange }: TogglePil
         {/* Left label */}
         <button
           type="button"
-          onClick={() => onChange(true)}
+          onClick={() => !disabled && onChange(true)}
+          disabled={disabled}
           className={`relative z-10 flex-1 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
             value ? 'text-white' : 'text-muted-foreground hover:text-foreground'
           }`}
@@ -33,7 +35,8 @@ export function TogglePill({ leftLabel, rightLabel, value, onChange }: TogglePil
         {/* Right label */}
         <button
           type="button"
-          onClick={() => onChange(false)}
+          onClick={() => !disabled && onChange(false)}
+          disabled={disabled}
           className={`relative z-10 flex-1 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
             !value ? 'text-white' : 'text-muted-foreground hover:text-foreground'
           }`}
@@ -44,5 +47,3 @@ export function TogglePill({ leftLabel, rightLabel, value, onChange }: TogglePil
     </div>
   );
 }
-
-

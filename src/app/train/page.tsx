@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
-import { Play, Calendar, Loader2 } from 'lucide-react';
+import { Calendar, Loader2 } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import type {
   ProtocolInstance,
@@ -14,7 +14,7 @@ import type {
   Phase,
   PhaseInstance,
 } from '@/types/train';
-import { fetchJson, formatDate, timeToMinutes, formatMinutesAsHours } from '@/lib/train/helpers';
+import { fetchJson, formatDate } from '@/lib/train/helpers';
 
 type ApiListResponse<T> = { [key: string]: T[] };
 
@@ -26,9 +26,6 @@ export default function TrainPage() {
   const [activePhase, setActivePhase] = useState<Phase | null>(null);
   const [phaseWorkouts, setPhaseWorkouts] = useState<Workout[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [recentWorkoutInstances, setRecentWorkoutInstances] = useState<
-    WorkoutInstance[]
-  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [startingWorkoutId, setStartingWorkoutId] = useState<string | null>(
     null
@@ -63,9 +60,6 @@ export default function TrainPage() {
         const activeInstance = protocolInstances[0] ?? null;
         setActiveProtocolInstance(activeInstance);
         setWorkouts((workoutsRes.workouts as Workout[]) ?? []);
-        setRecentWorkoutInstances(
-          (workoutInstancesRes.workoutInstances as WorkoutInstance[]) ?? []
-        );
 
         if (activeInstance) {
           // Get protocol with phases
@@ -321,66 +315,6 @@ export default function TrainPage() {
               Build
             </Button>
           </Link>
-        </section>
-        
-        {/* Upcoming / Recent Sessions */}
-        <section className="px-4 md:px-6 py-6 border-border border-t">
-          <h2 className="mb-4 font-semibold text-lg">Recent Sessions</h2>
-          {recentWorkoutInstances.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              You don&apos;t have any logged sessions yet. Once you complete a
-              workout, it will show up here with summary stats.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {recentWorkoutInstances.slice(0, 5).map((instance) => {
-                const workout = workoutsById.get(instance.workoutId);
-                const name =
-                  workout?.name ?? `${workout?.workoutType ?? 'Workout'}`;
-                const durationMinutes = timeToMinutes(instance.duration ?? null);
-
-                return (
-                  <div
-                    key={instance.id}
-                    className="flex flex-col gap-4 bg-card p-4 border border-border rounded-lg"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="mb-1 font-semibold">{name}</h3>
-                        <p className="text-muted-foreground text-xs">
-                          {formatDate(instance.date)} •{' '}
-                          {durationMinutes > 0
-                            ? formatMinutesAsHours(durationMinutes)
-                            : 'No duration logged'}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 text-[11px] rounded ${instance.complete
-                          ? 'bg-emerald-500/15 text-emerald-500'
-                          : 'bg-warning/20 text-warning'
-                          }`}
-                      >
-                        {instance.complete ? 'Completed' : 'In progress'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <Link href={`/log/workouts/${instance.id}`} className="w-full">
-                        <Button variant="outline" size="md" className="w-full">
-                          View
-                        </Button>
-                      </Link>
-                      <Link href={`/train/session/${instance.id}`} className="w-full">
-                        <Button variant="outline" size="md" className="w-full">
-                          <Play className="mr-1 w-4 h-4" />
-                          Resume
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </section>
 
       </div>

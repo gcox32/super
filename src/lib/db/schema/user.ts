@@ -29,6 +29,30 @@ export const userProfile = pgTable('user_profile', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const userPreferences = pgTable('user_preferences', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().unique().references(() => user.id),
+  bodyFatStrategy: text('body_fat_strategy').default('weighted_mean'),
+  preferredWeightUnit: text('preferred_weight_unit', { enum: ['kg', 'lb'] }).default('lb'),
+  preferredLengthUnit: text('preferred_length_unit', { enum: ['cm', 'in'] }).default('in'),
+  bodyFatMaxDaysOld: integer('body_fat_max_days_old').default(30),
+  // sleepReminder moved to user_settings
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const userSettings = pgTable('user_settings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().unique().references(() => user.id),
+  sleepReminder: boolean('sleep_reminder').default(false),
+  // Placeholders for future settings
+  sessionReminders: boolean('session_reminders').default(true),
+  mealReminders: boolean('meal_reminders').default(false),
+  progressUpdates: boolean('progress_updates').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const userGoal = pgTable('user_goal', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => user.id),
@@ -133,6 +157,8 @@ export const userProfileKeyExercise = pgTable('user_profile_key_exercise', {
 // Relations
 export const userRelations = relations(user, ({ one, many }) => ({
   profile: one(userProfile),
+  preferences: one(userPreferences),
+  settings: one(userSettings),
   goals: many(userGoal),
   statsLog: one(userStatsLog),
   imageLog: one(userImageLog),
@@ -144,6 +170,20 @@ export const userProfileRelations = relations(userProfile, ({ one, many }) => ({
     references: [user.id],
   }),
   keyExercises: many(userProfileKeyExercise),
+}));
+
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(user, {
+    fields: [userPreferences.userId],
+    references: [user.id],
+  }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(user, {
+    fields: [userSettings.userId],
+    references: [user.id],
+  }),
 }));
 
 export const userGoalRelations = relations(userGoal, ({ one, many }) => ({

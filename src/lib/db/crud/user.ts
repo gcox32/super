@@ -14,6 +14,8 @@ function nullToUndefined<T extends Record<string, any>>(obj: T): T {
 import {
   user,
   userProfile,
+  userPreferences,
+  userSettings,
   userGoal,
   userGoalComponent,
   userGoalCriteria,
@@ -26,6 +28,8 @@ import {
   exercise, // Added to import exercise
 } from '../schema';
 import type { User, UserProfile, UserGoal, UserGoalComponent, UserStats, TapeMeasurement, UserImage, UserGoalCriteria, GoalComponentType, GoalComponentConditional } from '@/types/user';
+import type { UserPreferences } from '@/lib/preferences';
+import type { UserSettings } from '@/lib/settings';
 
 // ============================================================================
 // USER CRUD
@@ -208,6 +212,99 @@ export async function updateUserProfile(
     keyExercises: updatedKeyExercises.length > 0 ? updatedKeyExercises : undefined,
   } as UserProfile;
 }
+
+// ============================================================================
+// USER PREFERENCES CRUD
+// ============================================================================
+
+export async function getUserPreferences(userId: string): Promise<UserPreferences | null> {
+  const [prefs] = await db
+    .select()
+    .from(userPreferences)
+    .where(eq(userPreferences.userId, userId))
+    .limit(1);
+
+  if (!prefs) return null;
+
+  return nullToUndefined(prefs) as unknown as UserPreferences;
+}
+
+export async function upsertUserPreferences(
+  userId: string,
+  prefs: Partial<UserPreferences>
+): Promise<UserPreferences> {
+  const existing = await getUserPreferences(userId);
+
+  if (existing) {
+    const [updated] = await db
+      .update(userPreferences)
+      .set({
+        ...prefs,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(userPreferences.userId, userId))
+      .returning();
+      
+    return nullToUndefined(updated) as unknown as UserPreferences;
+  } else {
+    const [inserted] = await db
+      .insert(userPreferences)
+      .values({
+        userId,
+        ...prefs,
+      } as any)
+      .returning();
+      
+    return nullToUndefined(inserted) as unknown as UserPreferences;
+  }
+}
+
+// ============================================================================
+// USER SETTINGS CRUD
+// ============================================================================
+
+export async function getUserSettings(userId: string): Promise<UserSettings | null> {
+  const [settings] = await db
+    .select()
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId))
+    .limit(1);
+
+  if (!settings) return null;
+
+  return nullToUndefined(settings) as unknown as UserSettings;
+}
+
+export async function upsertUserSettings(
+  userId: string,
+  settings: Partial<UserSettings>
+): Promise<UserSettings> {
+  const existing = await getUserSettings(userId);
+
+  if (existing) {
+    const [updated] = await db
+      .update(userSettings)
+      .set({
+        ...settings,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(userSettings.userId, userId))
+      .returning();
+      
+    return nullToUndefined(updated) as unknown as UserSettings;
+  } else {
+    const [inserted] = await db
+      .insert(userSettings)
+      .values({
+        userId,
+        ...settings,
+      } as any)
+      .returning();
+      
+    return nullToUndefined(inserted) as unknown as UserSettings;
+  }
+}
+
 
 // ============================================================================
 // USER GOAL CRUD

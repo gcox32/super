@@ -46,6 +46,34 @@ CREATE TABLE IF NOT EXISTS public.user_profile (
 
 CREATE INDEX idx_user_profile_user_id ON public.user_profile(user_id);
 
+-- User Preferences
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL UNIQUE REFERENCES public.user(id) ON DELETE CASCADE,
+    body_fat_strategy TEXT DEFAULT 'weighted_mean',
+    preferred_weight_unit TEXT CHECK (preferred_weight_unit IN ('kg', 'lb')) DEFAULT 'lb',
+    preferred_length_unit TEXT CHECK (preferred_length_unit IN ('cm', 'in')) DEFAULT 'in',
+    body_fat_max_days_old INTEGER DEFAULT 30,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_preferences_user_id ON public.user_preferences(user_id);
+
+-- User Settings
+CREATE TABLE IF NOT EXISTS public.user_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL UNIQUE REFERENCES public.user(id) ON DELETE CASCADE,
+    sleep_reminder BOOLEAN DEFAULT FALSE,
+    session_reminders BOOLEAN DEFAULT TRUE,
+    meal_reminders BOOLEAN DEFAULT FALSE,
+    progress_updates BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_settings_user_id ON public.user_settings(user_id);
+
 -- User Goal
 CREATE TABLE IF NOT EXISTS public.user_goal (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,6 +93,36 @@ CREATE TABLE IF NOT EXISTS public.user_goal (
 CREATE INDEX idx_user_goal_user_id ON public.user_goal(user_id);
 CREATE INDEX idx_user_goal_components ON public.user_goal USING GIN(components);
 CREATE INDEX idx_user_goal_complete ON public.user_goal(complete);
+
+-- User Goal Component
+CREATE TABLE IF NOT EXISTS public.user_goal_component (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    goal_id UUID NOT NULL REFERENCES public.user_goal(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    type TEXT,
+    priority INTEGER NOT NULL DEFAULT 1,
+    complete BOOLEAN NOT NULL DEFAULT FALSE,
+    exercise_id UUID REFERENCES train.exercise(id),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_goal_component_goal_id ON public.user_goal_component(goal_id);
+
+-- User Goal Criteria
+CREATE TABLE IF NOT EXISTS public.user_goal_criteria (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    component_id UUID NOT NULL REFERENCES public.user_goal_component(id) ON DELETE CASCADE,
+    type TEXT,
+    conditional TEXT NOT NULL,
+    value JSONB NOT NULL,
+    initial_value JSONB,
+    measurement_site TEXT
+);
+
+CREATE INDEX idx_user_goal_criteria_component_id ON public.user_goal_criteria(component_id);
 
 -- User Stats Log
 CREATE TABLE IF NOT EXISTS public.user_stats_log (
@@ -267,7 +325,7 @@ CREATE TABLE IF NOT EXISTS train.workout_block_exercise (
     "order" INTEGER NOT NULL,
     sets INTEGER NOT NULL,
     measures JSONB NOT NULL,
-    scoring_type TEXT NOT NULL DEFAULT 'reps' CHECK (scoring_type IN ('reps', 'load', 'dist', 'cals', 'time')),
+    scoring_type TEXT CHECK (scoring_type IN ('reps', 'load', 'dist', 'cals', 'time', 'height', 'pace')),
     tempo JSONB,
     rest_time INTEGER CHECK (rest_time IN (0, 15, 30, 45, 60, 90, 120, 180, 240, 300)),
     rpe INTEGER CHECK (rpe BETWEEN 1 AND 10),
@@ -700,6 +758,15 @@ CREATE TRIGGER update_user_profile_updated_at BEFORE UPDATE ON public.user_profi
 CREATE TRIGGER update_user_goal_updated_at BEFORE UPDATE ON public.user_goal
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON public.user_preferences
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON public.user_settings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_goal_component_updated_at BEFORE UPDATE ON public.user_goal_component
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Train schema
 CREATE TRIGGER update_protocol_updated_at BEFORE UPDATE ON train.protocol
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -749,6 +816,10 @@ CREATE TRIGGER update_supplement_schedule_updated_at BEFORE UPDATE ON fuel.suppl
 ALTER TABLE public.user ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_profile ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_goal ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_goal_component ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_goal_criteria ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_stats_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tape_measurement ENABLE ROW LEVEL SECURITY;
@@ -823,6 +894,90 @@ CREATE POLICY "Users can update own profile" ON public.user_profile
 
 CREATE POLICY "Users can view own goals" ON public.user_goal
     FOR ALL USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can view own preferences" ON public.user_preferences
+    FOR ALL USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "Users can view own settings" ON public.user_settings
+    FOR ALL USING ((select auth.uid()) = user_id);
+
+-- User Goal Component Policies
+CREATE POLICY "Users can view own goal components" ON public.user_goal_component
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.user_goal
+            WHERE id = user_goal_component.goal_id
+            AND user_id = (select auth.uid())
+        )
+    );
+
+CREATE POLICY "Users can insert own goal components" ON public.user_goal_component
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.user_goal
+            WHERE id = user_goal_component.goal_id
+            AND user_id = (select auth.uid())
+        )
+    );
+
+CREATE POLICY "Users can update own goal components" ON public.user_goal_component
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.user_goal
+            WHERE id = user_goal_component.goal_id
+            AND user_id = (select auth.uid())
+        )
+    );
+
+CREATE POLICY "Users can delete own goal components" ON public.user_goal_component
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM public.user_goal
+            WHERE id = user_goal_component.goal_id
+            AND user_id = (select auth.uid())
+        )
+    );
+
+-- User Goal Criteria Policies
+CREATE POLICY "Users can view own goal criteria" ON public.user_goal_criteria
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.user_goal_component
+            JOIN public.user_goal ON user_goal.id = user_goal_component.goal_id
+            WHERE user_goal_component.id = user_goal_criteria.component_id
+            AND user_goal.user_id = (select auth.uid())
+        )
+    );
+
+CREATE POLICY "Users can insert own goal criteria" ON public.user_goal_criteria
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.user_goal_component
+            JOIN public.user_goal ON user_goal.id = user_goal_component.goal_id
+            WHERE user_goal_component.id = user_goal_criteria.component_id
+            AND user_goal.user_id = (select auth.uid())
+        )
+    );
+
+CREATE POLICY "Users can update own goal criteria" ON public.user_goal_criteria
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.user_goal_component
+            JOIN public.user_goal ON user_goal.id = user_goal_component.goal_id
+            WHERE user_goal_component.id = user_goal_criteria.component_id
+            AND user_goal.user_id = (select auth.uid())
+        )
+    );
+
+CREATE POLICY "Users can delete own goal criteria" ON public.user_goal_criteria
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM public.user_goal_component
+            JOIN public.user_goal ON user_goal.id = user_goal_component.goal_id
+            WHERE user_goal_component.id = user_goal_criteria.component_id
+            AND user_goal.user_id = (select auth.uid())
+        )
+    );
 
 CREATE POLICY "Users can view own stats log" ON public.user_stats_log
     FOR ALL USING ((select auth.uid()) = user_id);

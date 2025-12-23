@@ -1,34 +1,81 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Sliders, Globe, ArrowLeft, BarChart3 } from 'lucide-react';
-import Link from 'next/link';
-import { getUserPreferences, saveUserPreferences, type UserPreferences } from '@/lib/preferences';
+import { Globe, BarChart3, Save } from 'lucide-react';
+import { usePreferences, type UserPreferences } from '@/lib/preferences';
 import type { CompositeStrategy } from '@/types/stats';
 import { useToast } from '@/components/ui/Toast';
 import { TogglePill } from '@/components/ui/TogglePill';
 import PageLayout from '@/components/layout/PageLayout';
+import Button from '@/components/ui/Button';
 
 export default function PreferencesPage() {
-  const [prefs, setPrefs] = useState<UserPreferences>(getUserPreferences());
+  const { preferences, updatePreferences, loading } = usePreferences();
   const { showToast } = useToast();
+  
+  // Local state for form fields
+  const [formState, setFormState] = useState<UserPreferences>(preferences);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saving, setSaving] = useState(false);
 
+  // Sync local state with loaded preferences
   useEffect(() => {
-    setPrefs(getUserPreferences());
-  }, []);
+    if (!loading) {
+      setFormState(preferences);
+    }
+  }, [loading, preferences]);
 
-  function updatePreference<K extends keyof UserPreferences>(
-    key: K,
-    value: UserPreferences[K]
-  ) {
-    const updated = { ...prefs, [key]: value };
-    setPrefs(updated);
-    saveUserPreferences({ [key]: value });
-    showToast({
-      variant: 'success',
-      title: 'Preference saved',
-      description: 'Your preference has been updated.',
-    });
+  // Check for changes
+  useEffect(() => {
+    if (loading) return;
+    
+    const isDifferent = 
+      formState.bodyFatStrategy !== preferences.bodyFatStrategy ||
+      formState.preferredWeightUnit !== preferences.preferredWeightUnit ||
+      formState.preferredLengthUnit !== preferences.preferredLengthUnit ||
+      formState.bodyFatMaxDaysOld !== preferences.bodyFatMaxDaysOld;
+      
+    setHasChanges(isDifferent);
+  }, [formState, preferences, loading]);
+
+  const handleChange = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
+    setFormState(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updatePreferences(formState);
+      showToast({
+        variant: 'success',
+        title: 'Preferences saved',
+        description: 'Your preferences have been updated successfully.',
+      });
+      setHasChanges(false);
+    } catch (error) {
+      showToast({
+        variant: 'error',
+        title: 'Error saving',
+        description: 'Failed to save preferences. Please try again.',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageLayout
+        breadcrumbHref="/me"
+        breadcrumbText="Me"
+        title="Preferences"
+        subtitle="Customize your app experience"
+      >
+        <div className="flex justify-center p-12">
+           <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </PageLayout>
+    );
   }
 
   return (
@@ -36,32 +83,9 @@ export default function PreferencesPage() {
       breadcrumbHref="/me"
       breadcrumbText="Me"
       title="Preferences"
-      subtitle="Customize your app experience"
+      subtitle="Customize how data is displayed and calculated"
     >
-      <div className="md:mx-auto md:max-w-4xl">
-        {/* Header */}
-        <section className="px-4 md:px-6 pt-6 pb-4 border-border border-b">
-          <div className="flex items-center gap-4 mb-4">
-            <Link
-              href="/me"
-              className="hover:bg-hover p-2 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="flex justify-center items-center bg-brand-primary/20 rounded-full w-10 h-10">
-                <Sliders className="w-5 h-5 text-brand-primary" />
-              </div>
-              <div>
-                <h1 className="font-bold text-2xl">Preferences</h1>
-                <p className="text-muted-foreground text-sm">
-                  Customize your app experience
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
+      <div className="md:mx-auto md:max-w-4xl pb-24">
 
         {/* Body Fat Calculation */}
         <section className="px-4 md:px-6 py-6 border-border border-t">
@@ -79,8 +103,8 @@ export default function PreferencesPage() {
                 {(['median', 'trimmed_mean', 'mean', 'weighted_mean'] as CompositeStrategy[]).map((strategy) => (
                   <button
                     key={strategy}
-                    onClick={() => updatePreference('bodyFatStrategy', strategy)}
-                    className={`py-2 px-4 border rounded-lg font-semibold text-left transition-colors ${prefs.bodyFatStrategy === strategy
+                    onClick={() => handleChange('bodyFatStrategy', strategy)}
+                    className={`py-2 px-4 border rounded-lg font-semibold text-left transition-colors ${formState.bodyFatStrategy === strategy
                         ? 'bg-brand-primary text-white border-brand-primary'
                         : 'border-border hover:bg-hover'
                       }`}
@@ -108,12 +132,12 @@ export default function PreferencesPage() {
                   type="number"
                   min="1"
                   max="365"
-                  value={prefs.bodyFatMaxDaysOld}
+                  value={formState.bodyFatMaxDaysOld}
                   onChange={(e) => {
                     const value = Math.max(1, Math.min(365, parseInt(e.target.value) || 30));
-                    updatePreference('bodyFatMaxDaysOld', value);
+                    handleChange('bodyFatMaxDaysOld', value);
                   }}
-                  className="bg-zinc-950/60 focus:bg-zinc-900/80 px-3 py-2 border border-zinc-800 focus:border-brand-primary rounded-lg outline-none ring-0 w-24 text-white text-sm transition-colors"
+                  className="bg-input text-foreground px-3 py-2 border border-input focus:border-brand-primary rounded-lg outline-none ring-0 w-24 text-sm transition-colors"
                 />
                 <span className="text-muted-foreground text-sm">days</span>
               </div>
@@ -134,8 +158,8 @@ export default function PreferencesPage() {
                 <TogglePill
                   leftLabel="lbs"
                   rightLabel="kg"
-                  value={prefs.preferredWeightUnit === 'lb'}
-                  onChange={(value) => updatePreference('preferredWeightUnit', value ? 'lb' : 'kg')}
+                  value={formState.preferredWeightUnit === 'lb'}
+                  onChange={(value) => handleChange('preferredWeightUnit', value ? 'lb' : 'kg')}
                 >
                 </TogglePill>
               </div>
@@ -146,8 +170,8 @@ export default function PreferencesPage() {
                 <TogglePill
                   leftLabel="inches"
                   rightLabel="cm"
-                  value={prefs.preferredLengthUnit === 'in'}
-                  onChange={(value) => updatePreference('preferredLengthUnit', value ? 'in' : 'cm')}
+                  value={formState.preferredLengthUnit === 'in'}
+                  onChange={(value) => handleChange('preferredLengthUnit', value ? 'in' : 'cm')}
                 >
                 </TogglePill>
               </div>
@@ -155,6 +179,21 @@ export default function PreferencesPage() {
           </div>
         </section>
 
+        {/* Floating Save Button */}
+        {hasChanges && (
+          <div className="fixed bottom-20 left-0 right-0 px-4 flex justify-center z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+             <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 shadow-2xl rounded-full p-2 pl-6 pr-2 flex items-center gap-4">
+                <span className="text-sm font-medium text-zinc-100">You have unsaved changes</span>
+                <Button 
+                    onClick={handleSave} 
+                    disabled={saving}
+                    className="rounded-full px-6 shadow-none"
+                >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+             </div>
+          </div>
+        )}
       </div>
     </PageLayout>
   );

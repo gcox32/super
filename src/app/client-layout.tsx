@@ -7,11 +7,14 @@ import { Loader2 } from 'lucide-react';
 import FloatingMenu from '@/components/layout/navigation/FloatingMenu';
 import BottomNav from '@/components/layout/navigation/BottomNav';
 import { ToastProvider } from '@/components/ui/Toast';
+import { useSleepReminder } from '@/hooks/useSleepReminder';
 
 function ProtectedContent({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+
+    useSleepReminder();
 
     // Public routes that don't require authentication
     const publicRoutes = ['/signin', '/terms-of-service', '/privacy-policy'];

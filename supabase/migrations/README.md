@@ -8,7 +8,7 @@ For **new database setups**, use the consolidated schema file:
 
 **`000_complete_schema.sql`** - Complete database schema initialization
 - Contains all tables, indexes, triggers, and RLS policies in their final state
-- Incorporates all changes from migrations 001-020
+- Incorporates all changes from migrations 001-024
 - Use this for fresh database installations instead of running migrations sequentially
 
 ## Migration Files (For Existing Databases)
@@ -63,11 +63,19 @@ For existing databases, run migrations in numerical order:
 
 17. **017_replace_phase_workout_with_workout_ids.sql** - Replaces phase_workout junction table with workout_ids array
 
-18. 
+18. **018_add_components_to_user_goal.sql** - Adds components to user goal
 
-19.
+19. **019_add_scoring_type_to_workout_block_exercise.sql** - Adds scoring_type to workout block exercise
 
-20. 
+20. **020_add_equipment_and_workout_types.sql** - Adds equipment and workout types
+
+21. **021_update_scoring_type.sql** - Updates scoring_type check constraint to include 'height' and 'pace'
+
+22. **022_create_goal_component_tables.sql** - Creates user_goal_component and user_goal_criteria tables
+
+23. **023_add_user_preferences.sql** - Adds user_preferences table
+
+24. **024_separate_settings.sql** - Separates user_settings from user_preferences
 
 ## Running Migrations
 
@@ -99,7 +107,7 @@ For **existing databases**, use Supabase CLI to run migrations sequentially:
    supabase db push
    ```
 
-This will run migrations 001-017 in order.
+This will run migrations 001-024 in order.
 
 ### Using Supabase Dashboard (Manual)
 
@@ -146,4 +154,3 @@ After running migrations, you can verify the schema by:
    WHERE table_schema IN ('public', 'train', 'fuel', 'anatomy')
    ORDER BY table_schema, table_name;
    ```
-
