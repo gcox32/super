@@ -213,7 +213,7 @@ export const sleepInstance = fuelSchema.table('sleep_instance', {
   id: uuid('id').defaultRandom().primaryKey(),
   sleepLogId: uuid('sleep_log_id').notNull().references(() => sleepLog.id),
   userId: uuid('user_id').notNull().references(() => user.id),
-  date: date('date').notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   timeAsleep: jsonb('time_asleep'),
   startTime: timestamp('start_time', { withTimezone: true }),
   endTime: timestamp('end_time', { withTimezone: true }),

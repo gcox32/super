@@ -1157,7 +1157,7 @@ export async function createSleepInstance(
     .values({
       sleepLogId,
       userId,
-      date: sleepData.date instanceof Date ? sleepData.date.toISOString().split('T')[0] : sleepData.date,
+      date: sleepData.date,
       timeAsleep: sleepData.timeAsleep ?? null,
       startTime: sleepData.startTime ?? null,
       endTime: sleepData.endTime ?? null,
@@ -1234,9 +1234,7 @@ export async function updateSleepInstance(
   // Convert Date objects to strings and numbers to strings for database
   const dbUpdates: any = { ...updates };
   if (updates.date) {
-    dbUpdates.date = updates.date instanceof Date 
-      ? updates.date.toISOString().split('T')[0] 
-      : updates.date;
+    dbUpdates.date = updates.date;
   }
   if (updates.sleepScore !== undefined) {
     dbUpdates.sleepScore = updates.sleepScore?.toString() ?? null;

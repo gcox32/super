@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, Settings } from 'lucide-react';
-import Link from 'next/link';
 import PageLayout from '@/components/layout/PageLayout';
 import { UserProfile } from '@/types/user';
 import { WorkoutInstance } from '@/types/train';
 import OverviewTab from '@/components/me/OverviewTab';
-import HistoryTab from '@/components/me/HistoryTab';
-import PerformanceTab from '@/components/me/PerformanceTab';
+import ActivityTab from '@/components/me/ActivityTab';
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -19,7 +17,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-type Tab = 'overview' | 'history' | 'performance';
+type Tab = 'overview' | 'activity';
 
 export default function MePage() {
   const [loading, setLoading] = useState(true);
@@ -98,32 +96,21 @@ export default function MePage() {
           Overview
         </button>
         <button
-          onClick={() => setActiveTab('history')}
+          onClick={() => setActiveTab('activity')}
           className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
-            activeTab === 'history'
+            activeTab === 'activity'
               ? 'border-brand-primary text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
-          History
-        </button>
-        <button
-          onClick={() => setActiveTab('performance')}
-          className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
-            activeTab === 'performance'
-              ? 'border-brand-primary text-foreground'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Performance
+          Activity
         </button>
       </div>
 
       {/* Tab Content */}
       <div className="min-h-[400px]">
         {activeTab === 'overview' && <OverviewTab profile={profile} workoutDates={workoutDates} />}
-        {activeTab === 'history' && <HistoryTab />}
-        {activeTab === 'performance' && <PerformanceTab />}
+        {activeTab === 'activity' && <ActivityTab />}
       </div>
 
     </PageLayout>
