@@ -19,7 +19,7 @@ export const EQUIPMENT_TYPES = [
     'barbell', 'dumbbell', 'kettlebell', 'machine', 'bodyweight', 'variable',
     'cable', 'band', 'medicine ball', 'sled', 'sandbag', 'wheel', 'jump rope',
     'pullup bar', 'rack', 'box', 'swiss ball', 'foam roller', 'bench', 'landmine',
-    'hip band', 'other'
+    'hip band', 'glute ham developer', 'other'
 ] as const;
 
 export const DIFFICULTY_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
