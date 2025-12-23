@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export function useSessionTimers() {
+  const { scheduleNotification } = useNotifications();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isResting, setIsResting] = useState(false);
@@ -117,6 +119,15 @@ export function useSessionTimers() {
     // Calculate target time if not set
     if (restTargetTimeRef.current === null) {
       restTargetTimeRef.current = Date.now() + restSecondsRemaining * 1000;
+      
+      // Schedule notification for when rest ends
+      if (restSecondsRemaining > 0) {
+        scheduleNotification('Rest Complete', {
+          body: 'Get back to work!',
+          icon: '/apple-icon.png',
+          tag: 'rest-timer'
+        }, restSecondsRemaining * 1000);
+      }
     }
 
     const interval = setInterval(() => {
@@ -161,7 +172,7 @@ export function useSessionTimers() {
     }, 200); // Check more frequently
 
     return () => clearInterval(interval);
-  }, [isResting, isPaused, timerSoundsEnabled]); // Removed restSecondsRemaining to use it only for init
+  }, [isResting, isPaused, timerSoundsEnabled, scheduleNotification]); // Removed restSecondsRemaining to use it only for init
 
   return {
     elapsedSeconds,
