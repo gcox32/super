@@ -81,7 +81,8 @@ export function MuscleHeatmap({
                     hue-rotate(180deg) 
                     saturate(${1.5 + opacity * 1.5}) 
                     brightness(1.2) 
-                    drop-shadow(0 0 2px rgba(255,100,100,${0.3 * opacity}))`, 
+
+                    `, 
                   transform: transform || undefined,
                   mixBlendMode: 'screen' // Better for dark mode
                 }} 
