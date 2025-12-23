@@ -1682,6 +1682,45 @@ export async function getWorkoutBlockExerciseInstances(
   })) as WorkoutBlockExerciseInstance[];
 }
 
+export async function getWorkoutBlockExerciseInstancesByExerciseIds(
+  userId: string,
+  exerciseIds: string[]
+): Promise<WorkoutBlockExerciseInstance[]> {
+  if (exerciseIds.length === 0) return [];
+
+  const results = await db
+    .select({
+      instance: workoutBlockExerciseInstance,
+      wbe: workoutBlockExercise,
+      ex: exercise,
+    })
+    .from(workoutBlockExerciseInstance)
+    .innerJoin(
+      workoutBlockExercise,
+      eq(workoutBlockExerciseInstance.workoutBlockExerciseId, workoutBlockExercise.id)
+    )
+    .innerJoin(
+      exercise,
+      eq(workoutBlockExercise.exerciseId, exercise.id)
+    )
+    .where(
+      and(
+        eq(workoutBlockExerciseInstance.userId, userId),
+        inArray(workoutBlockExercise.exerciseId, exerciseIds)
+      )
+    )
+    .orderBy(desc(workoutBlockExerciseInstance.created_at));
+
+  return results.map((r) => ({
+    ...nullToUndefined(r.instance),
+    created_at: new Date(r.instance.created_at),
+    workoutBlockExercise: {
+        ...nullToUndefined(r.wbe),
+        exercise: nullToUndefined(r.ex),
+    },
+  })) as WorkoutBlockExerciseInstance[];
+}
+
 export async function updateWorkoutBlockExerciseInstance(
   instanceId: string,
   userId: string,
@@ -1800,4 +1839,3 @@ export async function getUserPerformances(userId: string): Promise<Performance[]
     date: new Date(r.date),
   })) as Performance[];
 }
-

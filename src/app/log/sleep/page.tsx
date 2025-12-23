@@ -58,7 +58,7 @@ export default function SleepDashboardPage() {
                 ) : (
                     <>
                         <SleepStats instances={instances} />
-                        <section className="px-4 md:px-6 py-6 border-border border-t">
+                        <section className="px-2 md:px-6 py-6 border-border border-t">
                         <Link href="/log/sleep/new" className="w-full">
                             <Button size="lg" variant="primary" className="w-full">
                                 <Plus className="w-4 h-4" />

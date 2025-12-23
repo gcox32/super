@@ -20,7 +20,7 @@ export const logViews = [
         href: '/log/performance',
         icon: Timer,
         description: `Confirm you're getting better.`,
-        active: false,
+        active: true,
     },
     {
         name: 'Macros',

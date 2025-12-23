@@ -81,19 +81,19 @@ export function SleepStats({ instances }: SleepStatsProps) {
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="bg-card px-2 py-4 rounded-lg border border-border">
                 <div className="text-sm text-muted-foreground mb-1">7-Day Avg Sleep</div>
                 <div className="text-2xl font-bold">{formatHours(avgSleep7)}</div>
             </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="bg-card px-2 py-4 rounded-lg border border-border">
                 <div className="text-sm text-muted-foreground mb-1">7-Day Avg Score</div>
                 <div className="text-2xl font-bold">{Math.round(avgScore7) || '-'}</div>
             </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="bg-card px-2 py-4 rounded-lg border border-border">
                 <div className="text-sm text-muted-foreground mb-1">30-Day Avg Sleep</div>
                 <div className="text-2xl font-bold">{formatHours(avgSleep30)}</div>
             </div>
-             <div className="bg-card p-4 rounded-lg border border-border">
+             <div className="bg-card px-2 py-4 rounded-lg border border-border">
                 <div className="text-sm text-muted-foreground mb-1">Current Streak</div>
                 <div className="text-2xl font-bold flex items-center gap-2">
                     {streak} <span className="text-sm font-normal text-muted-foreground">days</span>
