@@ -1,5 +1,6 @@
 import TodaySessions from "@/components/today/TodaySessions";
 import PageLayout from '@/components/layout/PageLayout';
+import LatestSleep from "@/components/today/LatestSleep";
 
 export default function Today() {
   const today = new Date();
@@ -14,8 +15,11 @@ export default function Today() {
       title="Today"
       subtitle={dateString}    >
         {/* Today's Sessions */}
-        <section className="px-4 md:px-6 py-6">
+        <section className="p-4">
           <TodaySessions />
+        </section>
+        <section className="p-4">
+          <LatestSleep />
         </section>
     </PageLayout>
   );
