@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { WorkoutInstance } from '@/types/train';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
 
 export default function WorkoutInstanceList() {
   const [instances, setInstances] = useState<WorkoutInstance[]>([]);
@@ -30,7 +30,7 @@ export default function WorkoutInstanceList() {
     fetchInstances();
   }, []);
 
-  if (loading) return <div className="py-10 text-center">Loading...</div>;
+  if (loading) return <div className="py-10 text-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
 
   return (
     <div className="bg-card shadow sm:rounded-md overflow-hidden">

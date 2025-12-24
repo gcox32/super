@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { getSettingsConfig, SettingItem } from './settingsConfig';
 import React, { useState, useEffect } from 'react';
 import ChangePasswordModal from './ChangePasswordModal';
+import { Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { showToast } = useToast();
@@ -48,10 +49,15 @@ export default function SettingsPage() {
     }
   };
 
+  const handleTrainingRemindersChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    updateSettings({ trainingReminders: checked });
+  };
+
   if (loading) {
     return (
         <PageLayout title="Settings" subtitle="Manage your app settings" breadcrumbHref="/me" breadcrumbText="Me">
-             <div className="flex justify-center p-8">Loading...</div>
+             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </PageLayout>
     );
   }
@@ -68,6 +74,7 @@ export default function SettingsPage() {
       handleSleepReminderChange,
       handleChangePassword: () => setIsPasswordModalOpen(true),
       handleDataExport,
+      handleTrainingRemindersChange,
     },
     env: {
       version: process.env.APP_VERSION || '1.0.0',

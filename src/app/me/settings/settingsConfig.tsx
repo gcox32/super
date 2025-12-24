@@ -64,6 +64,7 @@ interface SettingsConfigProps {
     handleSleepReminderChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleChangePassword: () => void;
     handleDataExport: () => void;
+    handleTrainingRemindersChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   };
   env: {
     version: string;
@@ -108,6 +109,7 @@ export const getSettingsConfig = ({ settings, storageStats, handlers, env }: Set
         label: 'Training Reminders',
         description: 'Get notified when it\'s time to get to work',
         settingKey: 'trainingReminders',
+        onChange: handlers.handleTrainingRemindersChange,
       },
       {
         id: 'mealReminders',
