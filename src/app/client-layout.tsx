@@ -21,6 +21,7 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
         '/signin', 
         '/terms-of-service', 
         '/privacy-policy', 
+        '/about',
         '/methods', 
         '/methods/training', 
         '/methods/body-comp',

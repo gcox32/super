@@ -1,4 +1,3 @@
-
 import PageLayout from '@/components/layout/PageLayout';
 
 export default function BodyCompMethodsPage() {
@@ -7,57 +6,107 @@ export default function BodyCompMethodsPage() {
       breadcrumbHref="/methods"
       breadcrumbText="Methods"
       title="Body Composition"
-      subtitle="Estimating metrics through non-invasive measurements."
+      subtitle="Triangulating truth through multiple signals."
     >
       <div className="md:max-w-4xl md:mx-auto pb-12">
-        <section className="px-4 md:px-6 py-6 space-y-8">
+        <section className="px-4 md:px-6 py-6 space-y-12">
           
-          <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-white">Body Fat Estimation</h2>
+          {/* Philosophy Section */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold tracking-tight">The Composite Approach</h2>
             <p className="text-muted-foreground leading-relaxed">
-              While DEXA scans and hydrostatic weighing are the gold standards, they are not practical for frequent tracking. We utilize the <strong>U.S. Navy Body Fat Formula</strong>, which estimates body fat percentage using simple tape measurements.
+              No single indirect method of body fat estimation is perfect. Even "gold standard" methods like DEXA or Hydrostatic weighing have error margins. Simple tape measurements are accessible but prone to user error and biological variance.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              This method balances accessibility with reasonable accuracy for tracking trends over time.
+              Aegis rejects reliance on a single formula. Instead, we use a <strong>Composite Estimation</strong> strategy. We run your measurements through multiple proven algorithms independently, then synthesize the results to find the central tendency and calculate a confidence interval.
             </p>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium text-white">Required Measurements</h3>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-2">
-              <li><strong className="text-white">Height:</strong> Measured without shoes.</li>
-              <li><strong className="text-white">Neck:</strong> Circumference just below the larynx (Adam's apple).</li>
-              <li><strong className="text-white">Waist (Men):</strong> Circumference at the navel.</li>
-              <li><strong className="text-white">Waist (Women):</strong> Circumference at the narrowest point.</li>
-              <li><strong className="text-white">Hips (Women):</strong> Circumference at the widest point.</li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium text-white">The Formula</h3>
-            <p className="text-muted-foreground text-sm">
-              The calculations involve logarithmic equations derived from large population samples.
-            </p>
-            
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-zinc-300 mb-1">For Men:</h4>
-                <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg font-mono text-xs md:text-sm text-brand-primary overflow-x-auto">
-                  %BF = 86.010 × log10(abdomen - neck) - 70.041 × log10(height) + 36.76
+          {/* Methods Section */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">The Algorithms</h3>
+            <div className="grid gap-6 md:grid-cols-1">
+              
+              {/* Navy */}
+              <div className="space-y-3 p-6 border border-border rounded-lg bg-card/50">
+                <h4 className="text-lg font-medium text-foreground">1. U.S. Navy Method</h4>
+                <p className="text-sm text-muted-foreground">
+                  The primary signal. Developed by the Naval Health Research Center, this method uses circumference measurements to estimate body density.
+                </p>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p><span className="text-foreground font-medium">Inputs:</span> Height, Neck, Waist, Hip (Female only)</p>
+                  <p><span className="text-foreground font-medium">Strengths:</span> High correlation with hydrostatic weighing; accounts for frame size via neck measurement.</p>
                 </div>
               </div>
 
-              <div>
-                <h4 className="text-sm font-semibold text-zinc-300 mb-1">For Women:</h4>
-                <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg font-mono text-xs md:text-sm text-brand-primary overflow-x-auto">
-                  %BF = 163.205 × log10(waist + hip - neck) - 97.684 × log10(height) - 78.387
+              {/* BMI / Deurenberg */}
+              <div className="space-y-3 p-6 border border-border rounded-lg bg-card/50">
+                <h4 className="text-lg font-medium text-foreground">2. Deurenberg BMI Method</h4>
+                <p className="text-sm text-muted-foreground">
+                  A population-based formula that adjusts BMI for age and gender. While BMI is a poor individual predictor, when contextualized with age, it provides a useful baseline "floor" or "ceiling" for other methods.
+                </p>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p><span className="text-foreground font-medium">Inputs:</span> BMI, Age, Gender</p>
+                  <p><span className="text-foreground font-medium">Strengths:</span> Accounts for the natural increase in body fat with age that other linear tape methods might miss.</p>
+                </div>
+              </div>
+
+              {/* YMCA */}
+              <div className="space-y-3 p-6 border border-border rounded-lg bg-card/50">
+                <h4 className="text-lg font-medium text-foreground">3. YMCA Formula</h4>
+                <p className="text-sm text-muted-foreground">
+                  A simpler weight-based formula used by the YMCA for decades. It provides a weight-heavy counter-balance to the circumference-heavy Navy method.
+                </p>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p><span className="text-foreground font-medium">Inputs:</span> Weight, Waist</p>
+                  <p><span className="text-foreground font-medium">Strengths:</span> simple, widely used baseline.</p>
                 </div>
               </div>
             </div>
-            
-            <p className="text-muted-foreground text-sm italic mt-4">
-              *All measurements in the formulas above are typically calculated in centimeters.
+          </div>
+
+          {/* Synthesis Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-foreground">Synthesis & Uncertainty</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              We don't just average these numbers. We calculate the <strong>Median</strong> to reject outliers (e.g., if one method fails significantly due to body type).
             </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Crucially, we also calculate the <strong>Dispersion</strong> (Standard Deviation) between these methods. This gives us a "Confidence Band."
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-2 pt-2">
+              <li>If the methods agree closely, the confidence band is narrow (e.g., 15% ± 1%).</li>
+              <li>If the methods disagree, the band widens (e.g., 15% ± 4%), signaling that the estimate is less certain.</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed pt-2">
+              This honesty about uncertainty is vital. It prevents you from chasing "ghosts" in the data—tiny fluctuations that are actually just statistical noise.
+            </p>
+          </div>
+
+          {/* Sanity Checks */}
+          <div className="space-y-4 pt-4 border-t border-border">
+            <h3 className="text-lg font-semibold text-foreground">Validation & Sanity Checks</h3>
+            <p className="text-muted-foreground text-sm">
+              Before computing, Aegis runs the data through a series of biological plausibility checks to catch measurement errors:
+            </p>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary/50" />
+                Waist vs. Neck ratio validation
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary/50" />
+                Waist-to-Height Ratio (WHtR) bands
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary/50" />
+                Extreme method disagreement detection
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary/50" />
+                BMI range verification
+              </li>
+            </ul>
           </div>
 
         </section>
@@ -65,4 +114,3 @@ export default function BodyCompMethodsPage() {
     </PageLayout>
   );
 }
-
