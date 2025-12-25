@@ -27,7 +27,6 @@ export function WorkoutCompleteView({ onContinue, workoutInstance, exercisesMap,
       {/* Muscle Heatmap */}
       {workoutInstance && (
         <div className="mb-8 w-full max-w-md">
-          <h2 className="mb-4 font-semibold text-zinc-400 text-sm text-center uppercase tracking-wide">Muscle Work</h2>
           <MuscleHeatmap 
             workoutInstance={workoutInstance}
             exercisesMap={exercisesMap}
