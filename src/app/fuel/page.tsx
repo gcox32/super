@@ -1,4 +1,4 @@
-import { UtensilsCrossed, Target, Plus } from 'lucide-react';
+import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import PageLayout from '@/components/layout/PageLayout';
 
@@ -8,110 +8,33 @@ export default function FuelPage() {
       title="Fuel"
       subtitle="Plan and track your nutrition"
     >
-      {/* Today's Macros */}
-      <section className="px-4 md:px-6 py-6">
-        <h2 className="text-lg font-semibold mb-4">Today's Macros</h2>
-        <div className="bg-card rounded-lg p-4 border border-border md:max-w-2xl">
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Calories</span>
-              <span className="text-sm text-muted-foreground">
-                0 / 4,200
-              </span>
-            </div>
-            <div className="w-full bg-input rounded-full h-2">
-              <div className="bg-success h-2 rounded-full" style={{ width: '0%' }}></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <span className="text-xs text-muted-foreground block mb-1">Protein</span>
-              <p className="font-semibold">0g / 200g</p>
-              <div className="w-full bg-input rounded-full h-1 mt-2">
-                <div className="bg-success h-1 rounded-full" style={{ width: '0%' }}></div>
-              </div>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground block mb-1">Carbs</span>
-              <p className="font-semibold">0g / 500g</p>
-              <div className="w-full bg-input rounded-full h-1 mt-2">
-                <div className="bg-success h-1 rounded-full" style={{ width: '0%' }}></div>
-              </div>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground block mb-1">Fat</span>
-              <p className="font-semibold">0g / 140g</p>
-              <div className="w-full bg-input rounded-full h-1 mt-2">
-                <div className="bg-success h-1 rounded-full" style={{ width: '0%' }}></div>
+      {/* Current Meal Plan */}
+      <div className="md:mx-auto md:max-w-4xl">
+        <section className="px-4 md:px-6 py-6">
+          <h2 className="mb-3 font-semibold text-lg">Current Meal Plan</h2>
+          <div className="bg-card p-4 border border-border rounded-lg">
+            <div className="flex justify-between items-center gap-3">
+              <div>
+                <p className="font-medium text-sm">No active meal plan</p>
+                <p className="mt-1 text-muted-foreground text-xs">
+                  When you start a meal plan, it will appear here with your
+                  weekly structure.
+                </p>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Meals */}
-      <section className="px-4 md:px-6 py-6 border-t border-border">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Meals</h2>
-          <button className="text-sm text-brand-primary hover:underline">
-            Plan Day
-          </button>
-        </div>
-        <div className="space-y-2 md:max-w-2xl">
-          {['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map((meal) => (
-            <div
-              key={meal}
-              className="bg-card rounded-lg p-4 border border-border"
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <UtensilsCrossed className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <span className="font-medium block">{meal}</span>
-                    <span className="text-sm text-muted-foreground">
-                      Not planned
-                    </span>
-                  </div>
-                </div>
-                <button className="p-2 hover:bg-hover rounded-lg transition-colors">
-                  <Plus className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+        <section className="px-4 md:px-6 py-6 border-border border-t">
+          <Link href="/fuel/build">
+            <Button variant="primary" size="lg" className="w-full">
+              Build
+            </Button>
+          </Link>
+        </section>
 
-      {/* Quick Actions */}
-      <section className="px-4 md:px-6 py-6 border-t border-border">
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-        <div className="flex gap-2 md:max-w-2xl">
-          <Button variant="primary">
-            Log Meal
-          </Button>
-          <Button variant="outline">
-            Plan Meals
-          </Button>
-        </div>
-      </section>
 
-      {/* Weekly Target */}
-      <section className="px-4 md:px-6 py-6 border-t border-border">
-        <div className="bg-card rounded-lg p-4 border border-border md:max-w-2xl">
-          <div className="flex items-center gap-3 mb-3">
-            <Target className="w-5 h-5 text-brand-primary" />
-            <h3 className="font-semibold">Weekly Target</h3>
-          </div>
-          <p className="text-sm text-muted-foreground mb-3">
-            Average daily calories: 4,200
-          </p>
-          <div className="flex gap-2 text-xs">
-            <span className="px-2 py-1 bg-success/20 text-success rounded">
-              On track
-            </span>
-          </div>
-        </div>
-      </section>
+      </div>
     </PageLayout>
   );
 }
