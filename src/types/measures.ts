@@ -7,6 +7,7 @@ export type TimeMeasurement       = { value: number; unit: 's' | 'min' | 'hr' };
 export type WeightMeasurement     = { value: number; unit: 'kg' | 'lbs' };
 export type PaceMeasurement       = { value: number; unit: 'mph' | 'kph' | 'min/km' | 'min/mile' };
 export type LongTimeMeasurement   = { value: number; unit: 'days' | 'weeks' | 'months' | 'years' };
+export type CaloriesMeasurement   = { value: number; unit: 'cal' | 'kcal' };
 
 export type HeightMeasurement      = { value: number; unit: 'cm' | 'm' | 'in' | 'ft' };
 export type PercentageMeasurement  = { value: number; unit: '%' };

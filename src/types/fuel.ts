@@ -71,7 +71,9 @@ export interface Meal {
     name:         string;
     description?: string;
     foods?:       PortionedFood[]; // hydrated in UI
-    recipes?:     Recipe[]
+    calories?:    number; // hydrated using the foods field and the corresponding food's calories field
+    macros?:      Macros; // hydrated using the foods field and the corresponding food's macros field
+    micros?:      Micros; // hydrated using the foods field and the corresponding food's micros field
     createdAt:    Date;
     updatedAt:    Date;
 }
@@ -118,6 +120,9 @@ export interface MealInstance {
     mealPlanInstanceId: MealPlanInstance['id'];
     mealId:             Meal['id'];
     date:               Date;
+    calories?:          number;
+    macros?:            Macros;
+    micros?:            Micros;
     timestamp?:         Date | null;
     complete:           boolean;
     notes?:             string;

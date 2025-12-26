@@ -322,7 +322,7 @@ export async function updateFood(
 
 export async function createPortionedFood(
   parentId: { mealId?: string; recipeId?: string; groceryListId?: string },
-  portionedFoodData: Omit<PortionedFood, 'id' | 'createdAt' | 'updatedAt' | 'mealId' | 'recipeId' | 'groceryListId'>
+  portionedFoodData: PortionedFood
 ): Promise<PortionedFood> {
   const [newPortionedFood] = await db
     .insert(portionedFood)
@@ -332,16 +332,10 @@ export async function createPortionedFood(
       recipeId: parentId.recipeId,
       groceryListId: parentId.groceryListId,
       portion: portionedFoodData.portion,
-      calories: portionedFoodData.calories?.toString() || null,
-      macros: portionedFoodData.macros,
-      micros: portionedFoodData.micros,
     })
     .returning();
 
-  return {
-    ...newPortionedFood,
-    calories: newPortionedFood.calories ? Number(newPortionedFood.calories) : undefined,
-  } as PortionedFood;
+  return newPortionedFood as PortionedFood;
 }
 
 export async function getPortionedFoods(
@@ -358,10 +352,7 @@ export async function getPortionedFoods(
     .from(portionedFood)
     .where(whereClause);
 
-  return results.map((r) => ({
-    ...nullToUndefined(r),
-    calories: r.calories ? Number(r.calories) : undefined,
-  })) as PortionedFood[];
+  return results.map(nullToUndefined) as PortionedFood[];
 }
 
 export async function updatePortionedFood(
@@ -381,10 +372,7 @@ export async function updatePortionedFood(
 
   if (!updated) return null;
 
-  return {
-    ...updated,
-    calories: updated.calories ? Number(updated.calories) : undefined,
-  } as PortionedFood;
+  return updated as PortionedFood;
 }
 
 export async function deletePortionedFood(portionedFoodId: string): Promise<boolean> {
@@ -760,7 +748,7 @@ export async function getSupplements(): Promise<Supplement[]> {
 
 export async function createSupplementSchedule(
   userId: string,
-  scheduleData: Omit<SupplementSchedule, 'id' | 'userId' | 'supplements'>
+  scheduleData: SupplementSchedule
 ): Promise<SupplementSchedule> {
   const [newSchedule] = await db
     .insert(supplementSchedule)
@@ -772,7 +760,10 @@ export async function createSupplementSchedule(
     })
     .returning();
 
-  return newSchedule as SupplementSchedule;
+  return {
+    ...newSchedule,
+    supplements: scheduleData.supplements,
+  } as SupplementSchedule;
 }
 
 export async function getUserSupplementSchedules(userId: string): Promise<SupplementSchedule[]> {
