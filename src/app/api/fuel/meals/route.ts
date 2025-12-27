@@ -15,11 +15,11 @@ export async function GET(request: NextRequest) {
 
         if (query) {
           const { meals, total } = await searchMeals(query, page, limit);
-          return NextResponse.json({ meals, total, page, limit });
+          return { meals, total, page, limit };
         }
         
-        const { meals, total } = await getMeals(userId, null,page, limit);
-        return NextResponse.json({ meals, total, page, limit });
+        const { meals, total } = await getMeals(userId, null, page, limit);
+        return { meals, total, page, limit };
     });
 }
 

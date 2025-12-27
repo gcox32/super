@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Exercise } from '@/types/train';
+import { Food } from '@/types/fuel';
 import Button from '@/components/ui/Button';
 import { Plus, Search, Edit2 } from 'lucide-react';
 
-export default function ExerciseList() {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+export default function FoodList() {
+  const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -16,22 +16,22 @@ export default function ExerciseList() {
   const limit = 10;
 
   useEffect(() => {
-    async function fetchExercises() {
+    async function fetchFoods() {
       try {
         setLoading(true);
         const url = searchTerm
-          ? `/api/train/exercises?q=${encodeURIComponent(searchTerm)}&page=${currentPage}&limit=${limit}`
-          : `/api/train/exercises?page=${currentPage}&limit=${limit}`;
+          ? `/api/fuel/foods?q=${encodeURIComponent(searchTerm)}&page=${currentPage}&limit=${limit}`
+          : `/api/fuel/foods?page=${currentPage}&limit=${limit}`;
 
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          setExercises(data.exercises);
+          setFoods(data.foods);
           setTotalCount(data.total);
           setTotalPages(Math.ceil(data.total / limit));
         }
       } catch (err) {
-        console.error('Failed to fetch exercises', err);
+        console.error('Failed to fetch foods', err);
       } finally {
         setLoading(false);
       }
@@ -39,7 +39,7 @@ export default function ExerciseList() {
 
     // Debounce search
     const timer = setTimeout(() => {
-      fetchExercises();
+      fetchFoods();
     }, 300);
 
     return () => clearTimeout(timer);
@@ -54,7 +54,7 @@ export default function ExerciseList() {
           </div>
           <input
             type="text"
-            placeholder="Search exercises..."
+            placeholder="Search foods..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -63,10 +63,10 @@ export default function ExerciseList() {
             className="block py-2 pr-3 pl-10 border border-gray-300 focus:border-brand-primary rounded-md focus:outline-none focus:ring-1 focus:ring-brand-primary w-full sm:text-sm leading-5 placeholder-gray-500 focus:placeholder-gray-400"
           />
         </div>
-        <Link href="/train/build/exercises/new" className="mt-2 w-full">
+        <Link href="/fuel/build/foods/new" className="mt-2 w-full">
           <Button className="w-full">
             <Plus className="mr-2 w-4 h-4" />
-            New Exercise
+            New Food
           </Button>
         </Link>
       </div>
@@ -78,17 +78,17 @@ export default function ExerciseList() {
       ) : (
         <div className="bg-card shadow rounded-lg sm:rounded-md overflow-hidden">
           <ul className="divide-y divide-gray-200">
-            {exercises.length === 0 ? (
+            {foods.length === 0 ? (
               <li className="px-6 py-4 text-gray-500 text-center">
-                No exercises found.
+                No foods found.
               </li>
             ) : (
-              exercises.map((exercise) => (
-                <li key={exercise.id}>
-                  <Link href={`/train/build/exercises/${exercise.id}/edit`} className="block hover:bg-gray-700">
+              foods.map((food: Food) => (
+                <li key={food.id}>
+                  <Link href={`/fuel/build/foods/${food.id}/edit`} className="block hover:bg-gray-700">
                     <div className="flex justify-between items-center px-4 sm:px-6 py-4">
                       <div className="font-medium text-sm truncate" style={{ color: 'color-mix(in srgb, var(--color-brand-primary) 70%, white)' }}>
-                        {exercise.name}
+                        {food.name}
                       </div>
                       <Edit2 className="w-4 h-4" />
                     </div>

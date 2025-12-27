@@ -1,3 +1,5 @@
+import React from 'react';
+import MealList from '@/components/fuel/build/meals/MealList';
 import PageLayout from '@/components/layout/PageLayout';
 
 export default function MealPage() {
@@ -5,10 +7,9 @@ export default function MealPage() {
     <PageLayout
       breadcrumbHref="/fuel/build"
       breadcrumbText="Build"
-      title="Build Meals"
-      subtitle="Manage your meals"
+      title="Meals"
     >
-      <div className="md:mx-auto md:max-w-4xl pb-24"></div>
+      <MealList />
     </PageLayout>
   );
 }

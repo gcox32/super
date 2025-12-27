@@ -397,6 +397,11 @@ export async function updateFood(
   } as Food;
 }
 
+export async function deleteFood(foodId: string): Promise<boolean> {
+  await db.delete(food).where(eq(food.id, foodId));
+  return true;
+}
+
 // ============================================================================
 // PORTIONED FOOD CRUD (Unified for Meal, Recipe, GroceryList)
 // ============================================================================

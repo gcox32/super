@@ -12,7 +12,7 @@ export async function GET(
   return withAuth(async (userId) => {
     const { mealId } = await params; // MEAL ID
     const portions = await getPortionedFoods({ mealId });
-    return portions;
+    return { portions };
   });
 }
 

@@ -11,14 +11,13 @@ export async function GET(request: NextRequest) {
 
     const page = pageParam ? parseInt(pageParam) : 1;
     const limit = limitParam ? parseInt(limitParam) : 20;
-
     if (query) {
       const { foods, total } = await searchFoods(query, page, limit);
-      return NextResponse.json({ foods, total, page, limit });
+      return { foods, total, page, limit };
     }
 
     const { foods, total } = await getFoods(page, limit);
-    return NextResponse.json({ foods, total, page, limit });
+    return { foods, total, page, limit };
   });
 }
 
