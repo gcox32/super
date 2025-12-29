@@ -61,31 +61,8 @@ export default function LogPage() {
       title="Log"
       subtitle="Track your body stats, workouts, and more"
     >
-      {/* Highlights */}
-      <section className="px-4 md:px-6 py-6 border-border border-b">
-        <h2 className="mb-3 font-semibold text-muted-foreground text-sm uppercase tracking-[0.16em]">
-          Highlights
-        </h2>
-
-        {loading ? (
-          <div className="flex justify-center items-center bg-card px-4 py-8 border border-border rounded-xl text-muted-foreground text-sm">
-            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-            Loading latest stats...
-          </div>
-        ) : !latestStats ? (
-          <div className="bg-card/40 px-4 py-4 border border-border border-dashed rounded-xl text-muted-foreground text-sm">
-            No body stats logged yet. Start by logging your first entry.
-          </div>
-        ) : (
-          <Highlights latestWeight={latestWeight} latestBodyFat={latestBodyFat} latestStatsDate={latestStats.date ? new Date(latestStats.date).toLocaleDateString() : ''} />
-        )}
-      </section>
-
       {/* Log sections */}
       <section className="px-4 md:px-6 py-6">
-        <h2 className="mb-3 font-semibold text-muted-foreground text-sm uppercase tracking-[0.16em]">
-          Logs
-        </h2>
         <div className="gap-3 grid grid-cols-1 md:max-w-xl">
           {logViews.map((view) => (
             <div key={`${view.name}-log-section`}>

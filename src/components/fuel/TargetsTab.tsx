@@ -39,7 +39,7 @@ export default function TargetsTab() {
         const [profileRes, goalsRes, statsRes] = await Promise.all([
           fetchJson<{ profile: UserProfile }>('/api/me/profile'),
           fetchJson<{ goals: any[] }>('/api/me/goals'),
-          fetchJson<{ stats: any }>('/api/me/stats?latest=true'),
+          fetchJson<{ stats: any[] }>('/api/me/stats?latest=true'),
         ]);
 
         if (cancelled) return;
@@ -51,10 +51,11 @@ export default function TargetsTab() {
         }
 
         // Add goals and latest stats to profile
+        // statsRes.stats is now an array, so get the first item
         const profileWithData = {
           ...profile,
           goals: goalsRes.goals,
-          latestStats: statsRes.stats || undefined,
+          latestStats: statsRes.stats?.[0] || undefined,
         };
 
         // Calculate recommendations

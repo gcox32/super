@@ -119,6 +119,7 @@ export const userStats = pgTable('user_stats', {
 export const tapeMeasurement = pgTable('tape_measurement', {
   id: uuid('id').defaultRandom().primaryKey(),
   userStatsId: uuid('user_stats_id').notNull().unique().references(() => userStats.id),
+  date: date('date').notNull(),
   neck: jsonb('neck'),
   shoulders: jsonb('shoulders'),
   chest: jsonb('chest'),

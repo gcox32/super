@@ -36,7 +36,7 @@ interface PortionedFoodFormData {
 
 type LogMode = 'meal' | 'foods';
 
-export default function LoggingTab() {
+export default function RecordTab() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

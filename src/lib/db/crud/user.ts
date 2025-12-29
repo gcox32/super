@@ -602,8 +602,10 @@ export async function createUserStats(
 
   // Create tape measurement if provided
   if (statsData.tapeMeasurements) {
+    const tapeDate = statsData.date ? statsData.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
     await db.insert(tapeMeasurement).values({
       userStatsId: newStats.id,
+      date: tapeDate,
       neck: statsData.tapeMeasurements.neck,
       shoulders: statsData.tapeMeasurements.shoulders,
       chest: statsData.tapeMeasurements.chest,
@@ -617,7 +619,7 @@ export async function createUserStats(
       rightForearm: statsData.tapeMeasurements.rightForearm,
       leftCalf: statsData.tapeMeasurements.leftCalf,
       rightCalf: statsData.tapeMeasurements.rightCalf,
-    }).returning();
+    } as any).returning();
   }
 
   return {
@@ -634,11 +636,28 @@ export async function getUserStats(userId: string): Promise<UserStats[]> {
     .from(userStats)
     .where(eq(userStats.statsLogId, statsLogId))
     .orderBy(desc(userStats.date));
-  
-  return results.map((r) => ({
-    ...r,
-    date: new Date(r.date),
-  })) as UserStats[];
+
+  // Fetch tape measurements for all stats
+  const statsWithTape = await Promise.all(
+    results.map(async (r) => {
+      const [tape] = await db
+        .select()
+        .from(tapeMeasurement)
+        .where(eq(tapeMeasurement.userStatsId, r.id))
+        .limit(1);
+
+      return {
+        ...(r as any),
+        date: new Date(r.date),
+        tapeMeasurements: tape ? {
+          ...(tape as any),
+          date: tape.date ? new Date(tape.date) : undefined,
+        } : undefined,
+      } as UserStats & { tapeMeasurements?: TapeMeasurement };
+    })
+  );
+
+  return statsWithTape as UserStats[];
 }
 
 export async function getUserStatsById(
@@ -667,7 +686,10 @@ export async function getUserStatsById(
   return {
     ...(stat as any),
     date: new Date(stat.date),
-    tapeMeasurements: tape ? (tape as TapeMeasurement) : undefined,
+    tapeMeasurements: tape ? {
+      ...(tape as any),
+      date: tape.date ? new Date(tape.date) : undefined,
+    } : undefined,
   } as UserStats & { tapeMeasurements?: TapeMeasurement };
 }
 
@@ -688,8 +710,49 @@ export async function getLatestUserStats(
 
   return {
     ...(latest as any),
-    tapeMeasurements: tape ? (tape as TapeMeasurement) : undefined,
+    tapeMeasurements: tape ? {
+      ...(tape as any),
+      date: tape.date ? new Date(tape.date) : undefined,
+    } : undefined,
   } as UserStats & { tapeMeasurements?: TapeMeasurement };
+}
+
+export async function getLatestTapeMeasurements(userId: string): Promise<TapeMeasurement | null> {
+  const statsLogId = await getOrCreateUserStatsLog(userId);
+
+  // Get the latest tape measurement by joining with user_stats
+  const [latest] = await db
+    .select({
+      id: tapeMeasurement.id,
+      date: tapeMeasurement.date,
+      neck: tapeMeasurement.neck,
+      shoulders: tapeMeasurement.shoulders,
+      chest: tapeMeasurement.chest,
+      waist: tapeMeasurement.waist,
+      hips: tapeMeasurement.hips,
+      leftArm: tapeMeasurement.leftArm,
+      rightArm: tapeMeasurement.rightArm,
+      leftLeg: tapeMeasurement.leftLeg,
+      rightLeg: tapeMeasurement.rightLeg,
+      leftForearm: tapeMeasurement.leftForearm,
+      rightForearm: tapeMeasurement.rightForearm,
+      leftCalf: tapeMeasurement.leftCalf,
+      rightCalf: tapeMeasurement.rightCalf,
+    })
+    .from(tapeMeasurement)
+    .innerJoin(userStats, eq(tapeMeasurement.userStatsId, userStats.id))
+    .where(eq(userStats.statsLogId, statsLogId))
+    .orderBy(desc(tapeMeasurement.date))
+    .limit(1);
+
+  if (!latest) {
+    return null;
+  }
+
+  return {
+    ...(latest as any),
+    date: latest.date ? new Date(latest.date) : undefined,
+  } as TapeMeasurement;
 }
 
 export async function deleteUserStats(statsId: string, userId: string): Promise<boolean> {

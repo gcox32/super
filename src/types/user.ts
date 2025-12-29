@@ -119,6 +119,7 @@ export interface UserStats {
 // tape measurements
 export interface TapeMeasurement {
     id:            string;
+    date?:         Date;
     neck?:         DistanceMeasurement;
     shoulders?:    DistanceMeasurement;
     chest?:        DistanceMeasurement;

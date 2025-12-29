@@ -6,7 +6,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import TabLayout, { Tab } from '@/components/ui/TabLayout';
 import TargetsTab from '@/components/fuel/TargetsTab';
 import HistoryTab from '@/components/fuel/HistoryTab';
-import LoggingTab from '@/components/fuel/LoggingTab';
+import RecordTab from '@/components/fuel/RecordTab';
 
 export default function FuelPage() {
   const tabs: Tab[] = [
@@ -20,11 +20,11 @@ export default function FuelPage() {
       ),
     },
     {
-      id: 'log',
-      label: 'Log',
+      id: 'record',
+      label: 'Record',
       content: (
         <div className="md:mx-auto px-4 md:px-6 md:max-w-4xl">
-          <LoggingTab />
+          <RecordTab />
         </div>
       ),
     },

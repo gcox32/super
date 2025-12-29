@@ -7,6 +7,7 @@ import {
   getUserStatsById,
   deleteUserStats,
   getUserProfile,
+  getLatestTapeMeasurements,
 } from '@/lib/db/crud';
 import { getQueryParam } from '@/lib/api/helpers';
 import { estimateBodyFat } from '@/lib/stats/bodyfat';
@@ -21,7 +22,20 @@ export async function GET(request: NextRequest) {
 
     if (latest) {
       const stats = await getLatestUserStats(userId);
-      return { stats };
+      const latestTape = await getLatestTapeMeasurements(userId);
+      
+      // If we have stats, merge with latest tape measurements
+      if (stats) {
+        return {
+          stats: [{
+            ...stats,
+            tapeMeasurements: latestTape || stats.tapeMeasurements,
+          }],
+        };
+      }
+      
+      // If no stats but we have tape measurements, return empty stats array
+      return { stats: [] };
     }
 
     const stats = await getUserStats(userId);
