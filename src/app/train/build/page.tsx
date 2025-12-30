@@ -17,42 +17,42 @@ export default function BuildPage() {
         <section className="space-y-4 px-2 md:px-6 pb-6">
           
           <Link href="/train/build/exercises" className="block">
-            <div className="flex items-center gap-4 bg-card shadow-lg active:shadow-none p-6 border border-border hover:border-brand-primary rounded-lg transition-colors">
+            <div className="flex items-center gap-4 bg-card shadow-lg active:shadow-none p-6 border border-border hover:border-brand-primary rounded-(--radius) transition-colors">
               <div className="bg-gray-100 p-3 rounded-full text-gray-600">
                 <Dumbbell className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="font-semibold text-gray-300 text-lg">Exercises</h2>
                 <p className="mt-1 text-gray-300 text-sm">
-                  Create and manage your library of movements, including muscle groups, movement patterns, and equipment.
+                  Create and manage your library of movements.
                 </p>
               </div>
             </div>
           </Link>
 
           <Link href="/train/build/workouts" className="block">
-            <div className="flex items-center gap-4 bg-card shadow-lg active:shadow-none p-6 border border-border hover:border-brand-primary rounded-lg transition-colors">
+            <div className="flex items-center gap-4 bg-card shadow-lg active:shadow-none p-6 border border-border hover:border-brand-primary rounded-(--radius) transition-colors">
               <div className="bg-gray-100 p-3 rounded-full text-gray-600">
                 <ClipboardList className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="font-semibold text-gray-300 text-lg">Workouts</h2>
                 <p className="mt-1 text-gray-300 text-sm">
-                  Design individual training sessions by combining exercises into blocks and circuits.
+                  Design individual training sessions by combining exercises into blocks.
                 </p>
               </div>
             </div>
           </Link>
 
           <Link href="/train/build/protocols" className="block">
-            <div className="flex items-center gap-4 bg-card shadow-lg active:shadow-none p-6 border border-border hover:border-brand-primary rounded-lg transition-colors">
+            <div className="flex items-center gap-4 bg-card shadow-lg active:shadow-none p-6 border border-border hover:border-brand-primary rounded-(--radius) transition-colors">
               <div className="bg-gray-100 p-3 rounded-full text-gray-600">
                 <CalendarDays className="w-6 h-6" />
               </div>
               <div>
                 <h2 className="font-semibold text-gray-300 text-lg">Protocols</h2>
                 <p className="mt-1 text-gray-300 text-sm">
-                  Construct multi-week training programs by scheduling workouts and setting objectives.
+                  Construct objective-based multi-week programs from workouts.
                 </p>
               </div>
             </div>

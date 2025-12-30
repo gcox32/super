@@ -174,7 +174,8 @@ export default function MeProfilePage() {
       title="Profile"
       subtitle="Keep your details up to date to better contextualize your training."
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="px-2 md:px-6 py-6 overscroll-none">
+      <form onSubmit={handleSubmit} className="space-y-6 ">
           {profile?.email && (
             <div className="space-y-1.5">
               <label className="block font-medium text-zinc-400 text-xs uppercase tracking-[0.18em]">
@@ -316,6 +317,7 @@ export default function MeProfilePage() {
             </Button>
           </div>
         </form>
+        </div>
     </PageLayout>
   );
 }

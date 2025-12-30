@@ -60,7 +60,7 @@ export default function LogPage() {
       subtitle="Track your body stats, workouts, and more"
     >
       {/* Log sections */}
-      <section className="px-4 md:px-6 py-6">
+      <section className="px-2 md:px-6 py-6">
         <div className="gap-3 grid grid-cols-1 md:max-w-xl">
           {logViews.map((view) => (
             <div key={`${view.name}-log-section`}>
@@ -68,7 +68,7 @@ export default function LogPage() {
                 <Link
                   key={view.name}
                   href={view.href}
-                  className='flex justify-between items-center bg-card hover:bg-card/80 px-4 py-3 border border-border hover:border-brand-primary rounded-xl transition'
+                  className='flex justify-between items-center bg-card hover:bg-card/80 px-4 py-3 border border-border hover:border-brand-primary rounded-(--radius) transition'
                 >
                   <div className="flex items-center gap-3">
                     <div className='flex justify-center items-center bg-brand-primary/10 rounded-full w-10 h-10'>
@@ -81,7 +81,7 @@ export default function LogPage() {
                   </div>
                 </Link>
                 :
-                <div key={view.name} className="flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border-accent border-dashed rounded-xl">
+                <div key={view.name} className="flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border-accent border-dashed rounded-(--radius)">
                   <div className="flex items-center gap-3">
                     <div className="flex justify-center items-center bg-zinc-800/60 rounded-full w-10 h-10">
                       <view.icon className="w-5 h-5 text-muted-foreground" />

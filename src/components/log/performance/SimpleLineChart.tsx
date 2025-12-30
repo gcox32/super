@@ -71,7 +71,7 @@ export function SimpleLineChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center border rounded-lg bg-zinc-800 border-zinc-700 text-gray-500" style={{ height }}>
+      <div className="flex items-center justify-center border rounded-(--radius) bg-zinc-800 border-zinc-700 text-gray-500" style={{ height }}>
         No data available
       </div>
     );

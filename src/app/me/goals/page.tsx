@@ -112,7 +112,7 @@ export default function GoalsPage() {
                     <Plus className="mr-2 w-4 h-4" />
                     New Goal
                 </Button>
-                <Link href="/me/goals/keys" className="flex justify-between items-center bg-card hover:bg-hover p-4 border border-border rounded-lg w-full transition-colors">
+                <Link href="/me/goals/keys" className="flex justify-between items-center bg-card hover:bg-hover p-4 border border-border rounded-(--radius) w-full transition-colors">
                     <div className="flex items-center gap-3">
                         <Dumbbell className="w-5 h-5 text-muted-foreground" />
                         <span className="font-medium">Key Exercises</span>

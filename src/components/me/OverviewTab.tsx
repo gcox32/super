@@ -40,7 +40,7 @@ export default function OverviewTab({ profile, workoutDates = [] }: OverviewTabP
       {/* Manage Goals Button */}
       <Link 
           href="/me/goals" 
-          className="flex justify-between items-center bg-card hover:bg-hover p-4 border border-border rounded-lg w-full transition-colors"
+          className="flex justify-between items-center bg-card hover:bg-hover p-4 border border-border rounded-(--radius) w-full transition-colors"
         >
           <div className="flex items-center gap-3">
             <Target className="w-5 h-5 text-muted-foreground" />

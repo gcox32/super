@@ -83,7 +83,7 @@ export default function ProfileCalendar({ workoutDates = [] }: ProfileCalendarPr
   };
 
   return (
-    <div className="bg-card p-4 border border-border rounded-lg w-full">
+    <div className="bg-card p-4 border border-border rounded-(--radius) w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <button onClick={prevMonth} className="p-1 text-muted-foreground hover:text-foreground">

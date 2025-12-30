@@ -90,7 +90,7 @@ export default function TargetsTab() {
 
   if (error) {
     return (
-      <div className="bg-card p-6 border border-border rounded-lg">
+      <div className="bg-card p-6 border border-border rounded-(--radius)">
         <p className="text-muted-foreground text-sm">{error}</p>
       </div>
     );
@@ -98,7 +98,7 @@ export default function TargetsTab() {
 
   if (!recommendations || !recommendations.calorieTarget || !recommendations.macros) {
     return (
-      <div className="bg-card p-6 border border-border rounded-lg">
+      <div className="bg-card p-6 border border-border rounded-(--radius)">
         <p className="text-muted-foreground text-sm">
           Unable to calculate recommendations. Please ensure you have completed your profile with height, weight, gender, and birth date.
         </p>
@@ -123,7 +123,7 @@ export default function TargetsTab() {
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
-        <div className="bg-background shadow-lg p-3 border border-border rounded-lg">
+        <div className="bg-background shadow-lg p-3 border border-border rounded-(--radius)">
           <p className="font-medium text-sm">{data.name}</p>
           <p className="mt-1 text-muted-foreground text-xs">
             {data.payload.grams}g ({data.value} cal)
@@ -164,7 +164,7 @@ export default function TargetsTab() {
   return (
     <div className="space-y-6">
       {/* Calorie Targets */}
-      <div className="bg-card p-6 border border-border rounded-lg">
+      <div className="bg-card p-6 border border-border rounded-(--radius)">
         <h3 className="mb-4 font-semibold text-lg">Daily Calorie Targets</h3>
         <div className="gap-4 grid grid-cols-1 md:grid-cols-3">
           <div>
@@ -188,7 +188,7 @@ export default function TargetsTab() {
       </div>
 
       {/* Macro Targets */}
-      <div className="bg-card p-6 border border-border rounded-lg">
+      <div className="bg-card p-6 border border-border rounded-(--radius)">
         <h3 className="mb-4 font-semibold text-lg">Macro Targets</h3>
         
         {/* Pie Chart */}
@@ -222,7 +222,7 @@ export default function TargetsTab() {
 
         {/* Macro Breakdown */}
         <div className="gap-4 grid grid-cols-1 md:grid-cols-3">
-          <div className="p-4 border border-border rounded-lg">
+          <div className="p-4 border border-border rounded-(--radius)">
             <div className="flex items-center gap-2 mb-2">
               <div className="rounded-full w-3 h-3" style={{ backgroundColor: COLORS.protein }} />
               <p className="font-medium text-sm">Protein</p>
@@ -233,7 +233,7 @@ export default function TargetsTab() {
             </p>
           </div>
 
-          <div className="p-4 border border-border rounded-lg">
+          <div className="p-4 border border-border rounded-(--radius)">
             <div className="flex items-center gap-2 mb-2">
               <div className="rounded-full w-3 h-3" style={{ backgroundColor: COLORS.carbs }} />
               <p className="font-medium text-sm">Carbs</p>
@@ -244,7 +244,7 @@ export default function TargetsTab() {
             </p>
           </div>
 
-          <div className="p-4 border border-border rounded-lg">
+          <div className="p-4 border border-border rounded-(--radius)">
             <div className="flex items-center gap-2 mb-2">
               <div className="rounded-full w-3 h-3" style={{ backgroundColor: COLORS.fat }} />
               <p className="font-medium text-sm">Fat</p>

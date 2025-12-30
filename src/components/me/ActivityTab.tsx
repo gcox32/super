@@ -166,7 +166,7 @@ function ActivityCard({ item }: { item: ActivityItem }) {
   return (
     <div className="bg-card border border-border rounded-lg p-4 flex items-center justify-between shadow-sm">
       <div className="flex items-center gap-4">
-        <div className={`p-2 rounded-full bg-secondary/50`}>
+        <div className={`p-2 rounded-full bg-secondary/50 opacity-30`}>
           {getIcon()}
         </div>
         <div>

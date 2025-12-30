@@ -50,7 +50,7 @@ export function GoalList({ goals, onEdit, onDelete }: GoalListProps) {
                 return (
                     <div 
                         key={goal.id} 
-                        className="bg-card hover:bg-hover border border-border rounded-lg overflow-hidden transition-colors cursor-pointer"
+                        className="bg-card hover:bg-hover border border-border rounded-(--radius) p-2 overflow-hidden transition-colors cursor-pointer"
                         onClick={() => router.push(`/me/goals/${goal.id}`)}
                     >
                         <div className="flex justify-between items-start gap-4 p-4">

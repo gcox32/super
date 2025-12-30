@@ -201,7 +201,7 @@ export default function StatsForm({ onSuccess }: StatsFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 bg-card px-4 py-4 border border-border rounded-xl"
+      className="space-y-4 bg-card px-4 py-4 border border-border rounded-(--radius)"
     >
       {/* Date and Weight (always visible) */}
       <div className="gap-4 grid grid-cols-1 sm:grid-cols-2">

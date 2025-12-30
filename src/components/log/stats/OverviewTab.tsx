@@ -102,7 +102,7 @@ export default function OverviewTab() {
     <div className="space-y-6">
       {/* Anthropomorphic Ratios */}
       {ratios.length > 0 && (
-        <div className="bg-card p-6 border border-border rounded-lg">
+        <div className="bg-card p-6 border border-border rounded-(--radius)">
           <h3 className="mb-4 font-semibold text-lg">Anthropomorphic Ratios</h3>
           <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
             {ratios.map((ratio, idx) => (
@@ -127,11 +127,11 @@ export default function OverviewTab() {
       )}
 
       {/* Latest Measurements */}
-      <div className="bg-card p-6 border border-border rounded-lg">
+      <div className="bg-card p-6 border border-border rounded-(--radius)">
         <h3 className="mb-4 font-semibold text-lg">Latest Measurements</h3>
         
         {latestDate && daysAgo !== null && (
-          <div className="bg-background/50 mb-4 p-3 border border-border rounded-lg">
+          <div className="bg-background/50 mb-4 p-3 border border-border rounded-(--radius)">
             <div className="flex items-center gap-2">
               <AlertCircle className={`w-4 h-4 ${getStalenessColor(daysAgo)}`} />
               <p className="text-sm">

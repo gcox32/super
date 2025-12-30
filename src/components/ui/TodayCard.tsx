@@ -26,7 +26,7 @@ interface TodayCardContentProps {
 export function TodayCard({ isLoading, error, children, className }: TodayCardProps) {
   if (isLoading) {
     return (
-      <div className={`bg-card shadow-sm p-6 border border-border rounded-lg aspect-square flex justify-center items-center ${className}`}>
+      <div className={`bg-card shadow-sm p-6 border border-border aspect-square flex justify-center items-center rounded-(--radius) ${className}`}>
         <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
       </div>
     );
@@ -34,14 +34,14 @@ export function TodayCard({ isLoading, error, children, className }: TodayCardPr
 
   if (error) {
     return (
-      <div className={`bg-card shadow-sm p-6 border border-border rounded-lg aspect-square flex items-center justify-center text-destructive ${className}`}>
+      <div className={`bg-card shadow-sm p-6 border border-border rounded-(--radius) aspect-square flex items-center justify-center text-destructive ${className}`}>
         <p className="text-sm">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className={`bg-card shadow-sm p-6 border border-border rounded-lg aspect-square flex flex-col ${className}`}>
+    <div className={`bg-card shadow-sm p-6 border border-border rounded-(--radius) aspect-square flex flex-col ${className}`}>
       {children}
     </div>
   );

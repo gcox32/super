@@ -47,13 +47,13 @@ export default function PerformanceDashboard({ workoutStats, keyExerciseStats }:
       label: 'Workout Stats',
       content: (
         <div className="grid gap-6 md:grid-cols-1">
-          <div className="bg-zinc-800 p-4 rounded-lg shadow border border-zinc-700">
+          <div className="bg-zinc-800 p-4 rounded-(--radius) shadow border border-zinc-700">
             <SimpleLineChart data={volumeData} title="Volume (kg)" unit="kg" color="#8b5cf6" />
           </div>
-          <div className="bg-zinc-800 p-4 rounded-lg shadow border border-zinc-700">
+          <div className="bg-zinc-800 p-4 rounded-(--radius) shadow border border-zinc-700">
             <SimpleLineChart data={workData} title="Total Work (J)" unit="J" color="#f59e0b" />
           </div>
-          <div className="bg-zinc-800 p-4 rounded-lg shadow border border-zinc-700">
+          <div className="bg-zinc-800 p-4 rounded-(--radius) shadow border border-zinc-700">
             <SimpleLineChart data={powerData} title="Average Power (W)" unit="W" color="#ef4444" />
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function PerformanceDashboard({ workoutStats, keyExerciseStats }:
                 }));
 
               return (
-                <div key={exercise.id} className="bg-zinc-800 p-4 rounded-lg shadow border border-zinc-700">
+                <div key={exercise.id} className="bg-zinc-800 p-4 rounded-(--radius) shadow border border-zinc-700">
                   <SimpleLineChart
                     data={data}
                     title={`${exercise.name} - Projected 1RM`}

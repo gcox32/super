@@ -185,7 +185,7 @@ function AdherenceTab() {
 
     if (error) {
         return (
-            <div className="bg-card p-6 border border-border rounded-lg">
+            <div className="bg-card p-6 border border-border rounded-(--radius)">
                 <p className="text-muted-foreground text-sm">{error}</p>
             </div>
         );
@@ -196,7 +196,7 @@ function AdherenceTab() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-card p-6 border border-border rounded-lg">
+            <div className="bg-card p-6 border border-border rounded-(--radius)">
                 <h3 className="mb-6 font-semibold text-lg">Macro Adherence</h3>
 
                 <div className="space-y-6">
@@ -362,7 +362,7 @@ function AdherenceTab() {
                 </div>
 
                 {(!calorieTarget || !targets) && (
-                    <div className="mt-6 bg-muted/50 p-4 border border-border rounded-md">
+                    <div className="mt-6 bg-muted/50 p-4 border border-border rounded-(--radius)">
                         <p className="text-muted-foreground text-sm">
                             Targets not available. Please complete your profile and set up goals to see adherence metrics.
                         </p>
