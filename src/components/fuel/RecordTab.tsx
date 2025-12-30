@@ -493,7 +493,7 @@ export default function RecordTab() {
         {/* Date and Time */}
         <div className="bg-card p-4 border border-border rounded-lg">
           <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
-            <FormGroup>
+            <FormGroup className="max-w-[92%]">
               <FormLabel>Date</FormLabel>
               <FormInput
                 type="date"
@@ -503,7 +503,7 @@ export default function RecordTab() {
               />
             </FormGroup>
 
-            <FormGroup>
+            <FormGroup className="max-w-[92%]">
               <FormLabel>Time (optional)</FormLabel>
               <FormInput
                 type="time"
