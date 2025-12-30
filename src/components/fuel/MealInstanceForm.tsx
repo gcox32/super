@@ -38,7 +38,7 @@ export default function MealInstanceForm({ initialData }: MealInstanceFormProps)
       // Create date and timestamp in local timezone
       // Parse date string (YYYY-MM-DD) and create Date in local timezone at midnight
       const [year, month, day] = date.split('-').map(Number);
-      const dateObj = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const dateObj = new Date(year, month - 1, day, 12, 0, 0, 0);
       
       // Create timestamp if time is provided (date + time in local timezone)
       let timestamp: Date | null = null;
@@ -111,7 +111,7 @@ export default function MealInstanceForm({ initialData }: MealInstanceFormProps)
         )}
 
         <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
-          <FormGroup>
+          <FormGroup className="max-w-[88%]">
             <FormLabel>Date</FormLabel>
             <FormInput
               type="date"
@@ -121,7 +121,7 @@ export default function MealInstanceForm({ initialData }: MealInstanceFormProps)
             />
           </FormGroup>
 
-          <FormGroup>
+          <FormGroup className="max-w-[88%]">
             <FormLabel>Time (optional)</FormLabel>
             <FormInput
               type="time"

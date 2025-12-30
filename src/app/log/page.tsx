@@ -2,11 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import type { UserStats } from '@/types/user';
 import { logViews } from './config';
-import Highlights from '@/components/log/Highlights';
 import PageLayout from '@/components/layout/PageLayout';
 
 type LatestStatsResponse = {
