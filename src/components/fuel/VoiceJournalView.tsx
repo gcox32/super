@@ -287,6 +287,11 @@ export default function VoiceJournalView() {
   };
 
   const handleSubmit = async () => {
+    // Stop recording if still active
+    if (isRecording) {
+      stopRecording();
+    }
+    
     const text = transcription.trim();
     
     if (!text) {
