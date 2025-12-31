@@ -53,9 +53,27 @@ export default function VoiceJournalView() {
       return;
     }
 
-    // Only check if browser supports it - don't request permission yet
-    // Permission will be requested when user clicks the mic button
-    setHasPermission(null); // null means "not yet checked"
+    // Check permission status without requesting it (if API is available)
+    // Note: Permission query API may not be available in all browsers
+    if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'microphone' as PermissionName })
+        .then((result) => {
+          if (result.state === 'granted') {
+            setHasPermission(true);
+          } else if (result.state === 'denied') {
+            setHasPermission(false as boolean | null);
+          } else {
+            setHasPermission(null); // prompt - not yet requested
+          }
+        })
+        .catch(() => {
+          // Permission query API not supported, default to null
+          setHasPermission(null);
+        });
+    } else {
+      // Permission query API not available, default to null (will request on click)
+      setHasPermission(null);
+    }
   }, [showToast]);
 
   const startRecording = async () => {
@@ -410,7 +428,8 @@ export default function VoiceJournalView() {
     return <VoiceJournalConfirmation data={confirmationData} onCancel={handleConfirmationCancel} />;
   }
 
-  if (hasPermission === false) {
+  const permissionDenied = hasPermission === false;
+  if (permissionDenied) {
     return (
       <div className="z-50 fixed inset-0 flex justify-center items-center bg-black">
         <div className="space-y-4 px-6 max-w-md text-center">
@@ -498,7 +517,7 @@ export default function VoiceJournalView() {
           {/* Record Button (Microphone) */}
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            disabled={hasPermission !== true || isProcessing}
+            disabled={permissionDenied || isProcessing}
             className={`flex items-center justify-center w-20 h-20 rounded-full transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed relative ${
               isRecording 
                 ? 'bg-red-600 hover:bg-red-700 animate-pulse' 
