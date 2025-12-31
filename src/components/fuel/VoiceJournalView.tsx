@@ -27,7 +27,7 @@ export default function VoiceJournalView() {
   const intentionallyStoppedRef = useRef<boolean>(false);
   const { showToast } = useToast();
 
-  // Check for browser support and request permission
+  // Check for browser support only (don't request permission yet)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -53,174 +53,187 @@ export default function VoiceJournalView() {
       return;
     }
 
-    // Request microphone permission
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(() => {
+    // Only check if browser supports it - don't request permission yet
+    // Permission will be requested when user clicks the mic button
+    setHasPermission(null); // null means "not yet checked"
+  }, [showToast]);
+
+  const startRecording = async () => {
+    // Don't start if already recording
+    if (isRecording) {
+      return;
+    }
+
+    // Request microphone permission when user clicks the button
+    if (hasPermission === null || hasPermission === false) {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
         setHasPermission(true);
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onresult = (event: SpeechRecognitionEvent) => {
-          let interimTranscript = '';
-          let finalTranscript = '';
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript + ' ';
-            } else {
-              interimTranscript += transcript;
-            }
-          }
-
-          setTranscription((prev) => {
-            // Remove any previous interim text markers
-            const cleaned = prev.replace(/\s*\[listening\.\.\.\]\s*$/, '').trim();
-            const newText = cleaned + (cleaned ? ' ' : '') + finalTranscript;
-            const result = newText + (interimTranscript ? ' [listening...]' : '');
-            
-            // Trigger animation for new words (only animate final transcript, not interim)
-            if (finalTranscript) {
-              const cleanedFinal = newText;
-              if (cleanedFinal !== previousTextRef.current) {
-                // Use setTimeout to ensure state is updated
-                setTimeout(() => {
-                  animateText(cleanedFinal, previousTextRef.current);
-                  previousTextRef.current = cleanedFinal;
-                }, 0);
-              }
-            }
-            
-            return result;
-          });
-        };
-
-        recognition.onerror = (event: any) => {
-          if (event.error === 'no-speech') {
-            // This is common, don't show error - user might just be pausing
-            // Don't stop recording on no-speech errors
-            return;
-          }
-          // Only stop on actual errors, not on no-speech
-          if (event.error !== 'no-speech') {
-            setIsRecording(false);
-          }
-          
-          let errorTitle = 'Recording error';
-          let errorDescription = '';
-          let troubleshootingTips: string[] = [];
-          
-          switch (event.error) {
-            case 'not-allowed':
-              errorTitle = 'Microphone access denied';
-              errorDescription = 'Please enable microphone access in your browser settings to use voice journaling.';
-              troubleshootingTips = [
-                'Check browser permissions for microphone access',
-                'Try refreshing the page and allowing access when prompted',
-                'Check your system settings for microphone permissions'
-              ];
-              break;
-            case 'aborted':
-              errorTitle = 'Recording stopped';
-              errorDescription = 'Recording was interrupted. Please try again.';
-              break;
-            case 'network':
-              // Detect iOS/Safari for more specific error message
-              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-              const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-              
-              if (isIOS || isSafari) {
-                errorTitle = 'Speech recognition not available';
-                errorDescription = 'iOS Safari has limited support for speech recognition. The Web Speech API often fails with network errors on iOS.';
-                troubleshootingTips = [
-                  'Use Chrome or Edge browser on a desktop/laptop for best results',
-                  'Alternatively, you can type your meal description instead',
-                  'If you have access to a computer, the voice feature works reliably there'
-                ];
-              } else {
-                errorTitle = 'Network error';
-                errorDescription = 'Could not connect to speech recognition service.';
-                troubleshootingTips = [
-                  'Check your internet connection',
-                  'Try refreshing the page',
-                  'Check if you\'re behind a firewall or proxy that might block the service',
-                  'Try using Chrome or Edge (best support for speech recognition)',
-                  'If on mobile, ensure you have a stable connection',
-                  'The speech recognition service may be temporarily unavailable - try again in a few moments'
-                ];
-              }
-              break;
-            case 'audio-capture':
-              errorTitle = 'No microphone found';
-              errorDescription = 'No microphone was detected. Please connect a microphone and try again.';
-              troubleshootingTips = [
-                'Ensure a microphone is connected to your device',
-                'Check system settings to verify microphone is working',
-                'Try using a different microphone'
-              ];
-              break;
-            case 'service-not-allowed':
-              errorTitle = 'Service not allowed';
-              errorDescription = 'Speech recognition service is not available.';
-              troubleshootingTips = [
-                'This may be a browser or system restriction',
-                'Try using Chrome or Edge browser',
-                'Check if speech recognition is enabled in your browser settings',
-                'On iOS/Safari, speech recognition has limited support'
-              ];
-              break;
-            default:
-              errorDescription = `Error: ${event.error}`;
-              if (event.message) {
-                errorDescription += ` - ${event.message}`;
-              }
-          }
-          
-          showToast({
-            title: errorTitle,
-            description: troubleshootingTips.length > 0 
-              ? `${errorDescription}\n\nTroubleshooting:\n${troubleshootingTips.map(tip => `• ${tip}`).join('\n')}`
-              : errorDescription,
-            variant: 'error',
-          });
-        };
-
-        recognition.onend = () => {
-          // Only stop if we didn't intentionally stop it
-          // This prevents the onend event from immediately stopping after start
-          if (!intentionallyStoppedRef.current) {
-            setIsRecording(false);
-          }
-          intentionallyStoppedRef.current = false; // Reset for next time
-        };
-
-        recognitionRef.current = recognition;
-      })
-      .catch((err) => {
+      } catch (err: any) {
         setHasPermission(false);
         showToast({
           title: 'Microphone access denied',
           description: 'Please enable microphone access to use voice journaling.',
           variant: 'error',
         });
-      });
-  }, [showToast]);
+        return;
+      }
+    }
 
-  const startRecording = () => {
+    // Initialize recognition if not already done
+    if (!recognitionRef.current) {
+      const SpeechRecognition = 
+        (window as any).SpeechRecognition || 
+        (window as any).webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        showToast({
+          title: 'Speech recognition not available',
+          description: 'Please refresh the page and try again.',
+          variant: 'error',
+        });
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        setTranscription((prev) => {
+          const cleaned = prev.replace(/\s*\[listening\.\.\.\]\s*$/, '').trim();
+          const newText = cleaned + (cleaned ? ' ' : '') + finalTranscript;
+          const result = newText + (interimTranscript ? ' [listening...]' : '');
+          
+          if (finalTranscript) {
+            const cleanedFinal = newText;
+            if (cleanedFinal !== previousTextRef.current) {
+              setTimeout(() => {
+                animateText(cleanedFinal, previousTextRef.current);
+                previousTextRef.current = cleanedFinal;
+              }, 0);
+            }
+          }
+          
+          return result;
+        });
+      };
+
+      recognition.onerror = (event: any) => {
+        if (event.error === 'no-speech') {
+          return;
+        }
+        if (event.error !== 'no-speech') {
+          setIsRecording(false);
+        }
+        
+        let errorTitle = 'Recording error';
+        let errorDescription = '';
+        let troubleshootingTips: string[] = [];
+        
+        switch (event.error) {
+          case 'not-allowed':
+            errorTitle = 'Microphone access denied';
+            errorDescription = 'Please enable microphone access in your browser settings to use voice journaling.';
+            troubleshootingTips = [
+              'Check browser permissions for microphone access',
+              'Try refreshing the page and allowing access when prompted',
+              'Check your system settings for microphone permissions'
+            ];
+            break;
+          case 'aborted':
+            errorTitle = 'Recording stopped';
+            errorDescription = 'Recording was interrupted. Please try again.';
+            break;
+          case 'network':
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            
+            if (isIOS || isSafari) {
+              errorTitle = 'Speech recognition not available';
+              errorDescription = 'iOS Safari has limited support for speech recognition. The Web Speech API often fails with network errors on iOS.';
+              troubleshootingTips = [
+                'Use Chrome or Edge browser on a desktop/laptop for best results',
+                'Alternatively, you can type your meal description instead',
+                'If you have access to a computer, the voice feature works reliably there'
+              ];
+            } else {
+              errorTitle = 'Network error';
+              errorDescription = 'Could not connect to speech recognition service.';
+              troubleshootingTips = [
+                'Check your internet connection',
+                'Try refreshing the page',
+                'Check if you\'re behind a firewall or proxy that might block the service',
+                'Try using Chrome or Edge (best support for speech recognition)',
+                'If on mobile, ensure you have a stable connection',
+                'The speech recognition service may be temporarily unavailable - try again in a few moments'
+              ];
+            }
+            break;
+          case 'audio-capture':
+            errorTitle = 'No microphone found';
+            errorDescription = 'No microphone was detected. Please connect a microphone and try again.';
+            troubleshootingTips = [
+              'Ensure a microphone is connected to your device',
+              'Check system settings to verify microphone is working',
+              'Try using a different microphone'
+            ];
+            break;
+          case 'service-not-allowed':
+            errorTitle = 'Service not allowed';
+            errorDescription = 'Speech recognition service is not available.';
+            troubleshootingTips = [
+              'This may be a browser or system restriction',
+              'Try using Chrome or Edge browser',
+              'Check if speech recognition is enabled in your browser settings',
+              'On iOS/Safari, speech recognition has limited support'
+            ];
+            break;
+          default:
+            errorDescription = `Error: ${event.error}`;
+            if (event.message) {
+              errorDescription += ` - ${event.message}`;
+            }
+        }
+        
+        showToast({
+          title: errorTitle,
+          description: troubleshootingTips.length > 0 
+            ? `${errorDescription}\n\nTroubleshooting:\n${troubleshootingTips.map(tip => `• ${tip}`).join('\n')}`
+            : errorDescription,
+          variant: 'error',
+        });
+      };
+
+      recognition.onend = () => {
+        if (!intentionallyStoppedRef.current) {
+          setIsRecording(false);
+        }
+        intentionallyStoppedRef.current = false;
+      };
+
+      recognitionRef.current = recognition;
+    }
+
     if (!recognitionRef.current) {
       showToast({
         title: 'Speech recognition not available',
-        description: 'Please refresh the page and try again.',
+        description: 'Failed to initialize speech recognition. Please refresh the page.',
         variant: 'error',
       });
-      return;
-    }
-
-    // Don't start if already recording
-    if (isRecording) {
       return;
     }
 
@@ -228,7 +241,6 @@ export default function VoiceJournalView() {
       recognitionRef.current.start();
       setIsRecording(true);
     } catch (err: any) {
-      // If error is about already running, just set the state
       if (err.message && err.message.includes('already')) {
         setIsRecording(true);
       } else {

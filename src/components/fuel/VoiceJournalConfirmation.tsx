@@ -400,7 +400,7 @@ export default function VoiceJournalConfirmation({ data, onCancel }: VoiceJourna
           <div className="bg-zinc-900/50 p-6 border border-zinc-800 rounded-2xl">
             <h3 className="mb-4 font-semibold text-white text-lg">Details</h3>
             <div className="gap-4 grid grid-cols-2 mb-4">
-              <FormGroup className="max-w-[88%]">
+              <FormGroup className="max-w-[84%]">
                 <FormLabel className="text-zinc-300">Date</FormLabel>
                 <FormInput
                   type="date"
@@ -409,7 +409,7 @@ export default function VoiceJournalConfirmation({ data, onCancel }: VoiceJourna
                   className="bg-zinc-800 border-zinc-700 text-white"
                 />
               </FormGroup>
-              <FormGroup className="max-w-[88%]">
+              <FormGroup className="max-w-[84%]">
                 <FormLabel className="text-zinc-300">Time (optional)</FormLabel>
                 <FormInput
                   type="time"
