@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { X, Mic, MicOff, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import VoiceJournalConfirmation from './VoiceJournalConfirmation';
-import { Helix } from 'ldrs/react';
+import Helix from '@/components/ui/HelixLoader/Helix';
 
 export default function VoiceJournalView() {
   const router = useRouter();
