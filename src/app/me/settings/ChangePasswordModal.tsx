@@ -64,18 +64,18 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="z-50 fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-md"
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border rounded-lg p-6 w-full max-w-md mx-4 shadow-lg"
+        className="bg-card/95 shadow-2xl shadow-black/50 backdrop-blur-xl mx-4 p-6 border border-white/10 rounded-2xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-6">
-          <h2 className="text-xl font-bold">Change Password</h2>
+          <h2 className="font-bold text-xl">Change Password</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-hover rounded-lg transition-colors"
+            className="hover:bg-hover p-1 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -108,7 +108,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
           {error && <FormError>{error}</FormError>}
 
-          <div className="flex gap-3 justify-end mt-6">
+          <div className="flex justify-end gap-3 mt-6">
             <Button
               type="button"
               onClick={onClose}

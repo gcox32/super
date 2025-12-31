@@ -281,7 +281,7 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
 
                                         {/* Criteria Section - Now the only place for conditions */}
                                         {component.type && component.type !== 'skill' && component.type !== 'other' && (
-                                            <div className="space-y-4 border-t border-border pt-4 mt-2">
+                                            <div className="space-y-4 mt-2 pt-4 border-border border-t">
                                                 <div className="flex justify-between items-center">
                                                     <FormLabel className="mb-0">Success Criteria</FormLabel>
                                                     <Button
@@ -304,18 +304,18 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
 
                                                 {/* Multiple Criteria List */}
                                                 {component.criteria?.map((criteria, idx) => (
-                                                    <div key={criteria.id} className="p-3 bg-muted/20 rounded-md border border-border/50 relative group">
+                                                    <div key={criteria.id} className="group relative bg-muted/20 p-3 border border-border/50 rounded-md">
                                                         <button
                                                             type="button"
                                                             onClick={() => removeCriteria(component.id, criteria.id)}
-                                                            className="absolute top-2 right-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                            className="top-2 right-2 z-10 absolute opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
                                                         
-                                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                                                        <div className="items-end gap-3 grid grid-cols-1 md:grid-cols-12">
                                                             <div className="col-span-12 md:col-span-3">
-                                                                 <FormLabel className="text-xs mb-1">Type</FormLabel>
+                                                                 <FormLabel className="mb-1 text-xs">Type</FormLabel>
                                                                  <FormSelect
                                                                     value={criteria.type || component.type || ''}
                                                                     onChange={(e) => updateCriteria(component.id, criteria.id, { type: e.target.value as GoalComponentType | ExerciseMeasureType })}
@@ -354,7 +354,7 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                                             {/* Tape Site Selector if Type is Tape */}
                                                             {(criteria.type === 'tape' || (!criteria.type && component.type === 'tape')) && (
                                                                 <div className="col-span-12 md:col-span-3">
-                                                                    <FormLabel className="text-xs mb-1">Site</FormLabel>
+                                                                    <FormLabel className="mb-1 text-xs">Site</FormLabel>
                                                                     <FormSelect
                                                                         value={criteria.measurementSite || ''}
                                                                         onChange={(e) => updateCriteria(component.id, criteria.id, { 
@@ -372,7 +372,7 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                                             )}
 
                                                             <div className={cn("col-span-12", (criteria.type === 'tape' || (!criteria.type && component.type === 'tape')) ? "md:col-span-3" : "md:col-span-4")}>
-                                                                <FormLabel className="text-xs mb-1">Condition</FormLabel>
+                                                                <FormLabel className="mb-1 text-xs">Condition</FormLabel>
                                                                 <FormSelect
                                                                     value={criteria.conditional}
                                                                     onChange={(e) => updateCriteria(component.id, criteria.id, { conditional: e.target.value as GoalComponentConditional })}
@@ -387,13 +387,13 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                                             <div className={cn("col-span-12", (criteria.type === 'tape' || (!criteria.type && component.type === 'tape')) ? "md:col-span-3" : "md:col-span-5")}>
                                                                 <div className="flex flex-col gap-2">
                                                                     <div>
-                                                                        <FormLabel className="text-xs mb-1">Target</FormLabel>
+                                                                        <FormLabel className="mb-1 text-xs">Target</FormLabel>
                                                                         {renderValueInput(criteria.type || component.type || 'other', criteria.value, (value) => 
                                                                             updateCriteria(component.id, criteria.id, { value })
                                                                         )}
                                                                     </div>
                                                                     <div>
-                                                                        <FormLabel className="text-xs mb-1 text-muted-foreground">Start (Optional)</FormLabel>
+                                                                        <FormLabel className="mb-1 text-muted-foreground text-xs">Start (Optional)</FormLabel>
                                                                         {renderValueInput(criteria.type || component.type || 'other', criteria.initialValue, (value) => 
                                                                             updateCriteria(component.id, criteria.id, { initialValue: value })
                                                                         )}
@@ -406,7 +406,7 @@ export function GoalComponentsSection({ components, onChange }: GoalComponentsSe
                                             </div>
                                         )}
 
-                                        <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-border">
+                                        <div className="flex flex-col gap-4 mt-4 pt-4 border-border border-t">
                                             <FormGroup className="flex flex-row justify-end items-center gap-4 w-full">
                                                 <FormLabel htmlFor={`component-priority-${component.id}`}>
                                                     Priority

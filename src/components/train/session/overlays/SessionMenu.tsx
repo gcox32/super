@@ -52,7 +52,7 @@ export function SessionMenu({
   return (
     <div 
       className={`absolute inset-0 z-50 flex items-end sm:items-center justify-center transition-all duration-150 ease-out ${
-        isVisible ? 'bg-black/60 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-none'
+        isVisible ? 'bg-black/60 backdrop-blur-md' : 'bg-black/0 backdrop-blur-none'
       }`}
       onClick={onClose}
     >

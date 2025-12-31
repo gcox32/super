@@ -81,12 +81,19 @@
 }
 
 body {
-  /* Radial gradient background */
-  background: radial-gradient(
-    ellipse at left,
-    rgba(59, 130, 246, 0.25) 0%,
-    var(--background) 60%
-  );
+  /* Radial gradient background - more intense for visual depth */
+  background:
+    radial-gradient(
+      ellipse at 0% 30%,
+      rgba(59, 130, 246, 0.4) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 100% 80%,
+      rgba(245, 158, 11, 0.15) 0%,
+      transparent 40%
+    ),
+    var(--background);
   background-attachment: fixed;
   background-color: var(--background);
   color: var(--foreground);
@@ -107,5 +114,88 @@ html {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/*
+ * Global card/surface styling
+ * Any element with bg-card gets the polished treatment automatically
+ */
+[class*="bg-card"] {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      transparent 50%
+    ),
+    transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 2rem;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.3),
+    0 4px 6px -4px rgba(0, 0, 0, 0.25);
+}
+
+/* Utility classes for visual polish */
+@layer utilities {
+  .surface {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        transparent 50%
+      ),
+      var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.75rem;
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.25),
+      0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  }
+
+  .surface-interactive {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        transparent 50%
+      ),
+      var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.75rem;
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.25),
+      0 4px 6px -4px rgba(0, 0, 0, 0.2);
+    transition: transform 150ms ease-out;
+  }
+
+  .surface-interactive:active {
+    transform: scale(0.98);
+  }
+
+  .card-gradient {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      transparent 50%
+    );
+  }
+
+  .glow-primary {
+    box-shadow:
+      0 0 20px rgba(59, 130, 246, 0.15),
+      0 0 40px rgba(59, 130, 246, 0.05);
+  }
+
+  .glow-accent {
+    box-shadow:
+      0 0 20px rgba(245, 158, 11, 0.15),
+      0 0 40px rgba(245, 158, 11, 0.05);
+  }
+
+  .glow-success {
+    box-shadow:
+      0 0 20px rgba(16, 185, 129, 0.15),
+      0 0 40px rgba(16, 185, 129, 0.05);
   }
 }

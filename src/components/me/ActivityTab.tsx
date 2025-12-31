@@ -45,17 +45,17 @@ export default function ActivityTab() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="border-primary border-b-2 rounded-full w-8 h-8 animate-spin"></div>
       </div>
     );
   }
 
   if (activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <Activity className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium text-muted-foreground">No recent activity</h3>
-        <p className="text-sm text-muted-foreground mt-2">
+      <div className="flex flex-col justify-center items-center px-4 py-12 text-center">
+        <Activity className="mb-4 w-12 h-12 text-muted-foreground" />
+        <h3 className="font-medium text-muted-foreground text-lg">No recent activity</h3>
+        <p className="mt-2 text-muted-foreground text-sm">
           Your activity history will appear here.
         </p>
       </div>
@@ -80,7 +80,7 @@ export default function ActivityTab() {
     <div className="space-y-6 pb-20">
       {Object.entries(groupedActivities).map(([date, items]) => (
         <div key={date} className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 py-2 z-10">
+          <h3 className="top-0 z-10 sticky py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
             {date}
           </h3>
           <div className="space-y-3">
@@ -97,14 +97,14 @@ export default function ActivityTab() {
 function ActivityCard({ item }: { item: ActivityItem }) {
   const getIcon = () => {
     switch (item.type) {
-      case 'workout': return <Dumbbell className="h-5 w-5 text-blue-500" />;
-      case 'meal': return <Utensils className="h-5 w-5 text-green-500" />;
-      case 'sleep': return <Moon className="h-5 w-5 text-indigo-500" />;
-      case 'water': return <Droplets className="h-5 w-5 text-cyan-500" />;
-      case 'supplement': return <Pill className="h-5 w-5 text-purple-500" />;
-      case 'stats': return <Scale className="h-5 w-5 text-orange-500" />;
-      case 'image': return <Camera className="h-5 w-5 text-pink-500" />;
-      default: return <Activity className="h-5 w-5 text-gray-500" />;
+      case 'workout': return <Dumbbell className="w-5 h-5 text-blue-500" />;
+      case 'meal': return <Utensils className="w-5 h-5 text-green-500" />;
+      case 'sleep': return <Moon className="w-5 h-5 text-indigo-500" />;
+      case 'water': return <Droplets className="w-5 h-5 text-cyan-500" />;
+      case 'supplement': return <Pill className="w-5 h-5 text-purple-500" />;
+      case 'stats': return <Scale className="w-5 h-5 text-orange-500" />;
+      case 'image': return <Camera className="w-5 h-5 text-pink-500" />;
+      default: return <Activity className="w-5 h-5 text-gray-500" />;
     }
   };
 
@@ -164,14 +164,14 @@ function ActivityCard({ item }: { item: ActivityItem }) {
   const link = getLink();
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 flex items-center justify-between shadow-sm">
+    <div className="flex justify-between items-center bg-card shadow-sm p-4 border border-border rounded-lg">
       <div className="flex items-center gap-4">
         <div className={`p-2 rounded-full bg-secondary/50 opacity-30`}>
           {getIcon()}
         </div>
         <div>
           <h4 className="font-medium text-sm">{item.title}</h4>
-          <p className="text-xs text-muted-foreground flex items-center gap-2">
+          <p className="flex items-center gap-2 text-muted-foreground text-xs">
             <span>{getTime()}</span>
             {getDetails() && (
               <>
@@ -185,7 +185,7 @@ function ActivityCard({ item }: { item: ActivityItem }) {
       
       {link && (
         <Link href={link} className="text-muted-foreground hover:text-foreground">
-          <ChevronRight className="h-5 w-5" />
+          <ChevronRight className="w-5 h-5" />
         </Link>
       )}
     </div>

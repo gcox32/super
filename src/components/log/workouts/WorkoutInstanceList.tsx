@@ -30,7 +30,7 @@ export default function WorkoutInstanceList() {
     fetchInstances();
   }, []);
 
-  if (loading) return <div className="py-10 flex justify-center items-center w-full"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <div className="flex justify-center items-center py-10 w-full"><Loader2 className="w-8 h-8 text-muted-foreground animate-spin" /></div>;
 
   return (
     <div className="bg-card shadow sm:rounded-md overflow-hidden">

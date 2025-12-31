@@ -57,7 +57,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
         <PageLayout title="Settings" subtitle="Manage your app settings" breadcrumbHref="/me" breadcrumbText="Me">
-             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+             <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
         </PageLayout>
     );
   }
@@ -88,9 +88,9 @@ export default function SettingsPage() {
         return (
           <div key={item.id} className={`bg-card gap-4 rounded-lg p-4 border border-border flex items-center justify-between ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
             <div>
-              <span className="font-medium block">{item.label}</span>
+              <span className="block font-medium">{item.label}</span>
               {item.description && (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   {item.description}
                 </span>
               )}
@@ -103,7 +103,7 @@ export default function SettingsPage() {
                 onChange={item.onChange || (() => {})}
                 disabled={item.disabled}
               />
-              <div className="w-11 h-6 bg-input peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+              <div className="peer after:top-[2px] after:left-[2px] after:absolute bg-input after:bg-white peer-checked:bg-brand-primary after:border after:border-gray-300 peer-checked:after:border-white rounded-full after:rounded-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-primary w-11 after:w-5 h-6 after:h-5 after:content-[''] after:transition-all peer-checked:after:translate-x-full"></div>
             </label>
           </div>
         );
@@ -117,7 +117,7 @@ export default function SettingsPage() {
             disabled={item.disabled}
           >
             <div>
-              <span className="font-medium flex  items-center">{item.label}</span>
+              <span className="flex items-center font-medium">{item.label}</span>
               {item.description && (
                 <span className={`text-sm w-full flex items-center ${item.variant === 'danger' ? 'text-red-600' : 'text-muted-foreground'}`}>
                   {item.description}
@@ -132,7 +132,7 @@ export default function SettingsPage() {
             <Link
                 key={item.id}
                 href={item.href}
-                className="w-full py-2 border border-border rounded-lg font-semibold hover:bg-hover transition-colors flex items-center justify-center bg-card"
+                className="flex justify-center items-center bg-card hover:bg-hover py-2 border border-border rounded-lg w-full font-semibold transition-colors"
             >
                 {item.label}
             </Link>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
 
       case 'info':
         return (
-            <div key={item.id} className="bg-card rounded-lg p-4 border border-border flex justify-between items-center">
+            <div key={item.id} className="flex justify-between items-center bg-card p-4 border border-border rounded-lg">
                 <span className="text-muted-foreground">{item.label}</span>
                 <span className="font-medium">{item.value}</span>
             </div>
@@ -148,7 +148,7 @@ export default function SettingsPage() {
 
       case 'component':
           return (
-              <div key={item.id} className="bg-card rounded-lg p-4 border border-border">
+              <div key={item.id} className="bg-card p-4 border border-border rounded-lg">
                   {item.component}
               </div>
           );
@@ -169,7 +169,7 @@ export default function SettingsPage() {
         <section key={section.id} className={`px-4 md:px-6 py-6 ${index > 0 ? 'border-t border-border' : ''}`}>
           <div className="flex items-center gap-3 mb-4">
             <section.icon className="w-5 h-5 text-brand-primary" />
-            <h2 className="text-lg font-semibold">{section.title}</h2>
+            <h2 className="font-semibold text-lg">{section.title}</h2>
           </div>
           <div className="space-y-2">
             {section.items.map(renderItem)}

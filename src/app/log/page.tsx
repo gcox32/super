@@ -68,27 +68,27 @@ export default function LogPage() {
                 <Link
                   key={view.name}
                   href={view.href}
-                  className='flex justify-between items-center bg-card hover:bg-card/80 px-4 py-3 border border-border hover:border-brand-primary rounded-(--radius) transition'
+                  className='flex justify-between items-center bg-card px-4 py-4 active:scale-[0.98] transition-transform'
                 >
-                  <div className="flex items-center gap-3">
-                    <div className='flex justify-center items-center bg-brand-primary/10 rounded-full w-10 h-10'>
-                      <view.icon className='w-5 h-5 text-brand-primary' />
+                  <div className="flex items-center gap-4">
+                    <div className='flex justify-center items-center bg-brand-primary/15 shadow-brand-primary/10 shadow-lg rounded-xl w-12 h-12'>
+                      <view.icon className='w-6 h-6 text-brand-primary' />
                     </div>
                     <div>
-                      <div className="font-semibold text-sm">{view.name}</div>
-                      <div className="text-muted-foreground text-xs">{view.description}</div>
+                      <div className="font-semibold">{view.name}</div>
+                      <div className="text-muted-foreground text-sm">{view.description}</div>
                     </div>
                   </div>
                 </Link>
                 :
-                <div key={view.name} className="flex justify-between items-center bg-card/40 opacity-70 px-4 py-3 border border-border-accent border-dashed rounded-(--radius)">
-                  <div className="flex items-center gap-3">
-                    <div className="flex justify-center items-center bg-zinc-800/60 rounded-full w-10 h-10">
-                      <view.icon className="w-5 h-5 text-muted-foreground" />
+                <div key={view.name} className="flex justify-between items-center bg-card/30 opacity-60 px-4 py-4 border border-white/5 border-dashed rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="flex justify-center items-center bg-white/5 rounded-xl w-12 h-12">
+                      <view.icon className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div>
-                      <div className="font-semibold text-sm">{view.name}</div>
-                      <div className="text-muted-foreground text-xs">{view.description}</div>
+                      <div className="font-semibold">{view.name}</div>
+                      <div className="text-muted-foreground text-sm">{view.description}</div>
                     </div>
                   </div>
                 </div>

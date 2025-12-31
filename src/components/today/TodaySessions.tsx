@@ -179,8 +179,6 @@ export default function TodaySessions() {
       <TodayCardHeader
         title="Get to Work"
         subtitle="Pick something"
-        icon={Play}
-        iconVariant="muted"
       />
       <TodayCardContent>
         <div className="space-y-3">

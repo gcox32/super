@@ -72,7 +72,7 @@ export default function PreferencesPage() {
         subtitle="Customize your app experience"
       >
         <div className="flex justify-center p-12">
-           <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+           <div className="border-2 border-brand-primary border-t-transparent rounded-full w-6 h-6 animate-spin"></div>
         </div>
       </PageLayout>
     );
@@ -85,7 +85,7 @@ export default function PreferencesPage() {
       title="Preferences"
       subtitle="Customize how data is displayed and calculated"
     >
-      <div className="md:mx-auto md:max-w-4xl pb-24">
+      <div className="md:mx-auto pb-24 md:max-w-4xl">
 
         {/* Body Fat Calculation */}
         <section className="px-4 md:px-6 py-6 border-border border-t">
@@ -137,7 +137,7 @@ export default function PreferencesPage() {
                     const value = Math.max(1, Math.min(365, parseInt(e.target.value) || 30));
                     handleChange('bodyFatMaxDaysOld', value);
                   }}
-                  className="bg-input text-foreground px-3 py-2 border border-input focus:border-brand-primary rounded-lg outline-none ring-0 w-24 text-sm transition-colors"
+                  className="bg-input px-3 py-2 border border-input focus:border-brand-primary rounded-lg outline-none ring-0 w-24 text-foreground text-sm transition-colors"
                 />
                 <span className="text-muted-foreground text-sm">days</span>
               </div>
@@ -181,13 +181,13 @@ export default function PreferencesPage() {
 
         {/* Floating Save Button */}
         {hasChanges && (
-          <div className="fixed bottom-20 left-0 right-0 px-4 flex justify-center z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-             <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 shadow-2xl rounded-full p-2 pl-6 pr-2 flex items-center gap-4">
-                <span className="text-sm font-medium text-zinc-100">You have unsaved changes</span>
+          <div className="right-0 bottom-20 slide-in-from-bottom-4 left-0 z-50 fixed flex justify-center px-4 animate-in duration-300 fade-in">
+             <div className="flex items-center gap-4 bg-zinc-900/50 shadow-2xl backdrop-blur-sm p-2 pr-2 pl-6 border border-zinc-800 rounded-full">
+                <span className="font-medium text-zinc-100 text-sm">You have unsaved changes</span>
                 <Button 
                     onClick={handleSave} 
                     disabled={saving}
-                    className="rounded-full px-6 shadow-none"
+                    className="shadow-none px-6 rounded-full"
                 >
                     {saving ? 'Saving...' : 'Save Changes'}
                 </Button>

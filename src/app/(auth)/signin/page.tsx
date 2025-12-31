@@ -31,12 +31,12 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-300px)] mx-4">
-      <div className="w-full max-w-md p-8 bg-card rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+    <div className="flex justify-center items-center mx-4 min-h-[calc(100vh-300px)]">
+      <div className="bg-card shadow-md p-8 rounded-lg w-full max-w-md">
+        <h1 className="mb-6 font-bold text-2xl text-center">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+            <label htmlFor="email" className="block mb-1 font-medium text-foreground text-sm">
               Email
             </label>
             <input
@@ -44,12 +44,12 @@ export default function SignInPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="shadow-sm px-3 py-2 border border-border focus:border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               required
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
+            <label htmlFor="password" className="block mb-1 font-medium text-foreground text-sm">
               Password
             </label>
             <input
@@ -57,7 +57,7 @@ export default function SignInPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="shadow-sm px-3 py-2 border border-border focus:border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               required
             />
           </div>

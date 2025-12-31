@@ -23,7 +23,7 @@ export default function ProtocolList() {
       <div className="flex flex-col justify-between">
         <Link href="/train/build/protocols/new">
           <Button className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 w-4 h-4" />
             New Protocol
           </Button>
         </Link>
@@ -31,23 +31,23 @@ export default function ProtocolList() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+          <div className="border-brand-primary border-b-2 rounded-full w-8 h-8 animate-spin"></div>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="gap-4 grid sm:grid-cols-2 lg:grid-cols-3">
           {protocols.map(protocol => (
             <Link key={protocol.id} href={`/train/build/protocols/${protocol.id}/edit`} className="block">
-              <div className="p-6 rounded-lg shadow-sm border border-gray-200 hover:border-brand-primary transition-colors h-full bg-card">
+              <div className="bg-card shadow-sm p-6 border border-gray-200 hover:border-brand-primary rounded-lg h-full transition-colors">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold text-gray-300">{protocol.name || 'Untitled Protocol'}</h3>
+                  <h3 className="font-semibold text-gray-300 text-lg">{protocol.name || 'Untitled Protocol'}</h3>
                 </div>
-                <p className="text-sm text-gray-500 line-clamp-2 mb-4 min-h-[2.5em]">
+                <p className="mb-4 min-h-[2.5em] text-gray-500 text-sm line-clamp-2">
                   {protocol.description || 'No description provided.'}
                 </p>
 
-                <div className="flex items-center text-xs text-gray-400 gap-4 mb-3">
+                <div className="flex items-center gap-4 mb-3 text-gray-400 text-xs">
                   <div className="flex items-center">
-                    <Calendar className="h-3 w-3 mr-1" />
+                    <Calendar className="mr-1 w-3 h-3" />
                     {new Date(protocol.createdAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -55,13 +55,13 @@ export default function ProtocolList() {
                 {protocol.objectives && protocol.objectives.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-auto">
                     {protocol.objectives.slice(0, 2).map((obj, i) => (
-                      <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
-                        <Target className="h-3 w-3 mr-1" />
+                      <span key={i} className="inline-flex items-center bg-gray-100 px-2 py-0.5 rounded-full font-medium text-[10px] text-gray-600">
+                        <Target className="mr-1 w-3 h-3" />
                         {obj}
                       </span>
                     ))}
                     {protocol.objectives.length > 3 && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                      <span className="inline-flex items-center bg-gray-100 px-2 py-0.5 rounded-full font-medium text-[10px] text-gray-600">
                         +{protocol.objectives.length - 3}
                       </span>
                     )}
@@ -71,10 +71,10 @@ export default function ProtocolList() {
             </Link>
           ))}
           {protocols.length === 0 && (
-            <div className="shadow overflow-hidden sm:rounded-md rounded-lg bg-card">
+            <div className="bg-card shadow rounded-lg sm:rounded-md overflow-hidden">
               <ul className="divide-y divide-gray-200">
 
-                <li className="px-6 py-4 text-center text-gray-500">
+                <li className="px-6 py-4 text-gray-500 text-center">
                   No protocols found.
                 </li>
               </ul>

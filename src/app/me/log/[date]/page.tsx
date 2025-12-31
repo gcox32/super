@@ -143,7 +143,7 @@ export default function DayLogPage({ params }: { params: Promise<{ date: string 
       <div className="flex flex-col gap-6">
         
         {/* Workouts Section */}
-        <section className="bg-card border border-border rounded-lg p-4">
+        <section className="bg-card p-4 border border-border rounded-lg">
           <div className="flex items-center gap-2 mb-4">
             <Dumbbell className="w-5 h-5 text-brand-primary" />
             <h3 className="font-semibold text-lg">Workouts</h3>
@@ -155,10 +155,10 @@ export default function DayLogPage({ params }: { params: Promise<{ date: string 
                 <Link 
                   key={instance.id} 
                   href={`/log/workouts/${instance.id}`}
-                  className="block p-3 bg-muted/30 rounded border border-border hover:bg-muted/50 transition-colors"
+                  className="block bg-muted/30 hover:bg-muted/50 p-3 border border-border rounded transition-colors"
                 >
                   <p className="font-medium">{instance.workout?.name || 'Untitled Workout'}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="mt-1 text-muted-foreground text-xs">
                     {format(new Date(instance.date), 'h:mm a')}
                   </p>
                 </Link>
@@ -170,7 +170,7 @@ export default function DayLogPage({ params }: { params: Promise<{ date: string 
         </section>
 
         {/* Body Stats Section */}
-        <section className="bg-card border border-border rounded-lg p-4">
+        <section className="bg-card p-4 border border-border rounded-lg">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-5 h-5 text-blue-500" />
             <h3 className="font-semibold text-lg">Body Stats</h3>
@@ -179,8 +179,8 @@ export default function DayLogPage({ params }: { params: Promise<{ date: string 
           {data.stats.length > 0 ? (
             <div className="flex flex-col gap-3">
               {data.stats.map(stat => (
-                <div key={stat.id} className="p-3 bg-muted/30 rounded border border-border">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                <div key={stat.id} className="bg-muted/30 p-3 border border-border rounded">
+                  <div className="gap-2 grid grid-cols-2 text-sm">
                     {stat.weight && (
                       <div>
                         <span className="text-muted-foreground">Weight:</span>{' '}
@@ -204,7 +204,7 @@ export default function DayLogPage({ params }: { params: Promise<{ date: string 
         </section>
 
         {/* Nutrition Placeholder (Meals) */}
-        <section className="bg-card border border-border rounded-lg p-4">
+        <section className="bg-card p-4 border border-border rounded-lg">
           <div className="flex items-center gap-2 mb-4">
             <Utensils className="w-5 h-5 text-green-500" />
             <h3 className="font-semibold text-lg">Nutrition</h3>
@@ -220,7 +220,7 @@ export default function DayLogPage({ params }: { params: Promise<{ date: string 
         </section>
 
          {/* Hydration Placeholder (Water) */}
-         <section className="bg-card border border-border rounded-lg p-4">
+         <section className="bg-card p-4 border border-border rounded-lg">
           <div className="flex items-center gap-2 mb-4">
             <Droplets className="w-5 h-5 text-cyan-500" />
             <h3 className="font-semibold text-lg">Hydration</h3>
@@ -235,7 +235,7 @@ export default function DayLogPage({ params }: { params: Promise<{ date: string 
         </section>
 
          {/* Sleep Placeholder */}
-         <section className="bg-card border border-border rounded-lg p-4">
+         <section className="bg-card p-4 border border-border rounded-lg">
           <div className="flex items-center gap-2 mb-4">
             <Moon className="w-5 h-5 text-indigo-500" />
             <h3 className="font-semibold text-lg">Sleep</h3>

@@ -10,21 +10,21 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ profile, workoutDates = [] }: OverviewTabProps) {
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 md:px-6">
+    <div className="flex flex-col gap-6 px-4 md:px-6 py-6">
       {/* Profile Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center bg-card p-5">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-muted rounded-full overflow-hidden">
+          <div className="bg-brand-primary/20 rounded-full ring-2 ring-brand-primary/30 w-16 h-16 overflow-hidden">
             {profile?.profilePicture ? (
               <img src={profile.profilePicture} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-                <div className="flex items-center justify-center w-full h-full bg-secondary text-secondary-foreground text-2xl font-bold">
+                <div className="flex justify-center items-center w-full h-full font-bold text-brand-primary text-2xl">
                     {profile?.firstName?.[0] || profile?.email?.[0]?.toUpperCase() || '?'}
                 </div>
             )}
           </div>
           <div>
-            <h2 className="text-xl font-bold">
+            <h2 className="font-bold text-xl">
               {profile?.firstName ? `${profile.firstName} ${profile.lastName || ''}` : 'User'}
             </h2>
             <p className="text-muted-foreground text-sm">
@@ -32,20 +32,17 @@ export default function OverviewTab({ profile, workoutDates = [] }: OverviewTabP
             </p>
           </div>
         </div>
-        <Link href="/me/profile" className="p-2 bg-muted rounded-full hover:bg-muted/80 transition-colors">
+        <Link href="/me/profile" className="p-3">
           <Edit2 className="w-4 h-4" />
         </Link>
       </div>
 
       {/* Manage Goals Button */}
-      <Link 
-          href="/me/goals" 
-          className="flex justify-between items-center bg-card hover:bg-hover p-4 border border-border rounded-(--radius) w-full transition-colors"
+      <Link
+          href="/me/goals"
+          className="flex justify-between items-center bg-card p-4 w-full text-center active:scale-[0.98] transition-transform"
         >
-          <div className="flex items-center gap-3">
-            <Target className="w-5 h-5 text-muted-foreground" />
-            <span className="font-medium">Manage Goals</span>
-          </div>
+          <span className="w-full font-medium text-center">Manage Goals</span>
       </Link>
 
       {/* Calendar */}

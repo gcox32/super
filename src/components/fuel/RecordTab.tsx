@@ -344,7 +344,7 @@ export default function RecordTab() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Mode Selection */}
-        <div className="bg-card p-4 border border-border rounded-lg">
+        <div className="bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl card-gradient">
           <FormGroup>
             <FormLabel>Log as</FormLabel>
             <div className="flex gap-3">
@@ -382,7 +382,7 @@ export default function RecordTab() {
 
         {/* Meal Selection */}
         {mode === 'meal' && (
-          <div className="bg-card p-4 border border-border rounded-lg">
+          <div className="bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl card-gradient">
             <FormGroup>
               <FormLabel>Select Meal</FormLabel>
               <MealAutocomplete
@@ -395,7 +395,7 @@ export default function RecordTab() {
 
         {/* Food Logging */}
         {mode === 'foods' && (
-          <div className="bg-card p-4 border border-border rounded-lg">
+          <div className="bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl card-gradient">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-foreground text-sm">Foods</h3>
               <Button
@@ -479,7 +479,7 @@ export default function RecordTab() {
         )}
 
         {/* Date and Time */}
-        <div className="bg-card p-4 border border-border rounded-lg">
+        <div className="bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl card-gradient">
           <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
             <FormGroup className="max-w-[92%]">
               <FormLabel>Date</FormLabel>
@@ -504,7 +504,7 @@ export default function RecordTab() {
 
         {/* Meal Plan Instance (Optional) */}
         {mealPlanInstances.length > 0 && (
-          <div className="bg-card p-4 border border-border rounded-lg">
+          <div className="bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl card-gradient">
             <FormGroup>
               <FormLabel>Meal Plan Instance (Optional)</FormLabel>
               <FormSelect
@@ -526,7 +526,7 @@ export default function RecordTab() {
         )}
 
         {/* Additional Options */}
-        <div className="bg-card p-4 border border-border rounded-lg">
+        <div className="bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl card-gradient">
           <div className="space-y-4">
             <FormGroup>
               <FormLabel>Status</FormLabel>

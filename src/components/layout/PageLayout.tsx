@@ -26,8 +26,8 @@ export default function PageLayout({
       
       <div className="flex justify-between items-start my-2">
         <div className="flex-1">
-          {title && <h2 className="font-bold text-2xl">{title}</h2>}
-          {subtitle && <p className="text-muted-foreground text-sm mt-1 mb-4">{subtitle}</p>}
+          {title && <h1 className="font-bold text-3xl tracking-tight">{title}</h1>}
+          {subtitle && <p className="text-muted-foreground mt-1 mb-4">{subtitle}</p>}
         </div>
         {action && (
           <div className="ml-4">

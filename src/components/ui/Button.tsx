@@ -29,21 +29,21 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        'bg-brand-primary text-white hover:bg-brand-primary-dark active:bg-brand-primary-dark active:scale-[0.98] focus:ring-brand-primary',
+        'bg-brand-primary text-white shadow-lg shadow-brand-primary/30 hover:bg-brand-primary-dark hover:shadow-brand-primary/40 active:scale-[0.97] active:shadow-brand-primary/20 focus:ring-brand-primary',
       secondary:
-        'bg-card text-foreground border border-border hover:bg-hover active:bg-active active:scale-[0.98] focus:ring-brand-primary',
+        'bg-white/5 text-foreground border border-white/10 shadow-lg shadow-black/20 hover:bg-white/10 hover:border-white/15 active:scale-[0.97] focus:ring-brand-primary',
       danger:
-        'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 active:scale-[0.98] focus:ring-red-500',
+        'bg-red-600 text-white shadow-lg shadow-red-600/30 hover:bg-red-700 hover:shadow-red-600/40 active:scale-[0.97] active:shadow-red-600/20 focus:ring-red-500',
       ghost:
-        'bg-transparent text-foreground hover:bg-hover active:bg-active active:scale-[0.98] focus:ring-brand-primary',
+        'bg-transparent text-foreground hover:bg-white/5 active:bg-white/10 active:scale-[0.97] focus:ring-brand-primary',
       outline:
-        'border border-border text-foreground hover:bg-hover active:bg-active active:scale-[0.98] focus:ring-brand-primary',
+        'border border-white/10 text-foreground hover:bg-white/5 hover:border-white/20 active:scale-[0.97] focus:ring-brand-primary',
     };
 
     const sizeStyles = {
-      sm: 'px-3 py-1.5 text-sm min-h-[36px]',
-      md: 'px-4 py-2 text-base min-h-[44px]',
-      lg: 'px-6 py-3 text-lg min-h-[48px]',
+      sm: 'px-4 py-1.5 text-sm min-h-[36px]',
+      md: 'px-5 py-2.5 text-base min-h-[44px]',
+      lg: 'px-7 py-3 text-lg min-h-[52px]',
     };
 
     return (

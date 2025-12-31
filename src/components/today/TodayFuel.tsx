@@ -118,7 +118,7 @@ export default function TodayFuel() {
   return (
     <TodayCard isLoading={isLoading} error={loadError || undefined}>
       <TodayCardHeader
-        title="Today's Fuel"
+        title="Today's Food"
         iconVariant="primary"
       />
       <TodayCardContent>
@@ -209,7 +209,7 @@ export default function TodayFuel() {
             Manual Log
           </Button>
           <Button
-            variant="primary"
+            variant="secondary"
             fullWidth
             onClick={() => router.push('/fuel/voice-journal')}
             className="w-auto aspect-square"

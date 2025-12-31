@@ -9,7 +9,7 @@ interface HelixProps {
   speed?: number | string;
 }
 
-export default function Helix({ size = 60, color = '#3B82F6', speed = 2.5 }: HelixProps) {
+export default function Helix({ size = 60, color = 'var(--brand-primary)', speed = 2.5 }: HelixProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

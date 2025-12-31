@@ -182,7 +182,7 @@ export default function TrainPage() {
         {/* Active Program */}
         <section className="px-4 md:px-6 py-6">
           <h2 className="mb-3 font-semibold text-lg">Current Protocol</h2>
-          <div className="bg-card p-6 border border-border rounded-(--radius)">
+          <div className="bg-card card-gradient p-6 border border-white/5 rounded-(--radius) shadow-lg shadow-black/20">
             {isLoading ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
@@ -254,7 +254,7 @@ export default function TrainPage() {
               {phaseWorkouts.map((workout) => (
                 <div
                   key={workout.id}
-                  className="bg-card p-4 border border-border rounded-lg"
+                  className="bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl card-gradient"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>

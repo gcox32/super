@@ -202,12 +202,12 @@ function AdherenceTab() {
                 <div className="space-y-6">
                     {/* Calories */}
                     <div>
-                        <p className="mb-2 text-muted-foreground text-xs font-medium">Calories</p>
-                        <div className="gap-4 flex">
+                        <p className="mb-2 font-medium text-muted-foreground text-xs">Calories</p>
+                        <div className="flex gap-4">
                             {/* 7-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {sevenDayAverage.calories.toLocaleString()}
                                     </p>
                                     {calorieTarget && (
@@ -221,7 +221,7 @@ function AdherenceTab() {
                             {/* 30-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {thirtyDayAverage.calories.toLocaleString()}
                                     </p>
                                     {calorieTarget && (
@@ -242,12 +242,12 @@ function AdherenceTab() {
 
                     {/* Protein */}
                     <div>
-                        <p className="mb-2 text-muted-foreground text-xs font-medium">Protein</p>
-                        <div className="gap-4 flex">
+                        <p className="mb-2 font-medium text-muted-foreground text-xs">Protein</p>
+                        <div className="flex gap-4">
                             {/* 7-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {sevenDayAverage.protein}g
                                     </p>
                                     {targets?.protein && (
@@ -261,7 +261,7 @@ function AdherenceTab() {
                             {/* 30-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {thirtyDayAverage.protein}g
                                     </p>
                                     {targets?.protein && (
@@ -282,12 +282,12 @@ function AdherenceTab() {
 
                     {/* Carbs */}
                     <div>
-                        <p className="mb-2 text-muted-foreground text-xs font-medium">Carbs</p>
-                        <div className="gap-4 flex">
+                        <p className="mb-2 font-medium text-muted-foreground text-xs">Carbs</p>
+                        <div className="flex gap-4">
                             {/* 7-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {sevenDayAverage.carbs}g
                                     </p>
                                     {targets?.carbs && (
@@ -301,7 +301,7 @@ function AdherenceTab() {
                             {/* 30-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {thirtyDayAverage.carbs}g
                                     </p>
                                     {targets?.carbs && (
@@ -322,12 +322,12 @@ function AdherenceTab() {
 
                     {/* Fat */}
                     <div>
-                        <p className="mb-2 text-muted-foreground text-xs font-medium">Fat</p>
-                        <div className="gap-4 flex">
+                        <p className="mb-2 font-medium text-muted-foreground text-xs">Fat</p>
+                        <div className="flex gap-4">
                             {/* 7-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {sevenDayAverage.fat}g
                                     </p>
                                     {targets?.fat && (
@@ -341,7 +341,7 @@ function AdherenceTab() {
                             {/* 30-Day Average */}
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2">
-                                    <p className="font-bold text-2xl text-foreground">
+                                    <p className="font-bold text-foreground text-2xl">
                                         {thirtyDayAverage.fat}g
                                     </p>
                                     {targets?.fat && (
@@ -521,23 +521,23 @@ function TrackingTab() {
                          key={date}
                          className="bg-card p-4 border border-border rounded-lg"
                      >
-                         <div className="flex justify-between gap-2 flex-col md:flex-row items-start">
-                             <div className="w-full flex justify-between gap-2">
-                                 <h3 className="font-semibold text-foreground text-sm w-[50%]">
+                         <div className="flex md:flex-row flex-col justify-between items-start gap-2">
+                             <div className="flex justify-between gap-2 w-full">
+                                 <h3 className="w-[50%] font-semibold text-foreground text-sm">
                                      {date}
                                  </h3>
                                  <span className="w-[40%] text-right">
                                      {Math.round(dailyTotal.calories)} cal
                                  </span>
                              </div>
-                             <div className="flex text-right w-full">
-                                 <span className="text-muted-foreground w-[33%] text-sm border-r border-border pr-3 text-center">
+                             <div className="flex w-full text-right">
+                                 <span className="pr-3 border-border border-r w-[33%] text-muted-foreground text-sm text-center">
                                      {Math.round(dailyTotal.protein)}g P ({proteinPercent.toFixed(0)}%)
                                  </span>
-                                 <span className="text-muted-foreground w-[33%] text-sm border-r border-border pr-3 text-center">
+                                 <span className="pr-3 border-border border-r w-[33%] text-muted-foreground text-sm text-center">
                                      {Math.round(dailyTotal.carbs)}g C ({carbsPercent.toFixed(0)}%)
                                  </span>
-                                 <span className="text-muted-foreground w-[33%] text-sm pl-3 text-center">
+                                 <span className="pl-3 w-[33%] text-muted-foreground text-sm text-center">
                                      {Math.round(dailyTotal.fat)}g F ({fatPercent.toFixed(0)}%)
                                  </span>
                              </div>

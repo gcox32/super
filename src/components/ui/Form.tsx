@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export function FormWrapper({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("space-y-6 max-w-2xl mx-auto pb-12", className)} {...props}>
+    <div className={cn("space-y-6 mx-auto pb-12 max-w-2xl", className)} {...props}>
       {children}
     </div>
   );
@@ -11,7 +11,7 @@ export function FormWrapper({ className, children, ...props }: React.HTMLAttribu
 
 export function FormCard({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("bg-card text-card-foreground px-2 py-4 rounded-lg border border-border shadow-sm space-y-4", className)} {...props}>
+    <div className={cn("space-y-4 bg-card px-2 py-4 text-card-foreground", className)} {...props}>
       {children}
     </div>
   );
@@ -19,7 +19,7 @@ export function FormCard({ className, children, ...props }: React.HTMLAttributes
 
 export function FormTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2 className={cn("text-xl font-bold text-foreground", className)} {...props}>
+    <h2 className={cn("font-bold text-foreground text-xl", className)} {...props}>
       {children}
     </h2>
   );
@@ -35,7 +35,7 @@ export function FormGroup({ className, children, ...props }: React.HTMLAttribute
 
 export function FormLabel({ className, children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
-    <label className={cn("block text-sm font-medium text-muted-foreground", className)} {...props}>
+    <label className={cn("block font-medium text-muted-foreground text-sm", className)} {...props}>
       {children}
     </label>
   );
@@ -51,7 +51,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
       <input
         ref={ref}
         className={cn(
-          "block w-full rounded-md border border-input bg-input text-foreground px-3 py-2 shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary sm:text-sm placeholder:text-muted-foreground transition-colors",
+          "block bg-input shadow-sm px-3 py-2 border border-input focus:border-brand-primary rounded-md focus:outline-none focus:ring-1 focus:ring-brand-primary w-full text-foreground placeholder:text-muted-foreground sm:text-sm transition-colors",
           error && "border-error focus:border-error focus:ring-error",
           className
         )}
@@ -72,7 +72,7 @@ export const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaPr
       <textarea
         ref={ref}
         className={cn(
-          "block w-full rounded-md border border-input bg-input text-foreground px-3 py-2 shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary sm:text-sm placeholder:text-muted-foreground transition-colors min-h-[80px]",
+          "block bg-input shadow-sm px-3 py-2 border border-input focus:border-brand-primary rounded-md focus:outline-none focus:ring-1 focus:ring-brand-primary w-full min-h-[80px] text-foreground placeholder:text-muted-foreground sm:text-sm transition-colors",
           error && "border-error focus:border-error focus:ring-error",
           className
         )}
@@ -93,7 +93,7 @@ export const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
       <select
         ref={ref}
         className={cn(
-          "block w-full rounded-md border border-input bg-input text-foreground px-3 py-2 shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary sm:text-sm transition-colors appearance-none",
+          "block bg-input shadow-sm px-3 py-2 border border-input focus:border-brand-primary rounded-md focus:outline-none focus:ring-1 focus:ring-brand-primary w-full text-foreground sm:text-sm transition-colors appearance-none",
           // Add a custom arrow if needed, but for now relying on browser default or appearance-none + bg-image usually
           error && "border-error focus:border-error focus:ring-error",
           className
@@ -110,7 +110,7 @@ FormSelect.displayName = "FormSelect";
 export function FormError({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   if (!children) return null;
   return (
-    <p className={cn("text-sm text-error mt-1", className)} {...props}>
+    <p className={cn("mt-1 text-error text-sm", className)} {...props}>
       {children}
     </p>
   );

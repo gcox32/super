@@ -19,7 +19,7 @@ export default function TabLayout({ tabs, defaultTab, className = '' }: TabLayou
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  
+
   // Get tab from URL parameter, or fall back to defaultTab or first tab
   const getInitialTab = (): string => {
     const tabParam = searchParams.get('tab');
@@ -51,18 +51,30 @@ export default function TabLayout({ tabs, defaultTab, className = '' }: TabLayou
 
   if (tabs.length === 0) return null;
 
+  const activeIndex = tabs.findIndex(tab => tab.id === activeTab);
+
   return (
     <div className={`space-y-6 pb-6 ${className}`}>
       {/* Tabs */}
-      <div className="flex border-b border-border mb-6">
+      <div className="relative flex bg-card/50 mx-4 md:mx-6 p-1 border border-white/5 rounded-full">
+        {/* Sliding pill indicator */}
+        <div
+          className="top-1 bottom-1 absolute bg-brand-primary shadow-brand-primary/25 shadow-lg rounded-full transition-all duration-300 ease-out"
+          style={{
+            width: `calc((100% - 8px) / ${tabs.length})`,
+            left: `calc(4px + (100% - 8px) / ${tabs.length} * ${activeIndex})`,
+          }}
+        />
+
+        {/* Tab buttons */}
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
-            className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
+            className={`relative z-10 flex-1 px-4 py-2 font-medium text-sm transition-colors duration-200 rounded-full ${
               activeTab === tab.id
-                ? 'border-brand-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'text-white'
+                : 'text-muted-foreground'
             }`}
           >
             {tab.label}

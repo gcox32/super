@@ -90,7 +90,7 @@ export default function HistoryTab() {
 
   if (error) {
     return (
-      <div className="bg-card p-6 border border-border rounded-lg">
+      <div className="bg-card shadow-black/20 shadow-lg p-6 border border-white/5 rounded-xl card-gradient">
         <p className="text-muted-foreground text-sm">{error}</p>
       </div>
     );
@@ -199,7 +199,7 @@ function MealInstanceCard({ instance, mealName }: { instance: MealInstance; meal
   return (
     <Link
       href={`/fuel/meals/instances/${instance.id}/edit`}
-      className="block bg-card shadow-sm p-3 border border-border hover:border-brand-primary/50 rounded-lg transition-colors"
+      className="block bg-card shadow-black/20 shadow-lg p-4 border border-white/5 rounded-xl active:scale-[0.98] transition-all card-gradient"
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">

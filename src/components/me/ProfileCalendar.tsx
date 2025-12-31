@@ -42,7 +42,7 @@ export default function ProfileCalendar({ workoutDates = [] }: ProfileCalendarPr
     
     // Empty cells for days before start of month
     for (let i = 0; i < startOffset; i++) {
-      days.push(<div key={`empty-${i}`} className="h-10 w-10" />);
+      days.push(<div key={`empty-${i}`} className="w-10 h-10" />);
     }
 
     // Days of the month
@@ -62,7 +62,7 @@ export default function ProfileCalendar({ workoutDates = [] }: ProfileCalendarPr
         <Link 
           key={d} 
           href={`/me/log/${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`}
-          className="flex justify-center items-center h-10 w-10 hover:bg-muted/50 rounded-full transition-colors"
+          className="flex justify-center items-center hover:bg-muted/50 rounded-full w-10 h-10 transition-colors"
         >
           <div 
             className={`
@@ -83,14 +83,14 @@ export default function ProfileCalendar({ workoutDates = [] }: ProfileCalendarPr
   };
 
   return (
-    <div className="bg-card p-4 border border-border rounded-(--radius) w-full">
+    <div className="bg-card p-5 w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <button onClick={prevMonth} className="p-1 text-muted-foreground hover:text-foreground">
+        <button onClick={prevMonth} className="p-2 text-muted-foreground active:scale-90 transition-transform">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <span className="font-semibold">{monthNames[month]}</span>
-        <button onClick={nextMonth} className="p-1 text-muted-foreground hover:text-foreground">
+        <span className="font-semibold text-lg">{monthNames[month]}</span>
+        <button onClick={nextMonth} className="p-2 text-muted-foreground active:scale-90 transition-transform">
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
@@ -98,14 +98,14 @@ export default function ProfileCalendar({ workoutDates = [] }: ProfileCalendarPr
       {/* Days of Week */}
       <div className="grid grid-cols-7 mb-2 text-center">
         {daysOfWeek.map((day) => (
-          <div key={day} className="text-muted-foreground text-xs font-medium">
+          <div key={day} className="font-medium text-muted-foreground text-xs">
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 row-auto text-center">
+      <div className="grid grid-cols-7 text-center row-auto">
         {renderDays()}
       </div>
     </div>

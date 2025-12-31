@@ -90,7 +90,7 @@ export default function TargetsTab() {
 
   if (error) {
     return (
-      <div className="bg-card p-6 border border-border rounded-(--radius)">
+      <div className="bg-card p-6">
         <p className="text-muted-foreground text-sm">{error}</p>
       </div>
     );
@@ -98,7 +98,7 @@ export default function TargetsTab() {
 
   if (!recommendations || !recommendations.calorieTarget || !recommendations.macros) {
     return (
-      <div className="bg-card p-6 border border-border rounded-(--radius)">
+      <div className="bg-card p-6">
         <p className="text-muted-foreground text-sm">
           Unable to calculate recommendations. Please ensure you have completed your profile with height, weight, gender, and birth date.
         </p>
@@ -163,54 +163,29 @@ export default function TargetsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Calorie Targets */}
-      <div className="bg-card p-6 border border-border rounded-(--radius)">
-        <h3 className="mb-4 font-semibold text-lg">Daily Calorie Targets</h3>
-        <div className="gap-4 grid grid-cols-1 md:grid-cols-3">
-          <div>
-            <p className="mb-1 text-muted-foreground text-sm">BMR</p>
-            <p className="font-bold text-2xl">{bmr?.toLocaleString() || '—'}</p>
-            <p className="mt-1 text-muted-foreground text-xs">Basal Metabolic Rate</p>
-          </div>
-          <div>
-            <p className="mb-1 text-muted-foreground text-sm">TDEE</p>
-            <p className="font-bold text-2xl">{tdee?.toLocaleString() || '—'}</p>
-            <p className="mt-1 text-muted-foreground text-xs">Total Daily Energy Expenditure</p>
-          </div>
-          <div>
-            <p className="mb-1 text-muted-foreground text-sm">Target</p>
-            <p className="font-bold text-brand-primary text-2xl">
-              {calorieTarget?.toLocaleString() || '—'}
-            </p>
-            <p className="mt-1 text-muted-foreground text-xs">Daily Calorie Goal</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Macro Targets */}
-      <div className="bg-card p-6 border border-border rounded-(--radius)">
-        <h3 className="mb-4 font-semibold text-lg">Macro Targets</h3>
-        
-        {/* Pie Chart */}
-        <div className="mb-6">
-          <ResponsiveContainer width="100%" height={300}>
+      {/* Hero: Daily Calorie Target with Donut Chart */}
+      <div className="bg-card p-6">
+        {/* Donut chart with calorie target in center */}
+        <div className="relative">
+          <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
                 data={pieData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={CustomLabel}
-                outerRadius={100}
+                innerRadius={80}
+                outerRadius={110}
                 fill="#8884d8"
                 dataKey="value"
+                strokeWidth={0}
               >
                 {pieData.map((entry, index) => {
                   const colorKey = entry.name.toLowerCase() as keyof typeof COLORS;
                   return (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[colorKey] || '#8884d8'} 
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[colorKey] || '#8884d8'}
                     />
                   );
                 })}
@@ -218,42 +193,56 @@ export default function TargetsTab() {
               <Tooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
+
+          {/* Center content - Calorie Target */}
+          <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
+            <p className="font-medium text-muted-foreground text-sm">Daily Goal</p>
+            <p className="font-bold text-5xl tracking-tight">{calorieTarget?.toLocaleString() || '—'}</p>
+            <p className="text-muted-foreground text-sm">calories</p>
+          </div>
         </div>
 
-        {/* Macro Breakdown */}
-        <div className="gap-4 grid grid-cols-1 md:grid-cols-3">
-          <div className="p-4 border border-border rounded-(--radius)">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="rounded-full w-3 h-3" style={{ backgroundColor: COLORS.protein }} />
-              <p className="font-medium text-sm">Protein</p>
-            </div>
-            <p className="font-bold text-2xl">{macros.protein?.toLocaleString() || '—'}g</p>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {proteinCalories} calories ({((proteinCalories / calorieTarget) * 100).toFixed(1)}%)
-            </p>
+        {/* Supporting stats: BMR & TDEE */}
+        <div className="flex justify-center gap-8 mt-4 pt-4 border-white/5 border-t">
+          <div className="text-center">
+            <p className="font-semibold text-2xl">{bmr?.toLocaleString() || '—'}</p>
+            <p className="text-muted-foreground text-xs">BMR</p>
           </div>
+          <div className="bg-white/10 w-px" />
+          <div className="text-center">
+            <p className="font-semibold text-2xl">{tdee?.toLocaleString() || '—'}</p>
+            <p className="text-muted-foreground text-xs">TDEE</p>
+          </div>
+        </div>
+      </div>
 
-          <div className="p-4 border border-border rounded-(--radius)">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="rounded-full w-3 h-3" style={{ backgroundColor: COLORS.carbs }} />
-              <p className="font-medium text-sm">Carbs</p>
-            </div>
-            <p className="font-bold text-2xl">{macros.carbs?.toLocaleString() || '—'}g</p>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {carbsCalories} calories ({((carbsCalories / calorieTarget) * 100).toFixed(1)}%)
-            </p>
+      {/* Macro Breakdown Cards */}
+      <div className="gap-3 grid grid-cols-3">
+        <div className="bg-card p-4 !border-blue-500/20 text-center">
+          <div className="inline-flex justify-center items-center bg-blue-500/15 mb-2 rounded-full w-10 h-10">
+            <div className="rounded-full w-4 h-4" style={{ backgroundColor: COLORS.protein }} />
           </div>
+          <p className="font-bold text-2xl">{macros.protein || '—'}<span className="font-normal text-muted-foreground text-base">g</span></p>
+          <p className="mt-1 text-muted-foreground text-xs">Protein</p>
+          <p className="mt-0.5 text-blue-400 text-xs">{((proteinCalories / calorieTarget) * 100).toFixed(0)}%</p>
+        </div>
 
-          <div className="p-4 border border-border rounded-(--radius)">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="rounded-full w-3 h-3" style={{ backgroundColor: COLORS.fat }} />
-              <p className="font-medium text-sm">Fat</p>
-            </div>
-            <p className="font-bold text-2xl">{macros.fat?.toLocaleString() || '—'}g</p>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {fatCalories} calories ({((fatCalories / calorieTarget) * 100).toFixed(1)}%)
-            </p>
+        <div className="bg-card p-4 !border-emerald-500/20 text-center">
+          <div className="inline-flex justify-center items-center bg-emerald-500/15 mb-2 rounded-full w-10 h-10">
+            <div className="rounded-full w-4 h-4" style={{ backgroundColor: COLORS.carbs }} />
           </div>
+          <p className="font-bold text-2xl">{macros.carbs || '—'}<span className="font-normal text-muted-foreground text-base">g</span></p>
+          <p className="mt-1 text-muted-foreground text-xs">Carbs</p>
+          <p className="mt-0.5 text-emerald-400 text-xs">{((carbsCalories / calorieTarget) * 100).toFixed(0)}%</p>
+        </div>
+
+        <div className="bg-card p-4 !border-amber-500/20 text-center">
+          <div className="inline-flex justify-center items-center bg-amber-500/15 mb-2 rounded-full w-10 h-10">
+            <div className="rounded-full w-4 h-4" style={{ backgroundColor: COLORS.fat }} />
+          </div>
+          <p className="font-bold text-2xl">{macros.fat || '—'}<span className="font-normal text-muted-foreground text-base">g</span></p>
+          <p className="mt-1 text-muted-foreground text-xs">Fat</p>
+          <p className="mt-0.5 text-amber-400 text-xs">{((fatCalories / calorieTarget) * 100).toFixed(0)}%</p>
         </div>
       </div>
     </div>

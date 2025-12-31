@@ -175,7 +175,7 @@ export function FoodAutocomplete({
           {onCreate && !hasExactMatch && (
             <button
               type="button"
-              className="flex items-center gap-2 hover:bg-brand-primary/10 px-3 py-2 border-t border-border w-full font-medium text-brand-primary text-sm text-left"
+              className="flex items-center gap-2 hover:bg-brand-primary/10 px-3 py-2 border-border border-t w-full font-medium text-brand-primary text-sm text-left"
               onClick={() => {
                 setIsOpen(false);
                 setOptions([]); 
