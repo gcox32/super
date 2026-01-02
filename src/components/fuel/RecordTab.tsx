@@ -238,7 +238,7 @@ export default function RecordTab() {
         }
       }
 
-      // Create date and timestamp in local timezone
+      // Parse date and timestamp in local timezone
       // Parse date string (YYYY-MM-DD) and create Date in local timezone at midnight
       const [year, month, day] = date.split('-').map(Number);
       const dateObj = new Date(year, month - 1, day, 0, 0, 0, 0);
@@ -251,13 +251,14 @@ export default function RecordTab() {
       }
 
       // Create meal instance with calories and macros
-      // Both date and timestamp are Date objects in local timezone, which will be
-      // properly converted to timestamptz by the database
-      const instanceData: Omit<MealInstance, 'id' | 'userId'> = {
+      // Convert dates to ISO strings to avoid timezone issues when JSON.stringify converts Date objects
+      // This matches the approach used in VoiceJournalConfirmation
+      // Note: API accepts date/timestamp as strings (ISO format) or Date objects
+      const instanceData = {
         mealPlanInstanceId: selectedMealPlanInstanceId || undefined,
         mealId,
-        date: dateObj,
-        timestamp,
+        date: dateObj.toISOString(),
+        timestamp: timestamp?.toISOString() || null,
         complete,
         calories: instanceCalories,
         macros: instanceMacros,

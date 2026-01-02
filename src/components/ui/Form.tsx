@@ -11,7 +11,7 @@ export function FormWrapper({ className, children, ...props }: React.HTMLAttribu
 
 export function FormCard({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("space-y-4 bg-card px-2 py-4 text-card-foreground", className)} {...props}>
+    <div className={cn("space-y-4 bg-card px-4 py-4 text-card-foreground", className)} {...props}>
       {children}
     </div>
   );
@@ -62,7 +62,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
           // Shadow and inner glow
           "shadow-sm ring-1 ring-inset ring-white/5",
           // Transitions
-          "transition-all duration-200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+          "transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
           // Focus states
           "focus:outline-none focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/20",
           "focus:bg-white/8 focus:shadow-md focus:shadow-brand-primary/5",
@@ -102,7 +102,7 @@ export const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaPr
           // Resize
           "resize-none",
           // Transitions
-          "transition-all duration-200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+          "transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
           // Focus states
           "focus:outline-none focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/20",
           "focus:bg-white/8 focus:shadow-md focus:shadow-brand-primary/5",
@@ -141,7 +141,7 @@ export const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
             // Shadow and inner glow
             "shadow-sm ring-1 ring-inset ring-white/5",
             // Transitions
-            "transition-all duration-200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+            "transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
             // Focus states
             "focus:outline-none focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/20",
             "focus:bg-white/8 focus:shadow-md focus:shadow-brand-primary/5",
@@ -158,8 +158,8 @@ export const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
           {children}
         </select>
         {/* Custom dropdown arrow */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-          <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="right-0 absolute inset-y-0 flex items-center pr-3 pointer-events-none">
+          <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>

@@ -35,7 +35,7 @@ export default function MealInstanceForm({ initialData }: MealInstanceFormProps)
     setError(null);
 
     try {
-      // Create date and timestamp in local timezone
+      // Parse date and timestamp in local timezone
       // Parse date string (YYYY-MM-DD) and create Date in local timezone at midnight
       const [year, month, day] = date.split('-').map(Number);
       const dateObj = new Date(year, month - 1, day, 0, 0, 0, 0);
@@ -47,9 +47,11 @@ export default function MealInstanceForm({ initialData }: MealInstanceFormProps)
         timestamp = new Date(year, month - 1, day, hours, minutes, 0, 0);
       }
 
+      // Convert dates to ISO strings to avoid timezone issues when JSON.stringify converts Date objects
+      // This matches the approach used in VoiceJournalConfirmation and RecordTab
       const updateData = {
-        date: dateObj,
-        timestamp,
+        date: dateObj.toISOString(),
+        timestamp: timestamp?.toISOString() || null,
         complete,
         notes: notes || undefined,
       };

@@ -56,8 +56,8 @@ export function CreateEditForm({
         <FormWrapper>
           {children}
 
-          <FormActions className="flex items-center gap-4 flex-col">
-          <Button type="submit" disabled={loading} className="min-w-[140px] w-full">
+          <FormActions className="flex flex-col items-center gap-4">
+          <Button type="submit" disabled={loading} className="w-full min-w-[140px]">
               {loading 
                 ? 'Saving...' 
                 : isEditing 
