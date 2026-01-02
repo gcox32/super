@@ -51,8 +51,25 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
       <input
         ref={ref}
         className={cn(
-          "block bg-input shadow-sm px-3 py-2 border border-input focus:border-brand-primary rounded-md focus:outline-none focus:ring-1 focus:ring-brand-primary w-full text-foreground placeholder:text-muted-foreground sm:text-sm transition-colors",
-          error && "border-error focus:border-error focus:ring-error",
+          // Base layout
+          "block w-full px-4 py-3 sm:text-sm",
+          // Background with glass effect
+          "bg-white/5 backdrop-blur-sm",
+          // Border
+          "border border-white/10 rounded-xl",
+          // Text
+          "text-foreground placeholder:text-muted-foreground/60",
+          // Shadow and inner glow
+          "shadow-sm ring-1 ring-inset ring-white/5",
+          // Transitions
+          "transition-all duration-200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+          // Focus states
+          "focus:outline-none focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/20",
+          "focus:bg-white/8 focus:shadow-md focus:shadow-brand-primary/5",
+          // Hover
+          "hover:border-white/20 hover:bg-white/8",
+          // Error state
+          error && "border-error/50 focus:border-error focus:ring-error/20",
           className
         )}
         {...props}
@@ -72,8 +89,27 @@ export const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaPr
       <textarea
         ref={ref}
         className={cn(
-          "block bg-input shadow-sm px-3 py-2 border border-input focus:border-brand-primary rounded-md focus:outline-none focus:ring-1 focus:ring-brand-primary w-full min-h-[80px] text-foreground placeholder:text-muted-foreground sm:text-sm transition-colors",
-          error && "border-error focus:border-error focus:ring-error",
+          // Base layout
+          "block w-full px-4 py-3 min-h-[100px] sm:text-sm",
+          // Background with glass effect
+          "bg-white/5 backdrop-blur-sm",
+          // Border
+          "border border-white/10 rounded-xl",
+          // Text
+          "text-foreground placeholder:text-muted-foreground/60",
+          // Shadow and inner glow
+          "shadow-sm ring-1 ring-inset ring-white/5",
+          // Resize
+          "resize-none",
+          // Transitions
+          "transition-all duration-200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+          // Focus states
+          "focus:outline-none focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/20",
+          "focus:bg-white/8 focus:shadow-md focus:shadow-brand-primary/5",
+          // Hover
+          "hover:border-white/20 hover:bg-white/8",
+          // Error state
+          error && "border-error/50 focus:border-error focus:ring-error/20",
           className
         )}
         {...props}
@@ -90,18 +126,44 @@ export interface FormSelectProps extends React.SelectHTMLAttributes<HTMLSelectEl
 export const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
   ({ className, error, children, ...props }, ref) => {
     return (
-      <select
-        ref={ref}
-        className={cn(
-          "block bg-input shadow-sm px-3 py-2 border border-input focus:border-brand-primary rounded-md focus:outline-none focus:ring-1 focus:ring-brand-primary w-full text-foreground sm:text-sm transition-colors appearance-none",
-          // Add a custom arrow if needed, but for now relying on browser default or appearance-none + bg-image usually
-          error && "border-error focus:border-error focus:ring-error",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </select>
+      <div className="relative">
+        <select
+          ref={ref}
+          className={cn(
+            // Base layout
+            "block w-full px-4 py-3 pr-10 sm:text-sm appearance-none",
+            // Background with glass effect
+            "bg-white/5 backdrop-blur-sm",
+            // Border
+            "border border-white/10 rounded-xl",
+            // Text
+            "text-foreground",
+            // Shadow and inner glow
+            "shadow-sm ring-1 ring-inset ring-white/5",
+            // Transitions
+            "transition-all duration-200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+            // Focus states
+            "focus:outline-none focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/20",
+            "focus:bg-white/8 focus:shadow-md focus:shadow-brand-primary/5",
+            // Hover
+            "hover:border-white/20 hover:bg-white/8",
+            // Cursor
+            "cursor-pointer",
+            // Error state
+            error && "border-error/50 focus:border-error focus:ring-error/20",
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </select>
+        {/* Custom dropdown arrow */}
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+          <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
     );
   }
 );

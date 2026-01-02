@@ -50,7 +50,7 @@ export default function FloatingMenu() {
       {/* Overlay */}
       {isOpen && (
         <div
-          className="z-30 fixed inset-0 bg-black/50 backdrop-blur-sm animate-in duration-200 fade-in"
+          className="z-30 fixed inset-0 bg-black/60 backdrop-blur-md animate-fade-in"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -60,34 +60,65 @@ export default function FloatingMenu() {
         {/* FAB Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`cursor-pointer hover:opacity-100 w-10 h-10 bg-brand-primary 
-            text-white rounded-full shadow-lg hover:bg-brand-primary-dark transition-all 
-            duration-150 flex items-center justify-center
-            ${isOpen ? 'opacity-100' : 'opacity-50'}`}
+          className={`
+            cursor-pointer w-11 h-11 rounded-full
+            flex items-center justify-center
+            transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]
+            ${isOpen
+              ? 'bg-white/10 text-white rotate-90 scale-110'
+              : 'bg-black/40 backdrop-blur-xl text-muted-foreground hover:text-foreground hover:bg-white/10'
+            }
+            border border-white/10 hover:border-white/20
+            shadow-lg shadow-black/20
+            ring-1 ring-inset ring-white/5
+            active:scale-95
+          `}
           aria-label={isOpen ? 'Close menu' : 'Open menu'}
         >
-          {isOpen ? (
-            <X className="w-5 h-5" />
-          ) : (
-            <Settings className="w-5 h-5" />
-          )}
+          <div className="relative w-5 h-5">
+            <Settings
+              className={`
+                w-5 h-5 absolute inset-0
+                transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]
+                ${isOpen ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'}
+              `}
+            />
+            <X
+              className={`
+                w-5 h-5 absolute inset-0
+                transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]
+                ${isOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'}
+              `}
+            />
+          </div>
         </button>
 
         {/* Menu Items */}
         {isOpen && (
-          <div className="space-y-2 my-2">
+          <div className="space-y-2 mt-3">
             {menuItems.map((item, index) => (
               <div
                 key={item.label}
-                className="flex items-center gap-3 opacity-0 w-full animate-[fadeInUp_0.2s_ease-out_forwards]"
-                style={{ animationDelay: `${index * 50}ms` }}
+                className="opacity-0 animate-[fadeInUp_0.3s_cubic-bezier(0.16,1,0.3,1)_forwards]"
+                style={{ animationDelay: `${index * 60}ms` }}
               >
                 <button
                   onClick={item.onClick}
-                  className={`cursor-pointer flex w-full items-center gap-3 bg-card border border-border rounded-full px-4 py-3 shadow-lg hover:bg-hover transition-colors ${item.variant === 'danger'
-                      ? 'text-red-300 hover:text-red-500'
-                      : ''
-                    }`}
+                  className={`
+                    cursor-pointer flex w-full items-center gap-3
+                    px-4 py-3 rounded-2xl
+                    bg-black/40 backdrop-blur-xl
+                    border border-white/10 hover:border-white/20
+                    shadow-lg shadow-black/20
+                    ring-1 ring-inset ring-white/5
+                    transition-all duration-200 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]
+                    hover:bg-white/10 hover:-translate-x-1
+                    active:scale-95
+                    ${item.variant === 'danger'
+                      ? 'text-red-400 hover:text-red-300 hover:border-red-500/30'
+                      : 'text-foreground'
+                    }
+                  `}
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>

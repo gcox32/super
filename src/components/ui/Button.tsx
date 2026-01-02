@@ -24,20 +24,100 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles =
-      'inline-flex items-center justify-center gap-2 font-semibold rounded-full transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = cn(
+      // Layout & typography
+      'inline-flex items-center justify-center gap-2',
+      'font-semibold tracking-tight',
+      'rounded-full',
+      // Transitions with custom easing
+      'transition-all duration-200',
+      '[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+      // Cursor & focus
+      'cursor-pointer',
+      'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+      // Disabled state
+      'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+      // Transform origin for scale effects
+      'origin-center'
+    );
 
     const variantStyles = {
-      primary:
-        'bg-brand-primary text-white shadow-lg shadow-brand-primary/30 hover:bg-brand-primary-dark hover:shadow-brand-primary/40 active:scale-[0.97] active:shadow-brand-primary/20 focus:ring-brand-primary',
-      secondary:
-        'bg-white/5 text-foreground border border-white/10 shadow-lg shadow-black/20 hover:bg-white/10 hover:border-white/15 active:scale-[0.97] focus:ring-brand-primary',
-      danger:
-        'bg-red-600 text-white shadow-lg shadow-red-600/30 hover:bg-red-700 hover:shadow-red-600/40 active:scale-[0.97] active:shadow-red-600/20 focus:ring-red-500',
-      ghost:
-        'bg-transparent text-foreground hover:bg-white/5 active:bg-white/10 active:scale-[0.97] focus:ring-brand-primary',
-      outline:
-        'border border-white/10 text-foreground hover:bg-white/5 hover:border-white/20 active:scale-[0.97] focus:ring-brand-primary',
+      primary: cn(
+        // Base appearance
+        'bg-brand-primary text-white',
+        // Gradient overlay for depth
+        'bg-gradient-to-b from-brand-primary-light/20 to-transparent',
+        // Shadow with glow
+        'shadow-lg shadow-brand-primary/25',
+        // Inner highlight
+        'ring-1 ring-inset ring-white/10',
+        // Hover state
+        'hover:bg-brand-primary-dark hover:shadow-xl hover:shadow-brand-primary/35',
+        'hover:-translate-y-0.5',
+        // Active/press state
+        'active:scale-[0.97] active:translate-y-0 active:shadow-md active:shadow-brand-primary/20',
+        // Focus ring
+        'focus-visible:ring-brand-primary-light'
+      ),
+      secondary: cn(
+        // Base appearance with glass effect
+        'bg-white/5 text-foreground',
+        'backdrop-blur-sm',
+        // Border with subtle gradient
+        'border border-white/10',
+        // Shadow
+        'shadow-lg shadow-black/20',
+        // Inner highlight
+        'ring-1 ring-inset ring-white/5',
+        // Hover state
+        'hover:bg-white/10 hover:border-white/20',
+        'hover:-translate-y-0.5 hover:shadow-xl',
+        // Active state
+        'active:scale-[0.97] active:translate-y-0',
+        // Focus ring
+        'focus-visible:ring-brand-primary'
+      ),
+      danger: cn(
+        // Base appearance
+        'bg-red-600 text-white',
+        // Gradient overlay
+        'bg-gradient-to-b from-red-500/20 to-transparent',
+        // Shadow with glow
+        'shadow-lg shadow-red-600/25',
+        // Inner highlight
+        'ring-1 ring-inset ring-white/10',
+        // Hover state
+        'hover:bg-red-700 hover:shadow-xl hover:shadow-red-600/35',
+        'hover:-translate-y-0.5',
+        // Active state
+        'active:scale-[0.97] active:translate-y-0 active:shadow-md',
+        // Focus ring
+        'focus-visible:ring-red-400'
+      ),
+      ghost: cn(
+        // Base appearance
+        'bg-transparent text-foreground',
+        // Hover state
+        'hover:bg-white/5',
+        // Active state
+        'active:bg-white/10 active:scale-[0.97]',
+        // Focus ring
+        'focus-visible:ring-brand-primary'
+      ),
+      outline: cn(
+        // Base appearance
+        'bg-transparent text-foreground',
+        'border border-white/15',
+        // Subtle inner glow
+        'ring-1 ring-inset ring-white/5',
+        // Hover state
+        'hover:bg-white/5 hover:border-white/25',
+        'hover:-translate-y-0.5',
+        // Active state
+        'active:scale-[0.97] active:translate-y-0',
+        // Focus ring
+        'focus-visible:ring-brand-primary'
+      ),
     };
 
     const sizeStyles = {
@@ -54,7 +134,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           variantStyles[variant],
           sizeStyles[size],
           fullWidth && 'w-full',
-          disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
           className
         )}
         disabled={disabled}
