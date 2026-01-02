@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  Dumbbell, 
-  Utensils, 
-  Moon, 
-  Droplets, 
-  Pill, 
-  Scale, 
-  Camera, 
+import {
+  Dumbbell,
+  Utensils,
+  Moon,
+  Droplets,
+  Pill,
+  Scale,
+  Camera,
   ChevronRight,
   Activity
 } from 'lucide-react';
@@ -117,7 +117,7 @@ function ActivityCard({ item }: { item: ActivityItem }) {
         const duration = item.details.duration?.total ? `${Math.round(item.details.duration.total / 60)}m` : null;
         const vol = item.details.volume?.total ? `${item.details.volume.total}kg` : null;
         return [duration, vol].filter(Boolean).join(' • ');
-      
+
       case 'meal':
         const mealDetails: string[] = [];
         if (item.details.calories) {
@@ -151,15 +151,15 @@ function ActivityCard({ item }: { item: ActivityItem }) {
         return item.details.amount?.value ? `${item.details.amount.value} ${item.details.amount.unit}` : 'Logged';
 
       case 'supplement':
-         return item.details.dosage?.amount ? `${item.details.dosage.amount} ${item.details.dosage.unit}` : 'Taken';
+        return item.details.dosage?.amount ? `${item.details.dosage.amount} ${item.details.dosage.unit}` : 'Taken';
 
       case 'stats':
-         const weight = item.details.weight?.value ? `${item.details.weight.value} ${item.details.weight.unit}` : null;
-         const bodyFat = item.details.bodyFatPercentage?.value ? `${item.details.bodyFatPercentage.value}% BF` : null;
-         return [weight, bodyFat].filter(Boolean).join(' • ');
+        const weight = item.details.weight?.value ? `${item.details.weight.value} ${item.details.weight.unit}` : null;
+        const bodyFat = item.details.bodyFatPercentage?.value ? `${item.details.bodyFatPercentage.value}% BF` : null;
+        return [weight, bodyFat].filter(Boolean).join(' • ');
 
       case 'image':
-         return 'Photo added';
+        return 'Photo added';
 
       default:
         return null;
@@ -167,9 +167,9 @@ function ActivityCard({ item }: { item: ActivityItem }) {
   };
 
   const getLink = () => {
-    switch(item.type) {
+    switch (item.type) {
       case 'workout': return `/log/workouts/${item.id}`;
-      case 'sleep': return `/log/sleep`; 
+      case 'sleep': return `/log/sleep`;
       case 'meal': return `/fuel/meals/instances/${item.id}/edit`;
       default: return null;
     }
@@ -178,26 +178,41 @@ function ActivityCard({ item }: { item: ActivityItem }) {
   const link = getLink();
 
   return (
-    <div className="flex justify-between items-center bg-card shadow-sm p-4 border border-border rounded-lg">
-      <div className="flex items-center gap-4">
-        <div className={`p-2 rounded-full bg-secondary/50 opacity-30`}>
-          {getIcon()}
-        </div>
-        <div>
-          <h4 className="max-w-[200px] font-medium text-sm truncate">{item.title}</h4>
-          <p className="flex items-center gap-2 text-muted-foreground text-xs">
-            {getDetails() && (
-                <span>{getDetails()}</span>
-            )}
-          </p>
-        </div>
-      </div>
-      
-      {link && (
-        <Link href={link} className="text-muted-foreground hover:text-foreground">
+    <>
+      {link ? (
+        <Link href={link} className="flex justify-between items-center bg-card shadow-sm p-4 border border-border rounded-lg">
+          <div className="flex items-center gap-4">
+            <div className={`p-2 rounded-full bg-secondary/50 opacity-30`}>
+              {getIcon()}
+            </div>
+            <div>
+              <h4 className="max-w-[200px] font-medium text-sm truncate">{item.title}</h4>
+              <p className="flex items-center gap-2 text-muted-foreground text-xs">
+                {getDetails() && (
+                  <span>{getDetails()}</span>
+                )}
+              </p>
+            </div>
+          </div>
           <ChevronRight className="w-5 h-5" />
         </Link>
+      ) : (
+        <div className="flex justify-between items-center bg-card shadow-sm p-4 border border-border rounded-lg">
+          <div className="flex items-center gap-4">
+            <div className={`p-2 rounded-full bg-secondary/50 opacity-30`}>
+              {getIcon()}
+            </div>
+            <div>
+              <h4 className="max-w-[200px] font-medium text-sm truncate">{item.title}</h4>
+              <p className="flex items-center gap-2 text-muted-foreground text-xs">
+                {getDetails() && (
+                  <span>{getDetails()}</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }
