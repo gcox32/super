@@ -6,9 +6,10 @@ interface RestTimerDisplayProps {
     restSecondsRemaining: number;
     currentStep: SessionStep;
     endRestAndAdvance: () => void;
+    nextStep?: SessionStep | null;
 }
 
-export function RestTimerDisplay({ restSecondsRemaining, currentStep, endRestAndAdvance }: RestTimerDisplayProps) {
+export function RestTimerDisplay({ restSecondsRemaining, currentStep, endRestAndAdvance, nextStep }: RestTimerDisplayProps) {
 
     return (
         <div className="flex flex-col justify-center items-center gap-4 mt-6 mb-10">
@@ -21,6 +22,11 @@ export function RestTimerDisplay({ restSecondsRemaining, currentStep, endRestAnd
         {currentStep.exercise.restTime && (
           <div className="text-zinc-500 text-xs">
             Planned rest: {currentStep.exercise.restTime}s
+          </div>
+        )}
+        {nextStep && (
+          <div className="text-zinc-500 text-xs mt-1">
+            Next: {nextStep.exercise.exercise.name}
           </div>
         )}
         <div className="flex gap-3 mt-2">

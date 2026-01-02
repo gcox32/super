@@ -5,6 +5,7 @@ interface SessionProgressBarProps {
   steps: SessionStep[];
   currentStepIndex: number;
   currentBlockId: string;
+  isResting?: boolean;
 }
 
 export function SessionProgressBar({
@@ -12,6 +13,7 @@ export function SessionProgressBar({
   steps,
   currentStepIndex,
   currentBlockId,
+  isResting = false,
 }: SessionProgressBarProps) {
   return (
     <div className="flex gap-1 h-1 w-full mt-4 mb-6">
@@ -20,9 +22,11 @@ export function SessionProgressBar({
         const blockSteps = steps.filter((s) => s.block.id === block.id);
         const totalBlockSteps = blockSteps.length;
 
-        // Count how many of these steps are completed (index < currentStepIndex)
+        // Count how many of these steps are completed
+        // If we're resting, the current step is considered completed
+        const effectiveStepIndex = isResting ? currentStepIndex + 1 : currentStepIndex;
         const completedInBlock = blockSteps.filter(
-          (s) => steps.indexOf(s) < currentStepIndex
+          (s) => steps.indexOf(s) < effectiveStepIndex
         ).length;
 
         // If we are past this block entirely

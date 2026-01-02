@@ -233,6 +233,7 @@ export default function ActiveSessionPage({
           steps={steps}
           currentStepIndex={currentStepIndex}
           currentBlockId={currentStep.block.id}
+          isResting={isResting}
         />
 
         <SessionExerciseDisplay 
@@ -286,7 +287,8 @@ export default function ActiveSessionPage({
           <RestTimerDisplay 
             restSecondsRemaining={restSecondsRemaining} 
             currentStep={currentStep} 
-            endRestAndAdvance={endRestAndAdvance} 
+            endRestAndAdvance={endRestAndAdvance}
+            nextStep={nextStep}
           />
         )}
 

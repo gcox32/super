@@ -18,7 +18,7 @@ export function WorkoutCompleteView({ onContinue, workoutInstance, exercisesMap,
     <div className="flex flex-col justify-center items-center p-6 w-full h-dvh text-white">
       <div className="flex flex-col items-center gap-6 mb-12 animate-in duration-500 fade-in zoom-in">
         <CheckCircle className="w-24 h-24 text-brand-primary" />
-        <h1 className="font-bold text-3xl text-center">Workout Complete!</h1>
+        <h1 className="font-bold text-3xl text-center">Workout Complete</h1>
         <p className="max-w-xs text-zinc-400 text-center">
           Great job! Your workout has been saved to your history.
         </p>
