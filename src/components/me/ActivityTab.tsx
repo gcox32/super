@@ -32,7 +32,6 @@ export default function ActivityTab() {
         const res = await fetch('/api/me/activity?dateFrom=' + new Date(Date.now() - DEFAULT_DAYS_AGO * 24 * 60 * 60 * 1000).toISOString());
         if (res.ok) {
           const data = await res.json();
-          console.log(data.activities);
           setActivities(data.activities);
         }
       } catch (error) {

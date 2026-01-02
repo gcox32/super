@@ -46,7 +46,6 @@ export default function OverviewTab() {
         fetchJson<{ stats: UserStats[] }>('/api/me/stats?latest=true'),
         fetchJson<{ profile: UserProfile }>('/api/me/profile'),
       ]);
-      console.log('statsRes', statsRes);
       // Convert date strings to Date objects
       const statsWithDates = (statsRes.stats || []).map(stat => ({
         ...stat,

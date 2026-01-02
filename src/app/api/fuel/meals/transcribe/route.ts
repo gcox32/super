@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error: any) {
       console.error('OpenAI API error:', error);
-      
+
       // Provide more specific error messages
       if (error.status === 401 || error.status === 403) {
         throw new Error('OpenAI API authentication failed. Please check API key configuration.');
@@ -79,34 +79,23 @@ export async function POST(request: NextRequest) {
     // Step 2: Parse JSON response from OpenAI
     let parsedData: ParsedMealData;
     try {
-      // Log raw response for debugging
-      console.log('=== OpenAI Raw Response ===');
-      console.log('Type:', typeof openAIResponse);
-      console.log('Length:', openAIResponse.length);
-      console.log('First 500 chars:', openAIResponse.substring(0, 500));
-      console.log('Full response:', openAIResponse);
-      
       // With JSON mode, the response should be pure JSON, but we'll still handle markdown wrapping as a fallback
       let jsonString = openAIResponse.trim();
-      
+
       // Remove markdown code blocks if present (fallback for non-JSON mode)
-      const jsonMatch = jsonString.match(/```json\s*([\s\S]*?)\s*```/) || 
-                       jsonString.match(/```\s*([\s\S]*?)\s*```/);
+      const jsonMatch = jsonString.match(/```json\s*([\s\S]*?)\s*```/) ||
+        jsonString.match(/```\s*([\s\S]*?)\s*```/);
       if (jsonMatch) {
         jsonString = jsonMatch[1].trim();
       }
-      
+
       // Extract JSON object if wrapped in text
       const objectMatch = jsonString.match(/\{[\s\S]*\}/);
       if (objectMatch) {
         jsonString = objectMatch[0];
       }
-      
+
       parsedData = JSON.parse(jsonString);
-      
-      // Log parsed data for debugging
-      console.log('=== Parsed Meal Data ===');
-      console.log(JSON.stringify(parsedData, null, 2));
     } catch (error: any) {
       console.error('=== Failed to parse OpenAI response ===');
       console.error('Error:', error);
@@ -124,15 +113,15 @@ export async function POST(request: NextRequest) {
 
     // Validate portion units
     const validUnits: ServingSizeMeasurement['unit'][] = ['g', 'ml', 'oz', 'lb', 'kg', 'count', 'fl oz', 'cup', 'tbsp', 'tsp'];
-    
+
     for (let i = 0; i < parsedData.foods.length; i++) {
       const foodData = parsedData.foods[i];
-      
+
       // Validate food name
       if (!foodData.name || !foodData.name.trim()) {
         throw new Error(`Invalid food data: food at index ${i} is missing a name`);
       }
-      
+
       // Validate portion
       if (!foodData.portion) {
         throw new Error(`Invalid food data: food "${foodData.name}" is missing portion information`);
@@ -143,7 +132,7 @@ export async function POST(request: NextRequest) {
       if (!validUnits.includes(foodData.portion.unit)) {
         throw new Error(`Invalid food data: food "${foodData.name}" has invalid portion unit "${foodData.portion.unit}". Valid units: ${validUnits.join(', ')}`);
       }
-      
+
       // Validate servingSize if provided
       if (foodData.servingSize) {
         if (typeof foodData.servingSize.value !== 'number' || foodData.servingSize.value <= 0) {
@@ -152,13 +141,13 @@ export async function POST(request: NextRequest) {
         if (!validUnits.includes(foodData.servingSize.unit)) {
           throw new Error(`Invalid food data: food "${foodData.name}" has invalid serving size unit "${foodData.servingSize.unit}". Valid units: ${validUnits.join(', ')}`);
         }
-        
+
         // Warn if portion and serving size units are incompatible (but don't fail - we'll handle it)
         if (!areUnitsCompatible(foodData.portion.unit, foodData.servingSize.unit)) {
           console.warn(`Food "${foodData.name}": portion unit "${foodData.portion.unit}" and serving size unit "${foodData.servingSize.unit}" are incompatible. Using portion as serving size.`);
         }
       }
-      
+
       // Validate and normalize macros if provided
       if (foodData.macros) {
         // Normalize protein
@@ -171,7 +160,7 @@ export async function POST(request: NextRequest) {
             foodData.macros.protein = undefined;
           }
         }
-        
+
         // Normalize carbs
         if (foodData.macros.carbs !== undefined && foodData.macros.carbs !== null) {
           if (typeof foodData.macros.carbs === 'string') {
@@ -182,7 +171,7 @@ export async function POST(request: NextRequest) {
             foodData.macros.carbs = undefined;
           }
         }
-        
+
         // Normalize fat
         if (foodData.macros.fat !== undefined && foodData.macros.fat !== null) {
           if (typeof foodData.macros.fat === 'string') {
@@ -193,13 +182,13 @@ export async function POST(request: NextRequest) {
             foodData.macros.fat = undefined;
           }
         }
-        
+
         // Remove macros object if all values are undefined
         if (!foodData.macros.protein && !foodData.macros.carbs && !foodData.macros.fat) {
           foodData.macros = undefined;
         }
       }
-      
+
       // Validate and normalize calories if provided
       if (foodData.calories !== undefined && foodData.calories !== null) {
         // Convert string to number if needed
@@ -217,7 +206,7 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    
+
     // Validate date/timestamp if provided
     if (parsedData.date) {
       const dateObj = new Date(parsedData.date);
@@ -244,17 +233,17 @@ export async function POST(request: NextRequest) {
       try {
         // Try to find existing food using fuzzy matching
         const similarFood = await findSimilarFood(foodData.name, 0.7); // 70% similarity threshold
-        
+
         let food: Food;
         if (similarFood) {
           // Use existing food
           food = similarFood.item;
           matchedFoods.push(food);
-          
+
           // If existing food doesn't have nutritional data, update it with OpenAI's estimates
           // Otherwise, use existing data (it's likely more accurate)
           const needsNutritionalUpdate = !food.calories || !food.macros;
-          
+
           if (needsNutritionalUpdate && (foodData.calories || foodData.macros)) {
             // Update the food with OpenAI's nutritional estimates
             await updateFood(food.id, {
@@ -283,7 +272,7 @@ export async function POST(request: NextRequest) {
           if (!servingSize || !areUnitsCompatible(foodData.portion.unit, servingSize.unit)) {
             servingSize = foodData.portion;
           }
-          
+
           food = await createFood({
             name: foodData.name,
             servingSize,
@@ -293,7 +282,7 @@ export async function POST(request: NextRequest) {
           });
           createdFoods.push(food);
         }
-        
+
         foodIds.push(food.id);
         portionedFoods.push({
           foodId: food.id,
@@ -323,10 +312,10 @@ export async function POST(request: NextRequest) {
     // Step 6: Calculate meal totals from all foods
     // Calculate nutrients for each food portion
     const foodNutrients = parsedData.foods.map((foodData: ParsedFoodData, index: number) => {
-      const food = index < foodIds.length ? 
-        (matchedFoods.find(f => f.id === foodIds[index]) || createdFoods.find(f => f.id === foodIds[index])) : 
+      const food = index < foodIds.length ?
+        (matchedFoods.find(f => f.id === foodIds[index]) || createdFoods.find(f => f.id === foodIds[index])) :
         null;
-      
+
       if (!food) {
         // Fallback: use OpenAI's estimates directly if food not found
         return {
@@ -335,17 +324,17 @@ export async function POST(request: NextRequest) {
           micros: foodData.micros,
         };
       }
-      
+
       // Calculate nutrients based on portion size
       return calculateNutrients(food, foodData.portion);
     });
-    
+
     // Aggregate all nutrients for the meal
     const mealNutrients = aggregateNutrients(foodNutrients);
 
     // Step 7: Create or find meal using fuzzy matching
     const similarMeal = await findSimilarMeal(parsedData.meal.name, userId, 0.7); // 70% similarity threshold
-    
+
     let meal: Meal;
     if (similarMeal) {
       // Use existing meal
@@ -366,7 +355,7 @@ export async function POST(request: NextRequest) {
     // Check if meal already has portioned foods
     const existingPortionedFoods = await getPortionedFoods({ mealId: meal.id });
     const existingFoodIds = new Set(existingPortionedFoods.map(pf => pf.foodId));
-    
+
     for (const pf of portionedFoods) {
       // Only add if this food isn't already in the meal
       if (!existingFoodIds.has(pf.foodId)) {
@@ -387,7 +376,7 @@ export async function POST(request: NextRequest) {
     // Step 9: Create meal instance (but don't save it yet - return for confirmation)
     // We'll create a temporary structure that the frontend can use to confirm
     // The actual MealInstance will be created after user confirmation
-    
+
     // Parse date/timestamp (handles relative times parsed by OpenAI)
     let mealDate: Date;
     if (date) {
@@ -397,12 +386,12 @@ export async function POST(request: NextRequest) {
     } else {
       mealDate = new Date();
     }
-    
+
     // Validate date
     if (isNaN(mealDate.getTime())) {
       mealDate = new Date(); // Fallback to current date if invalid
     }
-    
+
     let mealTimestamp: Date | null = null;
     if (timestamp) {
       mealTimestamp = new Date(timestamp);
@@ -426,17 +415,17 @@ export async function POST(request: NextRequest) {
         micros: mealNutrients.micros,
       },
       foods: parsedData.foods.map((foodData, index) => {
-        const food = index < foodIds.length ? 
-          (matchedFoods.find(f => f.id === foodIds[index]) || createdFoods.find(f => f.id === foodIds[index])) : 
+        const food = index < foodIds.length ?
+          (matchedFoods.find(f => f.id === foodIds[index]) || createdFoods.find(f => f.id === foodIds[index])) :
           null;
-        
+
         // Calculate nutrients for this specific portion
         const portionNutrients = food ? calculateNutrients(food, foodData.portion) : {
           calories: foodData.calories,
           macros: foodData.macros,
           micros: foodData.micros,
         };
-        
+
         return {
           ...foodData,
           foodId: foodIds[index],

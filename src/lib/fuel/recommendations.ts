@@ -288,7 +288,6 @@ function calculateCalorieTarget(
  */
 function calculateProteinTarget(lbmTargetKg: number): number {
   // Use 2.0 g per kg of target lean mass (middle of 1.8-2.2 range)
-  console.log('lbmtargetkg', lbmTargetKg);
   return lbmTargetKg * 2.0;
 }
 
@@ -329,7 +328,6 @@ function calculateTargetLBM(
   goalType: GoalType,
   bodyFatPercentage?: number
 ): number {
-  console.log('currentLBMKg', currentLBMKg);
   if (goalType === 'recomp') {
     // For recomp, maintain current LBM while losing fat
     return currentLBMKg;
