@@ -258,7 +258,7 @@ export function SleepForm({ initialDate, initialData, onSuccess }: SleepFormProp
                         />
                     </FormGroup>
                     <FormGroup>
-                        <FormLabel>Time Awake (mins)</FormLabel>
+                        <FormLabel className="whitespace-nowrap">Time Awake (mins)</FormLabel>
                         <NumberInput
                             value={timeAwake}
                             onValueChange={setTimeAwake}
